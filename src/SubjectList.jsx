@@ -243,9 +243,13 @@ export default function SubjectList({ onSelectSubject }) {
       <div className="px-4 pt-5 pb-3">
         <div className="flex items-center gap-2">
           {/* TODO LIST 배지 */}
-          <div className="border-2 border-[#E8694A] rounded px-2 py-1 leading-none flex-shrink-0">
-            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">TODO</div>
-            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">LIST</div>
+          <div
+            className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-1.5"
+            style={{ border: '2.5px solid #E8694A', backgroundColor: '#FFF3F0', minWidth: 52 }}
+          >
+            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">TODO</span>
+            <div className="w-full my-0.5" style={{ height: 1.5, backgroundColor: '#E8694A', opacity: 0.35 }} />
+            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">LIST</span>
           </div>
 
           {/* 날짜 */}
