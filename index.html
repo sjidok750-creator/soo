@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>스터디버디</title>
+    <link rel="icon" type="image/svg+xml" href="/soo/icon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/soo/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="스터디버디" />
+    <link rel="manifest" href="/soo/manifest.json" />
+    <meta name="theme-color" content="#0D9488" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+    <script>
+      // GitHub Pages SPA: 404.html에서 넘어온 경로 복원
+      (function () {
+        var p = window.location.search.slice(1).match(/p=([^&]+)/);
+        if (p) {
+          window.history.replaceState(null, null, '/' + decodeURIComponent(p[1]));
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "스터디버디",
+  "short_name": "스터디버디",
+  "description": "고등학생을 위한 실시간 공부 투두 앱",
+  "start_url": "/soo/",
+  "display": "standalone",
+  "background_color": "#f0fdfa",
+  "theme_color": "#0D9488",
+  "icons": [
+    {
+      "src": "/soo/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/soo/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/soo/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
