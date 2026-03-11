@@ -184,32 +184,69 @@ function CalendarModal({ onClose, nickname }) {
   )
 }
 
+function DdayPickerModal({ onSelect, onClose }) {
+  const today = new Date()
+  const [year, setYear] = useState(today.getFullYear())
+  const [month, setMonth] = useState(today.getMonth())
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const firstDay = new Date(year, month, 1).getDay()
+  const cells = []
+  for (let i = 0; i < firstDay; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+
+  function selectDate(d) {
+    const mm = String(month + 1).padStart(2, '0')
+    const dd = String(d).padStart(2, '0')
+    onSelect(`${year}-${mm}-${dd}`)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-end justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-t-3xl w-full max-w-md pb-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <button onClick={() => { if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1) }}
+            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 text-sm">◀</button>
+          <span className="font-bold text-gray-800 text-sm">{year}년 {month + 1}월</span>
+          <button onClick={() => { if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1) }}
+            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 text-sm">▶</button>
+        </div>
+        <div className="grid grid-cols-7 px-4 mb-1">
+          {['일','월','화','수','목','금','토'].map((d, i) => (
+            <div key={d} className={`text-center text-[11px] font-medium py-1 ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-gray-400'}`}>{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 px-4 gap-y-1">
+          {cells.map((d, i) => {
+            if (!d) return <div key={i} />
+            const colIdx = i % 7
+            const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
+            return (
+              <button key={i} onClick={() => selectDate(d)}
+                className={`w-9 h-9 mx-auto flex items-center justify-center rounded-full text-sm font-medium transition
+                  ${isToday ? 'bg-[#E8694A] text-white' : colIdx === 0 ? 'text-red-500 hover:bg-red-50' : colIdx === 6 ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-700 hover:bg-gray-100'}`}>
+                {d}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SubjectList({ onSelectSubject }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
-  const [upcomingExams, setUpcomingExams] = useState([])
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [dday1Date, setDday1Date] = useState(() => localStorage.getItem('dday1') || '')
+  const [dday2Date, setDday2Date] = useState(() => localStorage.getItem('dday2') || '')
+  const [ddayPicker, setDdayPicker] = useState(null) // 1 or 2
   const { ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
   const todayLabel = getTodayLabel()
   const yearOptions = [new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1]
-
-  useEffect(() => {
-    const q = query(collection(db, 'exam-schedule'), orderBy('date', 'asc'))
-    return onSnapshot(q, (snap) => {
-      const todayStr = new Date().toDateString()
-      const base = new Date(todayStr)
-      const upcoming = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(e => {
-          const d = new Date(e.date + 'T00:00:00')
-          return Math.ceil((d - base) / 86400000) >= 0
-        })
-        .sort((a, b) => a.date.localeCompare(b.date))
-      setUpcomingExams(upcoming)
-    })
-  }, [])
 
   // 오늘 날짜로 스크롤
   useEffect(() => {
@@ -229,12 +266,16 @@ export default function SubjectList({ onSelectSubject }) {
   })
 
   function getDaysLeft(dateStr) {
+    if (!dateStr) return null
     const d = new Date(dateStr + 'T00:00:00')
     return Math.ceil((d - new Date(new Date().toDateString())) / 86400000)
   }
 
-  const dday1 = upcomingExams[0] || null
-  const dday2 = upcomingExams[1] || null
+  function handleDdaySelect(slot, dateStr) {
+    if (slot === 1) { setDday1Date(dateStr); localStorage.setItem('dday1', dateStr) }
+    else { setDday2Date(dateStr); localStorage.setItem('dday2', dateStr) }
+    setDdayPicker(null)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -243,9 +284,13 @@ export default function SubjectList({ onSelectSubject }) {
       <div className="px-4 pt-5 pb-3">
         <div className="flex items-center gap-2">
           {/* TODO LIST 배지 */}
-          <div className="border-2 border-[#E8694A] rounded px-2 py-1 leading-none flex-shrink-0">
-            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">TODO</div>
-            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">LIST</div>
+          <div
+            className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-1.5"
+            style={{ border: '2.5px solid #E8694A', backgroundColor: '#FFF3F0', minWidth: 52 }}
+          >
+            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">TODO</span>
+            <div className="w-full my-0.5" style={{ height: 1.5, backgroundColor: '#E8694A', opacity: 0.35 }} />
+            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">LIST</span>
           </div>
 
           {/* 날짜 */}
@@ -326,52 +371,46 @@ export default function SubjectList({ onSelectSubject }) {
         })}
       </div>
 
-      {/* D-day 카운터 2개 (좌측 정렬, 병렬) */}
+      {/* D-day 카운터 2개 */}
       <div className="px-4 flex gap-3">
 
-        {/* D-day 카운터 1 — 코랄 */}
-        <div className="w-36 rounded-2xl p-4 shadow-sm" style={{ backgroundColor: '#E8694A' }}>
-          {dday1 ? (
-            <>
-              <p className="text-[11px] text-white/80 font-medium truncate">
-                {getSubject(dday1.subject).emoji} {dday1.title}
-              </p>
-              <p className="text-3xl font-extrabold text-white mt-1 tracking-tight">
-                {getDaysLeft(dday1.date) === 0 ? 'D-Day' : `D-${getDaysLeft(dday1.date)}`}
-              </p>
-              <p className="text-[10px] text-white/60 mt-1">{dday1.date}</p>
-            </>
-          ) : (
-            <>
-              <p className="text-[11px] text-white/70">다음 시험</p>
-              <p className="text-xl font-bold text-white/40 mt-1">없음</p>
-            </>
-          )}
-        </div>
+        {/* D-day 1 — 코랄 */}
+        <button
+          onClick={() => setDdayPicker(1)}
+          className="w-36 rounded-2xl p-4 shadow-sm text-left active:scale-95 transition-transform"
+          style={{ backgroundColor: '#E8694A' }}
+        >
+          <p className="text-[10px] text-white/60 mb-1">{dday1Date || 'tap to set'}</p>
+          <p className="text-4xl leading-none tracking-tight">
+            <span className="font-black text-white">D-</span>
+            <span className="font-thin text-white">
+              {dday1Date
+                ? (getDaysLeft(dday1Date) === 0 ? 'Day' : getDaysLeft(dday1Date))
+                : 'None'}
+            </span>
+          </p>
+        </button>
 
-        {/* D-day 카운터 2 — 인디고 */}
-        <div className="w-36 bg-indigo-500 rounded-2xl p-4 shadow-sm">
-          {dday2 ? (
-            <>
-              <p className="text-[11px] text-white/80 font-medium truncate">
-                {getSubject(dday2.subject).emoji} {dday2.title}
-              </p>
-              <p className="text-3xl font-extrabold text-white mt-1 tracking-tight">
-                {getDaysLeft(dday2.date) === 0 ? 'D-Day' : `D-${getDaysLeft(dday2.date)}`}
-              </p>
-              <p className="text-[10px] text-white/60 mt-1">{dday2.date}</p>
-            </>
-          ) : (
-            <>
-              <p className="text-[11px] text-white/70">다음 시험</p>
-              <p className="text-xl font-bold text-white/40 mt-1">없음</p>
-            </>
-          )}
-        </div>
+        {/* D-day 2 — 인디고 */}
+        <button
+          onClick={() => setDdayPicker(2)}
+          className="w-36 bg-indigo-500 rounded-2xl p-4 shadow-sm text-left active:scale-95 transition-transform"
+        >
+          <p className="text-[10px] text-white/60 mb-1">{dday2Date || 'tap to set'}</p>
+          <p className="text-4xl leading-none tracking-tight">
+            <span className="font-black text-white">D-</span>
+            <span className="font-thin text-white">
+              {dday2Date
+                ? (getDaysLeft(dday2Date) === 0 ? 'Day' : getDaysLeft(dday2Date))
+                : 'None'}
+            </span>
+          </p>
+        </button>
 
       </div>
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
+      {ddayPicker && <DdayPickerModal onSelect={d => handleDdaySelect(ddayPicker, d)} onClose={() => setDdayPicker(null)} />}
       <ToastContainer />
     </div>
   )
