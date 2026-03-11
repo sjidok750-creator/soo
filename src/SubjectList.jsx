@@ -5,7 +5,7 @@ import {
   deleteDoc, doc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
-import { SUBJECTS, getSubject, getAvatarColor } from './subjectConfig'
+import { SUBJECTS, getSubject } from './subjectConfig'
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
@@ -221,6 +221,16 @@ function CalendarModal({ onClose, nickname }) {
   )
 }
 
+const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+function getTodayLabel() {
+  const now = new Date()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const day = DAY_ABBR[now.getDay()]
+  return `${mm}/${dd}(${day})`
+}
+
 export default function SubjectList({ onSelectSubject }) {
   const [nickname, setNickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [todoCounts, setTodoCounts] = useState({})  // { subjectId: { total, done } }
@@ -228,7 +238,10 @@ export default function SubjectList({ onSelectSubject }) {
   const [showNameChange, setShowNameChange] = useState(false)
   const [newName, setNewName] = useState('')
   const [upcomingExams, setUpcomingExams] = useState([])
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const { addToast, ToastContainer } = useToast()
+  const todayLabel = getTodayLabel()
+  const yearOptions = [new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1]
 
   // Pull-to-refresh
   const pullStartY = useRef(0)
@@ -282,30 +295,52 @@ export default function SubjectList({ onSelectSubject }) {
   const doneAll = Object.values(todoCounts).reduce((a, c) => a + c.done, 0)
   const progressAll = totalAll > 0 ? Math.round((doneAll / totalAll) * 100) : 0
 
-  const avatarColor = getAvatarColor(nickname)
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
 
         {/* 헤더 */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">📚 스터디버디</h1>
-            <p className="text-sm text-gray-500 mt-0.5">오늘도 열심히 공부해요!</p>
+        <div className="flex items-center gap-2">
+          {/* TODO LIST 배지 */}
+          <div className="border-2 border-[#E8694A] rounded px-2 py-1 leading-none flex-shrink-0">
+            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">TODO</div>
+            <div className="text-[9px] font-bold text-[#E8694A] tracking-widest">LIST</div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowCalendar(true)} className="p-2 bg-white rounded-xl shadow-sm hover:shadow text-teal-600 text-xl transition" title="시험 일정">
-              📅
-            </button>
-            <button
-              onClick={() => { setShowNameChange(true); setNewName(nickname) }}
-              className={`w-9 h-9 rounded-full ${avatarColor} text-white text-sm font-bold flex items-center justify-center shadow-sm hover:shadow transition`}
-              title="이름 변경"
+
+          {/* 날짜 */}
+          <span className="font-bold text-[#E8694A] text-sm tracking-tight">{todayLabel}</span>
+
+          {/* 달력 아이콘 */}
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="text-[#E8694A] text-lg hover:opacity-70 transition flex-shrink-0"
+            title="시험 일정"
+          >
+            📅
+          </button>
+
+          {/* 연도 선택 */}
+          <div className="relative flex-shrink-0">
+            <select
+              value={selectedYear}
+              onChange={e => setSelectedYear(Number(e.target.value))}
+              className="appearance-none border border-[#E8694A] text-[#E8694A] rounded-full px-3 pr-6 py-0.5 text-xs font-semibold bg-white focus:outline-none cursor-pointer"
             >
-              {nickname[0]}
-            </button>
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#E8694A] text-[10px] pointer-events-none">▼</span>
           </div>
+
+          <div className="flex-1" />
+
+          {/* + 버튼 */}
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="w-9 h-9 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-xl font-light flex items-center justify-center shadow-md transition flex-shrink-0"
+            title="시험 일정 추가"
+          >
+            +
+          </button>
         </div>
 
         {/* 이름 변경 모달 */}
