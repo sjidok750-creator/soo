@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"JetBrains Mono"', 'monospace'],
+      },
       keyframes: {
         'slide-up': {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
