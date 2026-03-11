@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#fff7f5"/>
+  <rect x="148" y="220" width="728" height="584" rx="20" ry="20"
+        fill="#fff7f5" stroke="#E8694A" stroke-width="32"/>
+  <rect x="178" y="250" width="668" height="524" rx="8" ry="8"
+        fill="none" stroke="#E8694A" stroke-width="8" opacity="0.3"/>
+  <text x="512" y="462"
+        font-family="'Courier New', Courier, monospace"
+        font-size="210"
+        font-weight="700"
+        fill="#E8694A"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        letter-spacing="18">TODO</text>
+  <line x1="208" y1="512" x2="816" y2="512"
+        stroke="#E8694A" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+  <text x="512" y="562"
+        font-family="'Courier New', Courier, monospace"
+        font-size="210"
+        font-weight="700"
+        fill="#E8694A"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        letter-spacing="18">LIST</text>
+</svg>

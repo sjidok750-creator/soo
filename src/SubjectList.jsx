@@ -4,7 +4,6 @@ import {
   collection, onSnapshot, query, orderBy, addDoc, serverTimestamp,
   deleteDoc, doc
 } from 'firebase/firestore'
-import NicknameGate from './NicknameGate'
 import { useToast } from './Toast'
 import { SUBJECTS, getSubject, getAvatarColor } from './subjectConfig'
 
@@ -223,7 +222,7 @@ function CalendarModal({ onClose, nickname }) {
 }
 
 export default function SubjectList({ onSelectSubject }) {
-  const [nickname, setNickname] = useState(() => localStorage.getItem(NICKNAME_KEY) ?? '')
+  const [nickname, setNickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [todoCounts, setTodoCounts] = useState({})  // { subjectId: { total, done } }
   const [showCalendar, setShowCalendar] = useState(false)
   const [showNameChange, setShowNameChange] = useState(false)
@@ -236,7 +235,6 @@ export default function SubjectList({ onSelectSubject }) {
   const [pulling, setPulling] = useState(false)
 
   useEffect(() => {
-    if (!nickname) return
     // 전체 todos 실시간 구독해서 과목별 통계 집계
     const q = query(collection(db, 'study-todos'), orderBy('createdAt', 'asc'))
     return onSnapshot(q, (snap) => {
@@ -253,7 +251,6 @@ export default function SubjectList({ onSelectSubject }) {
   }, [nickname])
 
   useEffect(() => {
-    if (!nickname) return
     const q = query(collection(db, 'exam-schedule'), orderBy('date', 'asc'))
     return onSnapshot(q, (snap) => {
       const today = new Date(new Date().toDateString())
@@ -269,11 +266,6 @@ export default function SubjectList({ onSelectSubject }) {
     })
   }, [nickname])
 
-  function handleEnter(name) {
-    localStorage.setItem(NICKNAME_KEY, name)
-    setNickname(name)
-  }
-
   function handleNameChange(e) {
     e.preventDefault()
     const trimmed = newName.trim()
@@ -284,8 +276,6 @@ export default function SubjectList({ onSelectSubject }) {
     setNewName('')
     addToast(`이름이 "${trimmed}"으로 변경됐어요`, { icon: '✏️' })
   }
-
-  if (!nickname) return <NicknameGate onEnter={handleEnter} />
 
   // 전체 통계
   const totalAll = Object.values(todoCounts).reduce((a, c) => a + c.total, 0)

@@ -198,6 +198,14 @@ npm run preview  # 빌드 결과물 미리보기
 - Firebase write는 반드시 `await`로 처리합니다.
 - 실시간 리스너(`onSnapshot`)의 언마운트 시 cleanup(`return unsubscribe`)을 반드시 합니다.
 
+### 사용자 지정 색상
+- **"그색" 또는 "그색상"** = `#E8694A` (코랄/오렌지 계열)
+
+### 폰트
+- **앱 전체 기본 폰트: JetBrains Mono Regular**
+- `tailwind.config.js`의 `fontFamily.sans`에 설정되어 있음
+- 별도 언급 없으면 항상 JetBrains Mono를 유지할 것
+
 ### 색상 테마
 - 메인 컬러: teal/emerald (청록/에메랄드)
 - 포인트 컬러: `#0D9488` (teal-600)
