@@ -307,46 +307,120 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
-/* ── D-day 카드 (선 스타일) ── */
+/* ── 오늘의 영단어 ── */
+const DAILY_WORDS = [
+  'abundant','adequate','ambiguous','ambivalent','analogy',
+  'anticipate','articulate','authentic','benevolent','brevity',
+  'candid','clarity','cognitive','compassion','concise',
+  'conscientious','contemplate','courage','curiosity','dedicate',
+  'deliberate','diligent','discern','eloquent','empathy',
+  'emphasis','endeavor','ephemeral','essence','flourish',
+  'fluent','fortitude','frugal','genuine','gratitude',
+  'harmony','humility','illuminate','immense','insight',
+  'inspire','integrity','intrinsic','justice','legacy',
+  'lucid','manifest','meticulous','nuance','optimism',
+  'paradigm','patience','persevere','profound','resilience',
+  'serendipity','solitude','tangible','tenacious','tranquil',
+  'ubiquitous','versatile','vigilant','zealous','aspire',
+]
+
+function WordOfDay() {
+  const kstDay = Math.floor((Date.now() + 9 * 3600000) / 86400000)
+  const todayWord = DAILY_WORDS[kstDay % DAILY_WORDS.length]
+  const cacheKey = `wod-${todayWord}`
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const cached = localStorage.getItem(cacheKey)
+    if (cached) { setData(JSON.parse(cached)); setLoading(false); return }
+    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${todayWord}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (!json?.[0]) { setLoading(false); return }
+        const e = json[0]
+        const phonetic = e.phonetic || e.phonetics?.find(p => p.text)?.text || ''
+        const m = e.meanings || []
+        const pos1 = m[0]?.partOfSpeech?.slice(0, 4) || ''
+        const def1 = m[0]?.definitions[0]?.definition || ''
+        const pos2 = m[1]?.partOfSpeech?.slice(0, 4) || m[0]?.partOfSpeech?.slice(0, 4) || ''
+        const def2 = m[1]?.definitions[0]?.definition || m[0]?.definitions[1]?.definition || ''
+        const result = { word: todayWord, phonetic, pos1, def1, pos2, def2 }
+        localStorage.setItem(cacheKey, JSON.stringify(result))
+        setData(result)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading) return (
+    <div className="flex-1 flex flex-col justify-between min-w-0 animate-pulse">
+      <div className="h-2 bg-gray-100 rounded w-16" />
+      <div>
+        <div className="h-4 bg-gray-100 rounded w-24 mb-1" />
+        <div className="h-2.5 bg-gray-100 rounded w-14" />
+      </div>
+      <div className="space-y-1">
+        <div className="h-2.5 bg-gray-100 rounded w-full" />
+        <div className="h-2.5 bg-gray-100 rounded w-4/5" />
+      </div>
+    </div>
+  )
+
+  const d = data ?? { word: todayWord, phonetic: '', pos1: '', def1: '', pos2: '', def2: '' }
+  return (
+    <div className="flex-1 flex flex-col justify-between min-w-0">
+      <p className="text-[8px] tracking-[0.18em] text-gray-300 uppercase leading-none">word of the day</p>
+      <div>
+        <p className="text-[15px] font-bold text-gray-700 leading-tight">{d.word}</p>
+        {d.phonetic && (
+          <p className="text-[10px] mt-0.5 leading-none" style={{ color: '#E8694A', opacity: 0.6 }}>{d.phonetic}</p>
+        )}
+      </div>
+      <div className="space-y-0.5">
+        {d.def1 && (
+          <p className="text-[10px] text-gray-500 leading-tight line-clamp-1">
+            <span className="text-gray-300 italic">{d.pos1}. </span>{d.def1}
+          </p>
+        )}
+        {d.def2 && (
+          <p className="text-[10px] text-gray-500 leading-tight line-clamp-1">
+            <span className="text-gray-300 italic">{d.pos2}. </span>{d.def2}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── D-day 카드 (컴팩트 선 스타일) ── */
 function DdayCard({ dday, onClick }) {
   const days = dday.date
     ? Math.ceil((new Date(dday.date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000)
     : null
-
-  const label = days === null ? null : days === 0 ? 'Day' : String(Math.abs(days))
+  const label = days === null ? '—' : days === 0 ? 'Day' : String(Math.abs(days))
   const isPast = days !== null && days < 0
+  const c = isPast ? '#d1d5db' : '#E8694A'
 
   return (
     <button
       onClick={onClick}
-      className="flex-1 text-left py-3 px-1 active:opacity-70 transition-opacity"
+      className="w-[88px] flex-shrink-0 flex flex-col justify-between text-left active:opacity-70 transition-opacity"
     >
-      {/* 제목 */}
-      <p className="text-[11px] tracking-widest text-gray-300 mb-3 truncate uppercase">
+      <p className="text-[11px] font-semibold text-gray-600 truncate leading-none">
         {dday.title || 'tap to set'}
       </p>
-      {/* 수평선 */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="h-px flex-1" style={{ backgroundColor: '#E8694A', opacity: isPast ? 0.3 : 1 }} />
-        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#E8694A', opacity: isPast ? 0.3 : 1 }} />
+      <div>
+        <div className="flex items-center gap-1.5 mb-1">
+          <div className="h-px flex-1" style={{ backgroundColor: c }} />
+          <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: c }} />
+        </div>
+        <p className="leading-none tracking-tight" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+          <span className="text-xs font-bold" style={{ color: c }}>D-</span>
+          <span className="text-2xl font-black" style={{ color: c }}>{label}</span>
+        </p>
       </div>
-      {/* D-숫자 */}
-      <p className="leading-none tracking-tight" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-        <span
-          className="text-base font-bold"
-          style={{ color: isPast ? '#d1d5db' : '#E8694A' }}
-        >D-</span>
-        <span
-          className="text-4xl font-black"
-          style={{ color: isPast ? '#d1d5db' : '#E8694A' }}
-        >
-          {label ?? '—'}
-        </span>
-      </p>
-      {/* 날짜 */}
-      <p className="text-[10px] text-gray-300 mt-1.5 tracking-wide">
-        {dday.date || '날짜 미설정'}
-      </p>
+      <p className="text-[9px] text-gray-300 leading-none">{dday.date || '날짜 미설정'}</p>
     </button>
   )
 }
@@ -355,9 +429,8 @@ export default function SubjectList({ onSelectSubject }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [dday1, setDday1] = useState(() => parseDday(localStorage.getItem('dday1')))
-  const [dday2, setDday2] = useState(() => parseDday(localStorage.getItem('dday2')))
-  const [ddayPicker, setDdayPicker] = useState(null) // 1 or 2
+  const [dday, setDday] = useState(() => parseDday(localStorage.getItem('dday2')))
+  const [showDdayPicker, setShowDdayPicker] = useState(false)
   const { ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -379,20 +452,18 @@ export default function SubjectList({ onSelectSubject }) {
     return d
   })
 
-  function handleDdaySelect(slot, value) {
-    const json = JSON.stringify(value)
-    if (slot === 1) { setDday1(value); localStorage.setItem('dday1', json) }
-    else { setDday2(value); localStorage.setItem('dday2', json) }
-    setDdayPicker(null)
+  function handleDdaySelect(value) {
+    setDday(value)
+    localStorage.setItem('dday2', JSON.stringify(value))
+    setShowDdayPicker(false)
   }
 
   return (
     <div className="min-h-screen bg-white">
 
-      {/* 헤더 — 아래 경계선 */}
+      {/* 헤더 */}
       <div className="px-4 pt-5 pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          {/* TODO LIST 배지 */}
           <div
             className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-1.5"
             style={{ border: '2.5px solid #E8694A', backgroundColor: '#FFF3F0', minWidth: 52 }}
@@ -401,19 +472,8 @@ export default function SubjectList({ onSelectSubject }) {
             <div className="w-full my-0.5" style={{ height: 1.5, backgroundColor: '#E8694A', opacity: 0.35 }} />
             <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">LIST</span>
           </div>
-
-          {/* 날짜 */}
           <span className="font-bold text-[#E8694A] text-sm tracking-tight">{todayLabel}</span>
-
-          {/* 달력 아이콘 */}
-          <button
-            onClick={() => setShowCalendar(true)}
-            className="text-[#E8694A] text-lg hover:opacity-70 transition flex-shrink-0"
-          >
-            📅
-          </button>
-
-          {/* 연도 선택 */}
+          <button onClick={() => setShowCalendar(true)} className="text-[#E8694A] text-lg hover:opacity-70 transition flex-shrink-0">📅</button>
           <div className="relative flex-shrink-0">
             <select
               value={selectedYear}
@@ -424,21 +484,16 @@ export default function SubjectList({ onSelectSubject }) {
             </select>
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#E8694A] text-[10px] pointer-events-none">▼</span>
           </div>
-
           <div className="flex-1" />
-
-          {/* + 버튼 */}
           <button
             onClick={() => setShowCalendar(true)}
             className="w-9 h-9 rounded-full text-white text-xl font-light flex items-center justify-center shadow-md transition flex-shrink-0"
             style={{ backgroundColor: '#E8694A' }}
-          >
-            +
-          </button>
+          >+</button>
         </div>
       </div>
 
-      {/* 한줄 가로 스크롤 달력 — 미니멀 */}
+      {/* 한줄 가로 스크롤 달력 */}
       <div
         ref={calendarRef}
         className="flex gap-0 px-3 py-3 overflow-x-auto border-b border-gray-100/60"
@@ -448,53 +503,33 @@ export default function SubjectList({ onSelectSubject }) {
           const isToday = d.getTime() === todayBase.getTime()
           const isFirstOfMonth = d.getDate() === 1
           return (
-            <div
-              key={i}
-              ref={isToday ? todayCellRef : null}
-              className="flex-shrink-0 w-9 flex flex-col items-center py-1"
-            >
-              {/* 요일 */}
-              <span className="text-[9px] text-gray-300 mb-1 leading-none">
-                {DAY_KR[d.getDay()]}
-              </span>
-              {/* 날짜 */}
+            <div key={i} ref={isToday ? todayCellRef : null} className="flex-shrink-0 w-9 flex flex-col items-center py-1">
+              <span className="text-[9px] text-gray-300 mb-1 leading-none">{DAY_KR[d.getDay()]}</span>
               <span
                 className={`text-[13px] leading-none font-medium ${isToday ? 'font-bold' : 'text-gray-500'}`}
                 style={isToday ? { color: '#E8694A' } : {}}
-              >
-                {d.getDate()}
-              </span>
-              {/* 오늘 도트 */}
+              >{d.getDate()}</span>
               {isToday
                 ? <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: '#E8694A' }} />
                 : <div className="w-1 h-1 mt-1" />
               }
-              {/* 월 레이블 (매월 1일, 오늘 제외) */}
               {isFirstOfMonth && !isToday && (
-                <span className="text-[8px] text-gray-300 mt-0.5 leading-none">
-                  {d.getMonth() + 1}월
-                </span>
+                <span className="text-[8px] text-gray-300 mt-0.5 leading-none">{d.getMonth() + 1}월</span>
               )}
             </div>
           )
         })}
       </div>
 
-      {/* D-day 2개 — 선 스타일 */}
-      <div className="px-5 pt-4 pb-2 flex gap-6">
-        <DdayCard dday={dday1} onClick={() => setDdayPicker(1)} />
-        {/* 구분선 */}
-        <div className="w-px bg-gray-100 self-stretch my-1 flex-shrink-0" />
-        <DdayCard dday={dday2} onClick={() => setDdayPicker(2)} />
+      {/* 영단어 + D-day — 동일 높이 */}
+      <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
+        <WordOfDay />
+        <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
+        <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
-      {ddayPicker && (
-        <DdayPickerModal
-          onSelect={v => handleDdaySelect(ddayPicker, v)}
-          onClose={() => setDdayPicker(null)}
-        />
-      )}
+      {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       <ToastContainer />
     </div>
   )
