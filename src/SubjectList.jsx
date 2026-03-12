@@ -462,34 +462,40 @@ export default function SubjectList({ onSelectSubject }) {
     <div className="min-h-screen bg-stone-50 pb-16">
 
       {/* 헤더 — 고정 */}
-      <div className="sticky top-0 z-40 bg-white px-4 pt-5 pb-3 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-1.5"
-            style={{ border: '2.5px solid #E8694A', backgroundColor: '#FFF3F0', minWidth: 52 }}
+      <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          {/* 달력 아이콘 버튼 */}
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="flex items-center justify-center rounded-xl p-2.5 transition hover:opacity-80"
+            style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
           >
-            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">TODO</span>
-            <div className="w-full my-0.5" style={{ height: 1.5, backgroundColor: '#E8694A', opacity: 0.35 }} />
-            <span className="text-[11px] font-extrabold tracking-[0.2em] text-[#E8694A] leading-tight">LIST</span>
-          </div>
-          <span className="font-bold text-[#E8694A] text-sm tracking-tight">{todayLabel}</span>
-          <button onClick={() => setShowCalendar(true)} className="text-[#E8694A] text-lg hover:opacity-70 transition flex-shrink-0">📅</button>
-          <div className="relative flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" stroke="#E8694A" strokeWidth="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" stroke="#E8694A" strokeWidth="2"/>
+              <line x1="8" y1="2" x2="8" y2="6" stroke="#E8694A" strokeWidth="2"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke="#E8694A" strokeWidth="2"/>
+              <rect x="7" y="13" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
+              <rect x="11" y="13" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
+              <rect x="15" y="13" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
+              <rect x="7" y="17" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
+              <rect x="11" y="17" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
+            </svg>
+          </button>
+          {/* 년도 선택 */}
+          <div className="relative">
             <select
               value={selectedYear}
               onChange={e => setSelectedYear(Number(e.target.value))}
-              className="appearance-none border border-[#E8694A] text-[#E8694A] rounded-full px-3 pr-6 py-0.5 text-xs font-semibold bg-white focus:outline-none cursor-pointer"
+              className="appearance-none rounded-full px-4 pr-9 py-2 text-sm font-bold focus:outline-none cursor-pointer"
+              style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0', color: '#E8694A' }}
             >
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#E8694A] text-[10px] pointer-events-none">▼</span>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
           </div>
-          <div className="flex-1" />
-          <button
-            onClick={() => setShowCalendar(true)}
-            className="w-9 h-9 rounded-full text-white text-xl font-light flex items-center justify-center shadow-md transition flex-shrink-0"
-            style={{ backgroundColor: '#E8694A' }}
-          >+</button>
         </div>
       </div>
 
