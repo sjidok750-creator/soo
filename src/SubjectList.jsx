@@ -960,7 +960,7 @@ export default function SubjectList({ onSelectSubject }) {
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
-  const { ToastContainer } = useToast()
+  const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
   const todayLabel = getTodayLabel()
