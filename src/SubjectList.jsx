@@ -18,6 +18,36 @@ const FIXED_HOLIDAYS = {
 const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
+const DAILY_SUBJECTS = [
+  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#EF4444', bg: '#FEF2F2' },
+  { id: 'math', name: '수학',      abbr: 'MATH', color: '#2563EB', bg: '#EFF6FF' },
+  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#059669', bg: '#ECFDF5' },
+  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#D97706', bg: '#FFFBEB' },
+  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#EA580C', bg: '#FFF7ED' },
+  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#7C3AED', bg: '#F5F3FF' },
+  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#0D9488', bg: '#F0FDFA' },
+  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#4F46E5', bg: '#EEF2FF' },
+  { id: 'sci',  name: '과학',      abbr: 'IS',   color: '#0891B2', bg: '#ECFEFF' },
+  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#6D28D9', bg: '#F5F3FF' },
+  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#DB2777', bg: '#FDF2F8' },
+  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#65A30D', bg: '#F7FEE7' },
+  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0284C7', bg: '#F0F9FF' },
+  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#6B7280', bg: '#F9FAFB' },
+]
+
+function getTodayStr() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
+}
+function timeToMins(str) {
+  if (!str) return 0
+  const [h, m] = str.split(':').map(Number)
+  return h * 60 + m
+}
+function getDailySubject(id) {
+  return DAILY_SUBJECTS.find(s => s.id === id) || DAILY_SUBJECTS.at(-1)
+}
+
 function getTodayLabel() {
   const now = new Date()
   const mm = String(now.getMonth() + 1).padStart(2, '0')
@@ -425,12 +455,291 @@ function DdayCard({ dday, onClick }) {
   )
 }
 
+/* ───── TodoInputSheet ───── */
+function TodoInputSheet({ nickname, onClose }) {
+  const [text, setText] = useState('')
+  const [subject, setSubject] = useState('')
+  const [customName, setCustomName] = useState('')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('10:00')
+  const { addToast, ToastContainer } = useToast()
+
+  const totalMins = (() => {
+    const s = timeToMins(startTime), e = timeToMins(endTime)
+    return e > s ? e - s : 0
+  })()
+
+  async function handleAdd() {
+    if (!text.trim()) { addToast('내용을 입력해주세요'); return }
+    if (!subject) { addToast('과목을 선택해주세요'); return }
+    const subj = getDailySubject(subject)
+    const subjectName = (subject === 'custom' && customName.trim()) ? customName.trim() : subj.name
+    await addDoc(collection(db, 'study-todos'), {
+      text: text.trim(), subject, subjectName,
+      studyStart: startTime, studyEnd: endTime, totalMinutes: totalMins,
+      date: getTodayStr(), author: nickname || '익명',
+      done: false, createdAt: serverTimestamp(), order: Date.now(),
+    })
+    setText('')
+    addToast('추가 완료!')
+  }
+
+  return (
+    <>
+      <div className="fixed inset-x-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+        style={{ bottom: 64, maxHeight: '55vh' }}>
+        <div className="overflow-y-auto h-full">
+          <div className="px-5 pt-3 pb-6">
+            {/* handle */}
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            {/* header */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-bold text-gray-800">오늘의 할 일 추가</span>
+              <button onClick={onClose}
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
+            </div>
+            {/* text */}
+            <textarea value={text} onChange={e => setText(e.target.value)}
+              placeholder="할 일 내용을 입력하세요..."
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#E8694A] mb-4"
+              rows={2} />
+            {/* subjects */}
+            <div className="mb-4">
+              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">과목 선택</span>
+              <div className="flex flex-wrap gap-1.5">
+                {DAILY_SUBJECTS.map(s => {
+                  const sel = subject === s.id
+                  return (
+                    <button key={s.id} onClick={() => setSubject(s.id)}
+                      className="px-2.5 py-1 rounded-full text-xs font-semibold border transition-all"
+                      style={sel
+                        ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' }
+                        : { backgroundColor: s.bg, borderColor: s.color + '80', color: s.color }
+                      }>{s.name}</button>
+                  )
+                })}
+              </div>
+              {subject === 'custom' && (
+                <input value={customName} onChange={e => setCustomName(e.target.value)}
+                  placeholder="과목명 직접 입력"
+                  className="mt-2 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#E8694A]" />
+              )}
+            </div>
+            {/* time */}
+            <div className="mb-5">
+              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">공부 시간</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
+                  <span className="text-[10px] text-gray-400 font-medium shrink-0">시작</span>
+                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
+                </div>
+                <span className="text-gray-300 text-base shrink-0">→</span>
+                <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
+                  <span className="text-[10px] text-gray-400 font-medium shrink-0">종료</span>
+                  <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
+                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
+                </div>
+                {totalMins > 0 && (
+                  <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold shrink-0"
+                    style={{ backgroundColor: '#FFF3F0', color: '#E8694A' }}>{totalMins}분</div>
+                )}
+              </div>
+            </div>
+            {/* buttons */}
+            <div className="flex gap-2">
+              <button onClick={onClose}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">닫기</button>
+              <button onClick={handleAdd}
+                className="py-3 rounded-2xl text-white text-sm font-bold"
+                style={{ backgroundColor: '#E8694A', flex: 2 }}>추가</button>
+            </div>
+          </div>
+        </div>
+        <ToastContainer />
+      </div>
+    </>
+  )
+}
+
+/* ───── TodoList (tab 1) ───── */
+function TodoList({ todos }) {
+  if (!todos.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
+        </svg>
+        <p className="text-sm font-medium">아직 할 일이 없어요</p>
+        <p className="text-xs mt-0.5">+ 버튼으로 추가해보세요</p>
+      </div>
+    )
+  }
+  return (
+    <div className="p-3 space-y-2">
+      {todos.map(todo => {
+        const subj = getDailySubject(todo.subject)
+        return (
+          <div key={todo.id} className="flex items-start gap-2.5 p-3 rounded-2xl" style={{ backgroundColor: subj.bg }}>
+            <div className="w-1 rounded-full flex-shrink-0 self-stretch" style={{ backgroundColor: subj.color, minHeight: 36 }} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: subj.color }}>
+                  {todo.subjectName || subj.name}
+                </span>
+                {todo.studyStart && todo.studyEnd && (
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    {todo.studyStart}–{todo.studyEnd}{todo.totalMinutes > 0 && ` · ${todo.totalMinutes}분`}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-700 font-medium leading-snug">{todo.text}</p>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ───── TimeGraph (tab 2) ───── */
+function TimeGraph({ todos }) {
+  const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
+  if (!ts.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/>
+        </svg>
+        <p className="text-sm font-medium">공부 시간 데이터가 없어요</p>
+      </div>
+    )
+  }
+
+  const allM = ts.flatMap(t => [timeToMins(t.studyStart), timeToMins(t.studyEnd)])
+  const minT = Math.floor(Math.min(...allM) / 60) * 60
+  const maxT = Math.ceil(Math.max(...allM) / 60) * 60
+  const range = Math.max(maxT - minT, 60)
+  const pL = m => `${((m - minT) / range * 100).toFixed(2)}%`
+  const pW = (s, e) => `${((e - s) / range * 100).toFixed(2)}%`
+
+  const subjIds = [...new Set(ts.map(t => t.subject))]
+  const hours = Array.from({ length: (maxT - minT) / 60 + 1 }, (_, i) => minT + i * 60)
+  const totals = {}
+  ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
+
+  return (
+    <div className="px-4 py-4">
+      <div className="flex">
+        {/* Y labels */}
+        <div className="flex-shrink-0 mr-3" style={{ width: 38 }}>
+          {subjIds.map(id => {
+            const s = getDailySubject(id)
+            return (
+              <div key={id} className="flex items-center justify-end mb-2" style={{ height: 28 }}>
+                <span className="text-[10px] font-bold" style={{ color: s.color }}>{s.abbr}</span>
+              </div>
+            )
+          })}
+          <div style={{ height: 20 }} />
+        </div>
+        {/* Chart */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Grid */}
+          <div className="absolute top-0 pointer-events-none z-0"
+            style={{ bottom: 20, left: 0, right: 0 }}>
+            {hours.map(h => (
+              <div key={h} className="absolute top-0 bottom-0"
+                style={{ left: pL(h), width: 1, backgroundColor: '#f0f0f0' }} />
+            ))}
+          </div>
+          {/* Bars */}
+          <div className="relative z-10">
+            {subjIds.map(id => {
+              const subj = getDailySubject(id)
+              const sessions = ts.filter(t => t.subject === id)
+              return (
+                <div key={id} className="relative mb-2 rounded-full overflow-hidden"
+                  style={{ height: 28, backgroundColor: subj.color + '1a' }}>
+                  {sessions.map((s, i) => {
+                    const sm = timeToMins(s.studyStart), em = timeToMins(s.studyEnd)
+                    return (
+                      <div key={i}
+                        className="absolute top-0.5 bottom-0.5 rounded-full flex items-center justify-center px-1 overflow-hidden"
+                        style={{ left: pL(sm), width: pW(sm, em), backgroundColor: subj.color }}>
+                        {s.totalMinutes >= 20 && (
+                          <span className="text-[8px] text-white font-bold leading-none">{s.totalMinutes}분</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+          {/* X axis */}
+          <div className="relative" style={{ height: 20 }}>
+            {hours.map(h => (
+              <span key={h} className="absolute text-[9px] text-gray-400 font-medium -translate-x-1/2"
+                style={{ left: pL(h), bottom: 2 }}>
+                {`${String(Math.floor(h / 60)).padStart(2, '0')}:00`}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Summary chips */}
+      <div className="flex flex-wrap gap-1.5 mt-2 pl-14">
+        {subjIds.map(id => {
+          const subj = getDailySubject(id)
+          const h = Math.floor(totals[id] / 60), m = totals[id] % 60
+          return (
+            <span key={id} className="px-2.5 py-1 rounded-full text-[10px] font-bold"
+              style={{ backgroundColor: subj.color + '1a', color: subj.color }}>
+              {subj.abbr} {h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}분`}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ───── DailyBoard ───── */
+function DailyBoard({ todos, activeTab, setActiveTab }) {
+  const tabs = [{ key: 'todo', label: '투두리스트' }, { key: 'timetable', label: '시간표' }]
+  return (
+    <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+      <div className="flex border-b border-gray-100">
+        {tabs.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 py-3 text-xs font-bold tracking-wide transition border-b-2 ${
+              activeTab === tab.key
+                ? 'border-[#E8694A] text-[#E8694A]'
+                : 'border-transparent text-gray-400'
+            }`}>{tab.label}</button>
+        ))}
+      </div>
+      <div className="min-h-[160px]">
+        {activeTab === 'todo' && <TodoList todos={todos} />}
+        {activeTab === 'timetable' && <TimeGraph todos={todos} />}
+      </div>
+    </div>
+  )
+}
+
 export default function SubjectList({ onSelectSubject }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [dday, setDday] = useState(() => parseDday(localStorage.getItem('dday2')))
   const [showDdayPicker, setShowDdayPicker] = useState(false)
+  const [showTodoInput, setShowTodoInput] = useState(false)
+  const [todayTodos, setTodayTodos] = useState([])
+  const [activeTab, setActiveTab] = useState('todo')
   const { ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -442,6 +751,18 @@ export default function SubjectList({ onSelectSubject }) {
       todayCellRef.current?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
     }, 150)
     return () => clearTimeout(timer)
+  }, [])
+
+  // 오늘 투두 실시간 구독
+  useEffect(() => {
+    return onSnapshot(collection(db, 'study-todos'), snap => {
+      const today = getTodayStr()
+      const items = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(t => t.date === today)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+      setTodayTodos(items)
+    })
   }, [])
 
   const todayBase = new Date()
@@ -534,8 +855,12 @@ export default function SubjectList({ onSelectSubject }) {
         <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
 
+      {/* Daily Board */}
+      <DailyBoard todos={todayTodos} activeTab={activeTab} setActiveTab={setActiveTab} />
+
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
+      {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} />}
       <ToastContainer />
 
       {/* 하단 네비게이션 바 */}
@@ -559,7 +884,7 @@ export default function SubjectList({ onSelectSubject }) {
           <span className="text-[9px] font-medium text-gray-700 leading-none">Search</span>
         </button>
         {/* Add (중앙) */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowCalendar(true)}>
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowTodoInput(true)}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.2" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
