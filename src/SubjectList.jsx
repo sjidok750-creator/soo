@@ -975,21 +975,27 @@ export default function SubjectList({ onSelectSubject }) {
 
   // D-day 실시간 구독 (Firestore → 기기 간 동기화)
   useEffect(() => {
-    return onSnapshot(doc(db, 'settings', 'dday'), snap => {
-      if (snap.exists()) setDday(snap.data())
-    })
+    return onSnapshot(
+      doc(db, 'settings', 'dday'),
+      snap => { if (snap.exists()) setDday(snap.data()) },
+      err => { console.error('D-day read error:', err); addToast(`❌ D-day 로드 실패: ${err.code}`) }
+    )
   }, [])
 
   // 오늘 투두 실시간 구독
   useEffect(() => {
-    return onSnapshot(collection(db, 'study-todos'), snap => {
-      const today = getTodayStr()
-      const items = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(t => t.date === today)
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
-      setTodayTodos(items)
-    })
+    return onSnapshot(
+      collection(db, 'study-todos'),
+      snap => {
+        const today = getTodayStr()
+        const items = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(t => t.date === today)
+          .sort((a, b) => (a.order || 0) - (b.order || 0))
+        setTodayTodos(items)
+      },
+      err => { console.error('Todos read error:', err); addToast(`❌ 투두 로드 실패: ${err.code}`) }
+    )
   }, [])
 
   const todayBase = new Date()
