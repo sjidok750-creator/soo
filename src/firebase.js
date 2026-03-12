@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,8 +12,4 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
-
-// Firebase v10 권장 방식 — iOS Safari 포함 모든 환경에서 안정적
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache(),
-})
+export const db = getFirestore(app)
