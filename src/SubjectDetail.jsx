@@ -122,6 +122,9 @@ export default function SubjectDetail({ subject, onBack }) {
       setDueDate('')
       setShowForm(false)
       addToast('할 일이 추가됐어요!', { icon: '✅' })
+    } catch (err) {
+      console.error('Todo add error:', err)
+      addToast(`❌ 저장 실패: ${err.code ?? err.message}`)
     } finally {
       setSubmitting(false)
     }
