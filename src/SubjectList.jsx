@@ -474,14 +474,23 @@ function TodoInputSheet({ nickname, onClose }) {
     if (!subject) { addToast('과목을 선택해주세요'); return }
     const subj = getDailySubject(subject)
     const subjectName = (subject === 'custom' && customName.trim()) ? customName.trim() : subj.name
-    await addDoc(collection(db, 'study-todos'), {
-      text: text.trim(), subject, subjectName,
-      studyStart: startTime, studyEnd: endTime, totalMinutes: totalMins,
-      date: getTodayStr(), author: nickname || '익명',
-      done: false, createdAt: serverTimestamp(), order: Date.now(),
-    })
-    setText('')
-    addToast('추가 완료!')
+    try {
+      await addDoc(collection(db, 'study-todos'), {
+        text: text.trim(), subject, subjectName,
+        studyStart: startTime, studyEnd: endTime, totalMinutes: totalMins,
+        date: getTodayStr(), author: nickname || '익명',
+        done: false, createdAt: serverTimestamp(), order: Date.now(),
+      })
+      setText('')
+      addToast('추가 완료!')
+    } catch (err) {
+      console.error('Firestore write error:', err)
+      if (err.code === 'permission-denied') {
+        addToast('❌ 저장 실패: Firebase 보안 규칙을 확인하세요')
+      } else {
+        addToast(`❌ 저장 실패: ${err.message}`)
+      }
+    }
   }
 
   return (
