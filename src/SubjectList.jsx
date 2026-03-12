@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
 import {
   collection, onSnapshot, query, orderBy, addDoc, serverTimestamp,
-  deleteDoc, doc, updateDoc
+  deleteDoc, doc, updateDoc, setDoc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
 import { SUBJECTS, getSubject } from './subjectConfig'
@@ -956,7 +956,7 @@ export default function SubjectList({ onSelectSubject }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [dday, setDday] = useState(() => parseDday(localStorage.getItem('dday2')))
+  const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
@@ -971,6 +971,13 @@ export default function SubjectList({ onSelectSubject }) {
       todayCellRef.current?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
     }, 150)
     return () => clearTimeout(timer)
+  }, [])
+
+  // D-day 실시간 구독 (Firestore → 기기 간 동기화)
+  useEffect(() => {
+    return onSnapshot(doc(db, 'settings', 'dday'), snap => {
+      if (snap.exists()) setDday(snap.data())
+    })
   }, [])
 
   // 오늘 투두 실시간 구독
@@ -993,9 +1000,8 @@ export default function SubjectList({ onSelectSubject }) {
     return d
   })
 
-  function handleDdaySelect(value) {
-    setDday(value)
-    localStorage.setItem('dday2', JSON.stringify(value))
+  async function handleDdaySelect(value) {
+    await setDoc(doc(db, 'settings', 'dday'), value)
     setShowDdayPicker(false)
   }
 
