@@ -459,10 +459,10 @@ export default function SubjectList({ onSelectSubject }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-stone-50">
 
-      {/* 헤더 */}
-      <div className="px-4 pt-5 pb-3 border-b border-gray-100">
+      {/* 헤더 — 고정 */}
+      <div className="sticky top-0 z-40 bg-white px-4 pt-5 pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div
             className="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-3 py-1.5"
