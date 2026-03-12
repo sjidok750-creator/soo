@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,11 +12,8 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
 
-// 오프라인 IndexedDB 퍼시스턴스 — 새로고침 후에도 데이터 유지
-enableIndexedDbPersistence(db).catch(err => {
-  if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-    console.error('Firestore persistence error:', err)
-  }
+// Firebase v10 권장 방식 — iOS Safari 포함 모든 환경에서 안정적
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache(),
 })
