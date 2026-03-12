@@ -15,8 +15,8 @@ const FIXED_HOLIDAYS = {
   '10-09': '한글날', '12-25': '성탄절',
 }
 
-const DAY_KR = ['일', '월', '화', '수', '목', '금', '토']
 const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
 function getTodayLabel() {
   const now = new Date()
@@ -459,7 +459,7 @@ export default function SubjectList({ onSelectSubject }) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 pb-16">
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-5 pb-3 border-b border-gray-100">
@@ -504,7 +504,10 @@ export default function SubjectList({ onSelectSubject }) {
           const isFirstOfMonth = d.getDate() === 1
           return (
             <div key={i} ref={isToday ? todayCellRef : null} className="flex-shrink-0 w-9 flex flex-col items-center py-1">
-              <span className="text-[9px] text-gray-300 mb-1 leading-none">{DAY_KR[d.getDay()]}</span>
+              <span className="text-[8px] font-bold text-gray-500 mb-0.5 leading-none">{DAY_ABBR[d.getDay()]}</span>
+              <span className={`text-[8px] font-semibold leading-none mb-0.5 ${isFirstOfMonth ? '' : 'invisible'}`}
+                style={{ color: '#E8694A' }}
+              >{MONTH_EN[d.getMonth()]}</span>
               <span
                 className={`text-[13px] leading-none font-medium ${isToday ? 'font-bold' : 'text-gray-500'}`}
                 style={isToday ? { color: '#E8694A' } : {}}
@@ -513,9 +516,6 @@ export default function SubjectList({ onSelectSubject }) {
                 ? <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: '#E8694A' }} />
                 : <div className="w-1 h-1 mt-1" />
               }
-              {isFirstOfMonth && !isToday && (
-                <span className="text-[8px] text-gray-300 mt-0.5 leading-none">{d.getMonth() + 1}월</span>
-              )}
             </div>
           )
         })}
@@ -531,6 +531,53 @@ export default function SubjectList({ onSelectSubject }) {
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       <ToastContainer />
+
+      {/* 하단 네비게이션 바 */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-center justify-around h-16 px-1">
+        {/* Task */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="13" y2="16"/>
+          </svg>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">Task</span>
+        </button>
+        {/* Search */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">Search</span>
+        </button>
+        {/* Add (중앙) */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowCalendar(true)}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.2" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">Add</span>
+        </button>
+        {/* Like */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+          </svg>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">Like</span>
+        </button>
+        {/* Stats */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            <line x1="3" y1="20" x2="21" y2="20"/>
+          </svg>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">Stats</span>
+        </button>
+      </div>
     </div>
   )
 }
