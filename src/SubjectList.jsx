@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
 import {
   collection, onSnapshot, query, orderBy, addDoc, serverTimestamp,
-  deleteDoc, doc
+  deleteDoc, doc, updateDoc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
 import { SUBJECTS, getSubject } from './subjectConfig'
@@ -53,6 +53,13 @@ function getTodayLabel() {
   const mm = String(now.getMonth() + 1).padStart(2, '0')
   const dd = String(now.getDate()).padStart(2, '0')
   return `${mm}/${dd}(${DAY_ABBR[now.getDay()]})`
+}
+
+function formatTotal(mins) {
+  if (!mins || mins <= 0) return '0min'
+  if (mins < 60) return `${mins}min`
+  const h = Math.floor(mins / 60), m = mins % 60
+  return m > 0 ? `${h}h${m}min` : `${h}h`
 }
 
 function parseDday(raw) {
@@ -571,116 +578,288 @@ function TodoInputSheet({ nickname, onClose }) {
   )
 }
 
-/* ───── TodoList (tab 1) ───── */
-function TodoList({ todos }) {
-  if (!todos.length) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-gray-300">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
-          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-          <rect x="9" y="3" width="6" height="4" rx="1"/>
-          <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
-        </svg>
-        <p className="text-sm font-medium">아직 할 일이 없어요</p>
-        <p className="text-xs mt-0.5">+ 버튼으로 추가해보세요</p>
-      </div>
-    )
+/* ───── EditTodoModal ───── */
+function EditTodoModal({ todo, onClose }) {
+  const [text, setText] = useState(todo.text)
+  const [subject, setSubject] = useState(todo.subject)
+  const [startTime, setStartTime] = useState(todo.studyStart || '09:00')
+  const [endTime, setEndTime] = useState(todo.studyEnd || '10:00')
+  const { addToast, ToastContainer } = useToast()
+
+  const totalMins = (() => {
+    const s = timeToMins(startTime), e = timeToMins(endTime)
+    return e > s ? e - s : 0
+  })()
+
+  async function handleSave() {
+    if (!text.trim()) { addToast('내용을 입력해주세요'); return }
+    try {
+      await updateDoc(doc(db, 'study-todos', todo.id), {
+        text: text.trim(), subject,
+        subjectName: getDailySubject(subject).name,
+        studyStart: startTime, studyEnd: endTime, totalMinutes: totalMins,
+      })
+      onClose()
+    } catch (err) {
+      addToast(`❌ 저장 실패: ${err.message}`)
+    }
   }
+
+  async function handleDelete() {
+    try {
+      await deleteDoc(doc(db, 'study-todos', todo.id))
+      onClose()
+    } catch (err) {
+      addToast(`❌ 삭제 실패: ${err.message}`)
+    }
+  }
+
   return (
-    <div className="p-3 space-y-2">
-      {todos.map(todo => {
-        const subj = getDailySubject(todo.subject)
-        return (
-          <div key={todo.id} className="flex items-start gap-2.5 p-3 rounded-2xl" style={{ backgroundColor: subj.bg }}>
-            <div className="w-1 rounded-full flex-shrink-0 self-stretch" style={{ backgroundColor: subj.color, minHeight: 36 }} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: subj.color }}>
-                  {todo.subjectName || subj.name}
-                </span>
-                {todo.studyStart && todo.studyEnd && (
-                  <span className="text-[10px] text-gray-400 font-medium">
-                    {todo.studyStart}–{todo.studyEnd}{todo.totalMinutes > 0 && ` · ${todo.totalMinutes}분`}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-700 font-medium leading-snug">{todo.text}</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-4 pb-8">
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-bold text-gray-800" style={{ fontFamily: 'Pretendard, sans-serif' }}>할 일 수정</span>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
+        </div>
+        <textarea value={text} onChange={e => setText(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#E8694A] mb-3"
+          style={{ fontFamily: 'Pretendard, sans-serif' }}
+          rows={2} />
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {DAILY_SUBJECTS.map(s => (
+            <button key={s.id} onClick={() => setSubject(s.id)}
+              className="px-2.5 py-1 rounded-full text-xs font-bold border transition-all"
+              style={subject === s.id
+                ? { backgroundColor: s.color, color: '#fff', borderColor: s.color }
+                : { backgroundColor: s.bg, color: s.color, borderColor: s.color + '40' }}>
+              {s.abbr}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <label className="text-[10px] text-gray-400 font-bold mb-1 block tracking-widest">START</label>
+            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]" />
           </div>
-        )
-      })}
+          <div className="flex-1">
+            <label className="text-[10px] text-gray-400 font-bold mb-1 block tracking-widest">END</label>
+            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]" />
+          </div>
+          <div className="flex-shrink-0 flex flex-col justify-end">
+            <span className="text-xs font-bold text-gray-500 pb-2">{formatTotal(totalMins)}</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={handleDelete}
+            className="flex-shrink-0 px-4 py-3 rounded-xl border border-red-200 text-red-400 text-sm font-bold">삭제</button>
+          <button onClick={handleSave}
+            className="flex-1 py-3 rounded-xl text-white text-sm font-bold"
+            style={{ backgroundColor: '#E8694A' }}>저장</button>
+        </div>
+        <ToastContainer />
+      </div>
     </div>
   )
 }
 
-/* ───── TimeGraph (tab 2) ───── */
-function TimeGraph({ todos }) {
-  const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
-  if (!ts.length) {
+/* ───── TodoList ───── */
+function TodoList({ todos }) {
+  const [editingTodo, setEditingTodo] = useState(null)
+  const longPressTimer = useRef(null)
+
+  function startPress(todo) {
+    longPressTimer.current = setTimeout(() => setEditingTodo(todo), 600)
+  }
+  function cancelPress() {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+  }
+
+  async function handleToggle(todo) {
+    cancelPress()
+    try {
+      await updateDoc(doc(db, 'study-todos', todo.id), { done: !todo.done })
+    } catch {}
+  }
+
+  const totalMins = todos.reduce((s, t) => s + (t.totalMinutes || 0), 0)
+
+  if (!todos.length) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-gray-300">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
-          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
         </svg>
-        <p className="text-sm font-medium">공부 시간 데이터가 없어요</p>
+        <p className="text-xs font-medium" style={{ fontFamily: 'Pretendard, sans-serif' }}>아직 할 일이 없어요</p>
       </div>
     )
   }
 
-  const allM = ts.flatMap(t => [timeToMins(t.studyStart), timeToMins(t.studyEnd)])
-  const minT = Math.floor(Math.min(...allM) / 60) * 60
-  const maxT = Math.ceil(Math.max(...allM) / 60) * 60
-  const range = Math.max(maxT - minT, 60)
-  const pL = m => `${((m - minT) / range * 100).toFixed(2)}%`
-  const pW = (s, e) => `${((e - s) / range * 100).toFixed(2)}%`
+  return (
+    <>
+      <div className="px-4 pt-1 pb-2">
+        {todos.map((todo, idx) => {
+          const subj = getDailySubject(todo.subject)
+          return (
+            <div key={todo.id}
+              className={`flex items-center gap-2.5 py-2.5 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
+              onMouseDown={() => startPress(todo)}
+              onMouseUp={cancelPress}
+              onMouseLeave={cancelPress}
+              onTouchStart={() => startPress(todo)}
+              onTouchEnd={cancelPress}
+              onTouchMove={cancelPress}
+            >
+              {/* Checkbox */}
+              <button
+                onMouseDown={e => e.stopPropagation()}
+                onTouchStart={e => e.stopPropagation()}
+                onClick={() => handleToggle(todo)}
+                className="flex-shrink-0 w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
+                style={todo.done
+                  ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
+                  : { borderColor: '#D1D5DB' }}
+              >
+                {todo.done && (
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                    <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+
+              {/* Todo text */}
+              <span
+                className={`flex-1 text-sm leading-snug min-w-0 ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
+                style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
+              >
+                {todo.text}
+              </span>
+
+              {/* Right: time + subject */}
+              <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+                {todo.studyStart && todo.studyEnd && (
+                  <span className="text-[9px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                    {todo.studyStart}–{todo.studyEnd}
+                    {todo.totalMinutes > 0 && ` (${todo.totalMinutes}m)`}
+                  </span>
+                )}
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white leading-none"
+                  style={{ backgroundColor: subj.color, fontFamily: 'JetBrains Mono, monospace' }}>
+                  {subj.abbr}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* 합계 */}
+        {totalMins > 0 && (
+          <div className="flex justify-end items-center gap-1.5 pt-2 mt-1 border-t border-dashed border-gray-100">
+            <span className="text-[9px] text-gray-400 tracking-widest uppercase" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Total</span>
+            <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+              {totalMins}min{totalMins >= 60 && `, ${formatTotal(totalMins)}`}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {editingTodo && <EditTodoModal todo={editingTodo} onClose={() => setEditingTodo(null)} />}
+    </>
+  )
+}
+
+/* ───── StudyTimeGraph ───── */
+function StudyTimeGraph({ todos }) {
+  const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
+  if (!ts.length) return null
 
   const subjIds = [...new Set(ts.map(t => t.subject))]
-  const hours = Array.from({ length: (maxT - minT) / 60 + 1 }, (_, i) => minT + i * 60)
   const totals = {}
   ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
+  const totalAllMins = Object.values(totals).reduce((a, b) => a + b, 0)
+
+  // 실제 공부한 시간 범위 (±1시간 여유)
+  const allM = ts.flatMap(t => [timeToMins(t.studyStart), timeToMins(t.studyEnd)])
+  const rangeStart = Math.max(0, Math.floor((Math.min(...allM) - 60) / 60) * 60)
+  const rangeEnd = Math.min(1440, Math.ceil((Math.max(...allM) + 60) / 60) * 60)
+  const range = rangeEnd - rangeStart
+
+  const pL = m => `${((m - rangeStart) / range * 100).toFixed(3)}%`
+  const pW = (s, e) => `${((e - s) / range * 100).toFixed(3)}%`
+
+  const hourMarkers = []
+  for (let h = Math.ceil(rangeStart / 60); h <= Math.floor(rangeEnd / 60); h++) {
+    hourMarkers.push(h * 60)
+  }
 
   return (
-    <div className="px-4 py-4">
-      <div className="flex">
-        {/* Y labels */}
-        <div className="flex-shrink-0 mr-3" style={{ width: 38 }}>
-          {subjIds.map(id => {
-            const s = getDailySubject(id)
-            return (
-              <div key={id} className="flex items-center justify-end mb-2" style={{ height: 28 }}>
-                <span className="text-[10px] font-bold" style={{ color: s.color }}>{s.abbr}</span>
-              </div>
-            )
-          })}
-          <div style={{ height: 20 }} />
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background: '#0F172A' }}>
+      {/* 헤더 */}
+      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5">
+        <div className="flex items-center gap-2">
+          <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: '#E8694A' }} />
+          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
+            Study Timeline
+          </span>
         </div>
-        {/* Chart */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Grid */}
-          <div className="absolute top-0 pointer-events-none z-0"
-            style={{ bottom: 20, left: 0, right: 0 }}>
-            {hours.map(h => (
-              <div key={h} className="absolute top-0 bottom-0"
-                style={{ left: pL(h), width: 1, backgroundColor: '#f0f0f0' }} />
-            ))}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'JetBrains Mono, monospace' }}>
+            {todos.filter(t => t.done).length}/{todos.length} done
+          </span>
+          <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+            {totalAllMins}min · {formatTotal(totalAllMins)}
+          </span>
+        </div>
+      </div>
+
+      {/* 차트 */}
+      <div className="px-4 pb-4">
+        <div className="flex items-start gap-2">
+          {/* Y labels */}
+          <div className="flex-shrink-0" style={{ width: 36, paddingTop: 2 }}>
+            {subjIds.map(id => {
+              const s = getDailySubject(id)
+              return (
+                <div key={id} className="flex items-center justify-end mb-1.5" style={{ height: 18 }}>
+                  <span className="text-[9px] font-bold" style={{ color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.abbr}</span>
+                </div>
+              )
+            })}
           </div>
-          {/* Bars */}
-          <div className="relative z-10">
+
+          {/* 바 영역 */}
+          <div className="flex-1 relative">
             {subjIds.map(id => {
               const subj = getDailySubject(id)
               const sessions = ts.filter(t => t.subject === id)
               return (
-                <div key={id} className="relative mb-2 rounded-full overflow-hidden"
-                  style={{ height: 28, backgroundColor: subj.color + '1a' }}>
+                <div key={id} className="relative mb-1.5" style={{ height: 18 }}>
+                  {/* 트랙 배경 */}
+                  <div className="absolute inset-0 rounded-sm" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }} />
+                  {/* 그리드 라인 */}
+                  {hourMarkers.map(h => (
+                    <div key={h} className="absolute top-0 bottom-0" style={{
+                      left: pL(h), width: 1,
+                      backgroundColor: 'rgba(255,255,255,0.06)'
+                    }} />
+                  ))}
+                  {/* 세션 바 */}
                   {sessions.map((s, i) => {
                     const sm = timeToMins(s.studyStart), em = timeToMins(s.studyEnd)
                     return (
                       <div key={i}
-                        className="absolute top-0.5 bottom-0.5 rounded-full flex items-center justify-center px-1 overflow-hidden"
+                        className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-center overflow-hidden"
                         style={{ left: pL(sm), width: pW(sm, em), backgroundColor: subj.color }}>
-                        {s.totalMinutes >= 20 && (
-                          <span className="text-[8px] text-white font-bold leading-none">{s.totalMinutes}분</span>
+                        {s.totalMinutes >= 25 && (
+                          <span className="text-[7px] font-bold leading-none px-0.5"
+                            style={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {s.totalMinutes}m
+                          </span>
                         )}
                       </div>
                     )
@@ -688,27 +867,51 @@ function TimeGraph({ todos }) {
                 </div>
               )
             })}
+
+            {/* X축 */}
+            <div className="relative mt-1" style={{ height: 14 }}>
+              {hourMarkers.map(h => (
+                <span key={h}
+                  className="absolute -translate-x-1/2 text-[8px]"
+                  style={{
+                    left: pL(h),
+                    color: 'rgba(255,255,255,0.25)',
+                    fontFamily: 'JetBrains Mono, monospace',
+                    bottom: 0,
+                  }}>
+                  {`${String(Math.floor(h / 60)).padStart(2, '0')}:00`}
+                </span>
+              ))}
+            </div>
           </div>
-          {/* X axis */}
-          <div className="relative" style={{ height: 20 }}>
-            {hours.map(h => (
-              <span key={h} className="absolute text-[9px] text-gray-400 font-medium -translate-x-1/2"
-                style={{ left: pL(h), bottom: 2 }}>
-                {`${String(Math.floor(h / 60)).padStart(2, '0')}:00`}
-              </span>
-            ))}
+
+          {/* 과목별 합계 */}
+          <div className="flex-shrink-0 flex flex-col items-start gap-1.5" style={{ width: 44, paddingTop: 2 }}>
+            {subjIds.map(id => {
+              const subj = getDailySubject(id)
+              return (
+                <div key={id} className="flex items-center" style={{ height: 18 }}>
+                  <span className="text-[8px] font-bold leading-none"
+                    style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>
+                    {formatTotal(totals[id])}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
-      {/* Summary chips */}
-      <div className="flex flex-wrap gap-1.5 mt-2 pl-14">
+
+      {/* 하단 과목 칩 */}
+      <div className="flex flex-wrap gap-1.5 px-4 pb-3.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         {subjIds.map(id => {
           const subj = getDailySubject(id)
-          const h = Math.floor(totals[id] / 60), m = totals[id] % 60
           return (
-            <span key={id} className="px-2.5 py-1 rounded-full text-[10px] font-bold"
-              style={{ backgroundColor: subj.color + '1a', color: subj.color }}>
-              {subj.abbr} {h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}분`}
+            <span key={id} className="flex items-center gap-1 px-2 py-1 rounded"
+              style={{ backgroundColor: subj.color + '22', fontFamily: 'JetBrains Mono, monospace' }}>
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
+              <span className="text-[9px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
+              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{formatTotal(totals[id])}</span>
             </span>
           )
         })}
@@ -718,23 +921,32 @@ function TimeGraph({ todos }) {
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos, activeTab, setActiveTab }) {
-  const tabs = [{ key: 'todo', label: '투두리스트' }, { key: 'timetable', label: '시간표' }]
+function DailyBoard({ todos }) {
+  const now = new Date()
+  const dateLabel = `${now.getMonth() + 1}/${String(now.getDate()).padStart(2, '0')}(${DAY_ABBR[now.getDay()]})`
   return (
-    <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-      <div className="flex border-b border-gray-100">
-        {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-3 text-xs font-bold tracking-wide transition border-b-2 ${
-              activeTab === tab.key
-                ? 'border-[#E8694A] text-[#E8694A]'
-                : 'border-transparent text-gray-400'
-            }`}>{tab.label}</button>
-        ))}
+    <div className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-gray-50">
+        {/* todo list 배지 */}
+        <span className="px-3 py-1 rounded-lg text-sm font-bold border-2"
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            color: '#E8694A',
+            borderColor: '#E8694A',
+            backgroundColor: '#FFF7F5',
+            letterSpacing: '0.04em',
+          }}>
+          todo list
+        </span>
+        {/* 날짜 */}
+        <span className="text-[11px] font-bold"
+          style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+          {dateLabel}
+        </span>
       </div>
-      <div className="min-h-[160px]">
-        {activeTab === 'todo' && <TodoList todos={todos} />}
-        {activeTab === 'timetable' && <TimeGraph todos={todos} />}
+      <div className="min-h-[120px]">
+        <TodoList todos={todos} />
       </div>
     </div>
   )
@@ -748,7 +960,6 @@ export default function SubjectList({ onSelectSubject }) {
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
-  const [activeTab, setActiveTab] = useState('todo')
   const { ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -865,7 +1076,8 @@ export default function SubjectList({ onSelectSubject }) {
       </div>
 
       {/* Daily Board */}
-      <DailyBoard todos={todayTodos} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <DailyBoard todos={todayTodos} />
+      <StudyTimeGraph todos={todayTodos} />
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
