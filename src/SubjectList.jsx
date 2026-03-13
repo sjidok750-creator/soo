@@ -19,20 +19,20 @@ const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
 const DAILY_SUBJECTS = [
-  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#EF4444', bg: '#FEF2F2' },
-  { id: 'math', name: '수학',      abbr: 'MATH', color: '#2563EB', bg: '#EFF6FF' },
-  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#059669', bg: '#ECFDF5' },
-  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#D97706', bg: '#FFFBEB' },
-  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#EA580C', bg: '#FFF7ED' },
-  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#7C3AED', bg: '#F5F3FF' },
-  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#0D9488', bg: '#F0FDFA' },
-  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#4F46E5', bg: '#EEF2FF' },
-  { id: 'sci',  name: '과학',      abbr: 'IS',   color: '#0891B2', bg: '#ECFEFF' },
-  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#6D28D9', bg: '#F5F3FF' },
-  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#DB2777', bg: '#FDF2F8' },
-  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#65A30D', bg: '#F7FEE7' },
-  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0284C7', bg: '#F0F9FF' },
-  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#6B7280', bg: '#F9FAFB' },
+  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#E53E3E', bg: '#FEF2F2' },  // 강렬한 레드
+  { id: 'math', name: '수학',      abbr: 'MATH', color: '#3B82F6', bg: '#EFF6FF' },  // 밝은 블루
+  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#10B981', bg: '#ECFDF5' },  // 에메랄드
+  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#F59E0B', bg: '#FFFBEB' },  // 앰버
+  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#F97316', bg: '#FFF7ED' },  // 오렌지
+  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#8B5CF6', bg: '#F5F3FF' },  // 바이올렛
+  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#14B8A6', bg: '#F0FDFA' },  // 틸
+  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#6366F1', bg: '#EEF2FF' },  // 인디고
+  { id: 'sci',  name: '과학',      abbr: 'SCI',  color: '#06B6D4', bg: '#ECFEFF' },  // 시안
+  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#A855F7', bg: '#FAF5FF' },  // 퍼플
+  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#EC4899', bg: '#FDF2F8' },  // 핑크
+  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#84CC16', bg: '#F7FEE7' },  // 라임
+  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0EA5E9', bg: '#F0F9FF' },  // 스카이
+  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#94A3B8', bg: '#F9FAFB' },  // 슬레이트
 ]
 
 function getTodayStr() {
@@ -787,71 +787,61 @@ function StudyTimeGraph({ todos }) {
   ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
   const totalAllMins = Object.values(totals).reduce((a, b) => a + b, 0)
 
-  // 시계 SVG 설정
-  const SIZE = 220
+  // 시계 SVG 설정 — 스마트폰 꽉 채우기
+  const SIZE = 280
   const CX = SIZE / 2, CY = SIZE / 2
-  const R = 85 // 메인 링 반지름
-  const STROKE = 18 // 링 두께
-  const FULL = 1440 // 24h in minutes
+  const R = 108      // 더 큰 반지름
+  const STROKE = 30  // 두꺼운 아크
+  const FULL = 1440  // 24h in minutes
 
-  // 분 → 각도 (0시 = 상단 = -90도)
   const minToAngle = m => (m / FULL) * 360 - 90
-  // 각도 → SVG 좌표
   const polarToXY = (angle, r) => ({
     x: CX + r * Math.cos(angle * Math.PI / 180),
     y: CY + r * Math.sin(angle * Math.PI / 180),
   })
 
-  // 호 경로 생성
-  function arcPath(startMin, endMin, r, sw) {
+  function arcPath(startMin, endMin, r) {
     const a1 = minToAngle(startMin)
     const a2 = minToAngle(endMin)
     const p1 = polarToXY(a1, r)
     const p2 = polarToXY(a2, r)
-    const diff = endMin - startMin
-    const large = diff > 720 ? 1 : 0
+    const large = (endMin - startMin) > 720 ? 1 : 0
     return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y}`
   }
 
-  // 현재 시각
-  const now = new Date()
-  const nowMins = now.getHours() * 60 + now.getMinutes()
-  const nowAngle = minToAngle(nowMins)
-  const nowP = polarToXY(nowAngle, R)
-  const nowTip = polarToXY(nowAngle, R + STROKE / 2 + 4)
+  // 아크 중간점 계산 (라벨 위치용)
+  function arcMidpoint(startMin, endMin, r) {
+    const mid = (startMin + endMin) / 2
+    return polarToXY(minToAngle(mid), r)
+  }
 
-  // 시간 라벨 (0, 3, 6, 9, 12, 15, 18, 21)
-  const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21]
+  const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
+  const nowTip = polarToXY(minToAngle(nowMins), R + STROKE / 2 + 5)
+
+  const hourLabels = [0, 6, 12, 18]  // 6시간 간격만 (깔끔하게)
+  const minorLabels = [3, 9, 15, 21]
 
   return (
-    <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background: '#0F172A' }}>
-      {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 pt-3.5 pb-1">
-        <div className="flex items-center gap-2">
-          <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: '#E8694A' }} />
-          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
-            Study Clock
-          </span>
-        </div>
-        <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-          {formatTotal(totalAllMins)}
-        </span>
-      </div>
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden"
+      style={{ background: 'linear-gradient(145deg, #1E293B 0%, #0F172A 60%, #1E1B4B 100%)' }}>
 
-      {/* 원형 시계 */}
-      <div className="flex justify-center py-2">
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-[200px] h-[200px] sm:w-[220px] sm:h-[220px]">
+      {/* 원형 시계 — 풀 사이즈 */}
+      <div className="flex justify-center pt-4 pb-2">
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
+          style={{ width: '100%', maxWidth: SIZE, height: 'auto' }}>
+
           {/* 배경 링 */}
-          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={STROKE} />
+          <circle cx={CX} cy={CY} r={R} fill="none"
+            stroke="rgba(255,255,255,0.07)" strokeWidth={STROKE} />
 
-          {/* 시간 눈금 (1시간 간격 작은 틱) */}
+          {/* 미세 그리드 (1시간 간격 틱) */}
           {Array.from({ length: 24 }, (_, i) => {
             const angle = minToAngle(i * 60)
-            const inner = polarToXY(angle, R - STROKE / 2 - 1)
-            const outer = polarToXY(angle, R - STROKE / 2 + (i % 3 === 0 ? 5 : 3))
+            const outer = polarToXY(angle, R - STROKE / 2)
+            const inner = polarToXY(angle, R - STROKE / 2 + (i % 6 === 0 ? 8 : i % 3 === 0 ? 5 : 3))
             return (
-              <line key={i} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
-                stroke={i % 6 === 0 ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}
+              <line key={i} x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y}
+                stroke={i % 6 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}
                 strokeWidth={i % 6 === 0 ? 1.5 : 0.8} />
             )
           })}
@@ -860,22 +850,48 @@ function StudyTimeGraph({ todos }) {
           {ts.map((t, i) => {
             const subj = getDailySubject(t.subject)
             const sm = timeToMins(t.studyStart), em = timeToMins(t.studyEnd)
+            const mid = arcMidpoint(sm, em, R)
+            const arcDeg = ((em - sm) / FULL) * 360
             return (
-              <path key={i} d={arcPath(sm, em, R, STROKE)}
-                fill="none" stroke={subj.color} strokeWidth={STROKE}
-                strokeLinecap="butt" opacity={0.85} />
+              <g key={i}>
+                <path d={arcPath(sm, em, R)}
+                  fill="none" stroke={subj.color} strokeWidth={STROKE}
+                  strokeLinecap="butt" opacity={0.92} />
+                {/* 과목 약자 — 아크가 충분히 길 때만 */}
+                {arcDeg >= 10 && (
+                  <text x={mid.x} y={mid.y}
+                    textAnchor="middle" dominantBaseline="central"
+                    fill="rgba(255,255,255,0.95)"
+                    fontSize={arcDeg >= 20 ? 9 : 7}
+                    fontWeight={700}
+                    fontFamily="JetBrains Mono, monospace">
+                    {subj.abbr}
+                  </text>
+                )}
+              </g>
             )
           })}
 
-          {/* 시간 라벨 */}
+          {/* 시간 라벨 (주요 4개) */}
           {hourLabels.map(h => {
-            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 12)
+            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 14)
             return (
               <text key={h} x={pos.x} y={pos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill={h % 6 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.25)'}
-                fontSize={h % 6 === 0 ? 11 : 9}
-                fontWeight={h % 6 === 0 ? 700 : 400}
+                fill="rgba(255,255,255,0.6)"
+                fontSize={12} fontWeight={700}
+                fontFamily="JetBrains Mono, monospace">
+                {h}
+              </text>
+            )
+          })}
+          {minorLabels.map(h => {
+            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 13)
+            return (
+              <text key={h} x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fill="rgba(255,255,255,0.25)"
+                fontSize={9} fontWeight={400}
                 fontFamily="JetBrains Mono, monospace">
                 {h}
               </text>
@@ -883,31 +899,33 @@ function StudyTimeGraph({ todos }) {
           })}
 
           {/* 현재 시각 인디케이터 */}
-          <circle cx={nowTip.x} cy={nowTip.y} r={3.5} fill="#E8694A" />
-          <circle cx={nowTip.x} cy={nowTip.y} r={6} fill="none" stroke="#E8694A" strokeWidth={1} opacity={0.4} />
+          <circle cx={nowTip.x} cy={nowTip.y} r={4} fill="#E8694A" />
+          <circle cx={nowTip.x} cy={nowTip.y} r={7} fill="none" stroke="#E8694A" strokeWidth={1.2} opacity={0.4} />
 
           {/* 중앙 텍스트 */}
-          <text x={CX} y={CY - 10} textAnchor="middle" dominantBaseline="central"
-            fill="rgba(255,255,255,0.6)" fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700}>
+          <text x={CX} y={CY - 12} textAnchor="middle" dominantBaseline="central"
+            fill="rgba(255,255,255,0.45)" fontSize={11}
+            fontFamily="JetBrains Mono, monospace" fontWeight={600}>
             {todos.filter(t => t.done).length}/{todos.length} done
           </text>
-          <text x={CX} y={CY + 8} textAnchor="middle" dominantBaseline="central"
-            fill="#E8694A" fontSize={16} fontFamily="JetBrains Mono, monospace" fontWeight={700}>
+          <text x={CX} y={CY + 10} textAnchor="middle" dominantBaseline="central"
+            fill="#E8694A" fontSize={20} fontFamily="JetBrains Mono, monospace" fontWeight={800}>
             {formatTotal(totalAllMins)}
           </text>
         </svg>
       </div>
 
       {/* 과목별 범례 */}
-      <div className="flex flex-wrap justify-center gap-2 px-4 pb-3.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', paddingTop: 10 }}>
+      <div className="flex flex-wrap justify-center gap-2 px-4 pb-4 border-t"
+        style={{ borderColor: 'rgba(255,255,255,0.07)', paddingTop: 10 }}>
         {subjIds.map(id => {
           const subj = getDailySubject(id)
           return (
             <span key={id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-              style={{ backgroundColor: subj.color + '18', fontFamily: 'JetBrains Mono, monospace' }}>
+              style={{ backgroundColor: subj.color + '22', fontFamily: 'JetBrains Mono, monospace' }}>
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
               <span className="text-[10px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
-              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{formatTotal(totals[id])}</span>
+              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{formatTotal(totals[id])}</span>
             </span>
           )
         })}
@@ -917,7 +935,7 @@ function StudyTimeGraph({ todos }) {
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos, loading }) {
+function DailyBoard({ todos, loading, heartCount }) {
   const now = new Date()
   const dateLabel = `${now.getMonth() + 1}/${String(now.getDate()).padStart(2, '0')}(${DAY_ABBR[now.getDay()]})`
   return (
@@ -935,11 +953,24 @@ function DailyBoard({ todos, loading }) {
           }}>
           todo list
         </span>
-        {/* 날짜 */}
-        <span className="text-[11px] font-bold"
-          style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-          {dateLabel}
-        </span>
+        {/* 날짜 + 하트 카운터 */}
+        <div className="flex items-center gap-2">
+          {heartCount > 0 && (
+            <div className="flex items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#E8694A">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              <span className="text-[11px] font-bold tabular-nums"
+                style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+                {heartCount}
+              </span>
+            </div>
+          )}
+          <span className="text-[11px] font-bold"
+            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+            {dateLabel}
+          </span>
+        </div>
       </div>
       <div className="min-h-[120px]">
         {loading ? (
@@ -966,6 +997,9 @@ export default function SubjectList({ onSelectSubject }) {
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
   const [todosLoading, setTodosLoading] = useState(false)
+  const [heartCount, setHeartCount] = useState(0)
+  const [floatingHearts, setFloatingHearts] = useState([])
+  const heartBtnRef = useRef(null)
   const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -1024,6 +1058,25 @@ export default function SubjectList({ onSelectSubject }) {
   async function handleDdaySelect(value) {
     await setDoc(doc(db, 'settings', 'dday'), value)
     setShowDdayPicker(false)
+  }
+
+  function handleHeart() {
+    setHeartCount(c => c + 1)
+    // 버튼 위치 기준으로 하트 여러 개 생성
+    const btn = heartBtnRef.current
+    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight - 64 }
+    const count = 3
+    const newHearts = Array.from({ length: count }, (_, i) => ({
+      id: Date.now() + i,
+      x: rect.left + rect.width / 2 + (Math.random() - 0.5) * 40,
+      y: rect.top + rect.height / 2,
+      emoji: ['💗', '💖', '💕', '❤️', '🩷'][Math.floor(Math.random() * 5)],
+      delay: i * 80,
+    }))
+    setFloatingHearts(prev => [...prev, ...newHearts])
+    setTimeout(() => {
+      setFloatingHearts(prev => prev.filter(h => !newHearts.find(n => n.id === h.id)))
+    }, 1400)
   }
 
   return (
@@ -1103,13 +1156,21 @@ export default function SubjectList({ onSelectSubject }) {
       </div>
 
       {/* Daily Board */}
-      <DailyBoard todos={todayTodos} loading={todosLoading} />
+      <DailyBoard todos={todayTodos} loading={todosLoading} heartCount={heartCount} />
       <StudyTimeGraph todos={todayTodos} />
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} />}
       <ToastContainer />
+
+      {/* 하트 플로팅 애니메이션 */}
+      {floatingHearts.map(h => (
+        <span key={h.id} className="heart-float"
+          style={{ left: h.x, top: h.y, animationDelay: `${h.delay}ms` }}>
+          {h.emoji}
+        </span>
+      ))}
 
       {/* 하단 네비게이션 바 */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-center justify-around h-16 px-1">
@@ -1140,11 +1201,16 @@ export default function SubjectList({ onSelectSubject }) {
           <span className="text-[9px] font-medium text-gray-700 leading-none">Add</span>
         </button>
         {/* Like */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <button ref={heartBtnRef} onClick={handleHeart}
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:scale-125 transition-transform">
+          <svg width="22" height="22" viewBox="0 0 24 24"
+            fill={heartCount > 0 ? '#E8694A' : 'none'}
+            stroke={heartCount > 0 ? '#E8694A' : '#111'}
+            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Like</span>
+          <span className="text-[9px] font-medium leading-none"
+            style={{ color: heartCount > 0 ? '#E8694A' : '#374151' }}>Like</span>
         </button>
         {/* Stats */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
