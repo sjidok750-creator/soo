@@ -469,6 +469,7 @@ function TodoInputSheet({ nickname, onClose }) {
   const [customName, setCustomName] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
+  const [added, setAdded] = useState(false)
   const { addToast, ToastContainer } = useToast()
 
   const totalMins = (() => {
@@ -489,7 +490,8 @@ function TodoInputSheet({ nickname, onClose }) {
         done: false, createdAt: serverTimestamp(), order: Date.now(),
       })
       setText('')
-      addToast('추가 완료!')
+      setAdded(true)
+      setTimeout(() => setAdded(false), 1800)
     } catch (err) {
       console.error('Firestore write error:', err)
       if (err.code === 'permission-denied') {
@@ -567,8 +569,10 @@ function TodoInputSheet({ nickname, onClose }) {
               <button onClick={onClose}
                 className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">닫기</button>
               <button onClick={handleAdd}
-                className="py-3 rounded-2xl text-white text-sm font-bold"
-                style={{ backgroundColor: '#E8694A', flex: 2 }}>추가</button>
+                className="py-3 rounded-2xl text-white text-sm font-bold transition-all duration-300"
+                style={{ backgroundColor: added ? '#10B981' : '#E8694A', flex: 2 }}>
+                {added ? '✓ 추가됨!' : '추가'}
+              </button>
             </div>
           </div>
         </div>
@@ -707,7 +711,7 @@ function TodoList({ todos }) {
           const subj = getDailySubject(todo.subject)
           return (
             <div key={todo.id}
-              className={`flex items-center gap-2.5 py-2.5 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
+              className={`py-3 select-none ${idx < todos.length - 1 ? 'border-b border-gray-100' : ''}`}
               onMouseDown={() => startPress(todo)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -715,43 +719,49 @@ function TodoList({ todos }) {
               onTouchEnd={cancelPress}
               onTouchMove={cancelPress}
             >
-              {/* Checkbox */}
-              <button
-                onMouseDown={e => e.stopPropagation()}
-                onTouchStart={e => e.stopPropagation()}
-                onClick={() => handleToggle(todo)}
-                className="flex-shrink-0 w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                style={todo.done
-                  ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
-                  : { borderColor: '#D1D5DB' }}
-              >
-                {todo.done && (
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                    <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </button>
+              <div className="flex items-start gap-3">
+                {/* Checkbox */}
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onTouchStart={e => e.stopPropagation()}
+                  onClick={() => handleToggle(todo)}
+                  className="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all mt-0.5"
+                  style={todo.done
+                    ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
+                    : { borderColor: '#D1D5DB' }}
+                >
+                  {todo.done && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
 
-              {/* Todo text */}
-              <span
-                className={`flex-1 text-sm leading-snug min-w-0 ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
-                style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
-              >
-                {todo.text}
-              </span>
-
-              {/* Right: time + subject */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
-                {todo.studyStart && todo.studyEnd && (
-                  <span className="text-[9px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                    {todo.studyStart}–{todo.studyEnd}
-                    {todo.totalMinutes > 0 && ` (${todo.totalMinutes}m)`}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Todo text */}
+                  <span
+                    className={`block text-base leading-snug ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
+                    style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
+                  >
+                    {todo.text}
                   </span>
-                )}
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white leading-none"
-                  style={{ backgroundColor: subj.color, fontFamily: 'JetBrains Mono, monospace' }}>
-                  {subj.abbr}
-                </span>
+                  {/* Meta row: time + subject */}
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {todo.studyStart && todo.studyEnd && (
+                      <span className="text-xs text-gray-400 whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                        {todo.studyStart}–{todo.studyEnd}
+                        {todo.totalMinutes > 0 && (
+                          <span className="ml-1 font-semibold" style={{ color: '#E8694A' }}>({todo.totalMinutes}m)</span>
+                        )}
+                      </span>
+                    )}
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white leading-tight"
+                      style={{ backgroundColor: subj.color, fontFamily: 'JetBrains Mono, monospace' }}>
+                      {subj.abbr}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )
