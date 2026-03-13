@@ -777,22 +777,21 @@ function TodoList({ todos }) {
   )
 }
 
-/* ───── StudyTimeGraph (24h Clock Ring) ───── */
+/* ───── StudyTimeGraph (24h Separated Donut Clock) ───── */
 function StudyTimeGraph({ todos }) {
   const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
   if (!ts.length) return null
 
-  const subjIds = [...new Set(ts.map(t => t.subject))]
   const totals = {}
   ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
   const totalAllMins = Object.values(totals).reduce((a, b) => a + b, 0)
 
-  // 시계 SVG 설정 — 스마트폰 꽉 채우기
-  const SIZE = 280
-  const CX = SIZE / 2, CY = SIZE / 2
-  const R = 108      // 더 큰 반지름
-  const STROKE = 30  // 두꺼운 아크
-  const FULL = 1440  // 24h in minutes
+  const SIZE = 320
+  const CX = SIZE / 2, CY = SIZE / 2   // 160, 160
+  const R = 105
+  const STROKE = 42   // 두꺼운 도넛
+  const GAP = 14      // 세그먼트 간 분리 간격 (분)
+  const FULL = 1440
 
   const minToAngle = m => (m / FULL) * 360 - 90
   const polarToXY = (angle, r) => ({
@@ -800,135 +799,130 @@ function StudyTimeGraph({ todos }) {
     y: CY + r * Math.sin(angle * Math.PI / 180),
   })
 
-  function arcPath(startMin, endMin, r) {
-    const a1 = minToAngle(startMin)
-    const a2 = minToAngle(endMin)
-    const p1 = polarToXY(a1, r)
-    const p2 = polarToXY(a2, r)
-    const large = (endMin - startMin) > 720 ? 1 : 0
-    return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y}`
+  function arcPath(startMin, endMin) {
+    const s = startMin + GAP / 2
+    const e = endMin - GAP / 2
+    if (e - s < 4) return ''
+    const a1 = minToAngle(s), a2 = minToAngle(e)
+    const p1 = polarToXY(a1, R), p2 = polarToXY(a2, R)
+    const large = (e - s) > 720 ? 1 : 0
+    return `M ${p1.x} ${p1.y} A ${R} ${R} 0 ${large} 1 ${p2.x} ${p2.y}`
   }
 
-  // 아크 중간점 계산 (라벨 위치용)
-  function arcMidpoint(startMin, endMin, r) {
-    const mid = (startMin + endMin) / 2
-    return polarToXY(minToAngle(mid), r)
+  function arcMidXY(startMin, endMin) {
+    return polarToXY(minToAngle((startMin + endMin) / 2), R)
   }
 
   const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
-  const nowTip = polarToXY(minToAngle(nowMins), R + STROKE / 2 + 5)
+  const nowDot = polarToXY(minToAngle(nowMins), R + STROKE / 2 + 7)
 
-  const hourLabels = [0, 6, 12, 18]  // 6시간 간격만 (깔끔하게)
-  const minorLabels = [3, 9, 15, 21]
+  const LABEL_R = R + STROKE / 2 + 17
+  const hourLabels = [
+    { h: 0,  label: '00시' },
+    { h: 6,  label: '06시' },
+    { h: 12, label: '12시' },
+    { h: 18, label: '18시' },
+  ]
 
   return (
-    <div className="mx-4 mb-4 rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(145deg, #1E293B 0%, #0F172A 60%, #1E1B4B 100%)' }}>
-
-      {/* 원형 시계 — 풀 사이즈 */}
-      <div className="flex justify-center pt-4 pb-2">
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+      <div className="flex justify-center pt-4 pb-4">
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
           style={{ width: '100%', maxWidth: SIZE, height: 'auto' }}>
 
           {/* 배경 링 */}
-          <circle cx={CX} cy={CY} r={R} fill="none"
-            stroke="rgba(255,255,255,0.07)" strokeWidth={STROKE} />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="#F1F5F9" strokeWidth={STROKE} />
 
-          {/* 미세 그리드 (1시간 간격 틱) */}
+          {/* 내부 눈금 (1h 간격, 링 내부) */}
           {Array.from({ length: 24 }, (_, i) => {
             const angle = minToAngle(i * 60)
-            const outer = polarToXY(angle, R - STROKE / 2)
-            const inner = polarToXY(angle, R - STROKE / 2 + (i % 6 === 0 ? 8 : i % 3 === 0 ? 5 : 3))
+            const inner = polarToXY(angle, R - STROKE / 2 - 2)
+            const outer = polarToXY(angle, R - STROKE / 2 + (i % 6 === 0 ? 9 : i % 3 === 0 ? 6 : 3))
             return (
-              <line key={i} x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y}
-                stroke={i % 6 === 0 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}
+              <line key={i} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+                stroke={i % 6 === 0 ? '#CBD5E1' : '#E2E8F0'}
                 strokeWidth={i % 6 === 0 ? 1.5 : 0.8} />
             )
           })}
 
-          {/* 공부 세션 아크 */}
+          {/* 공부 세션 아크 — 분리된 도넛 */}
           {ts.map((t, i) => {
             const subj = getDailySubject(t.subject)
             const sm = timeToMins(t.studyStart), em = timeToMins(t.studyEnd)
-            const mid = arcMidpoint(sm, em, R)
+            const path = arcPath(sm, em)
+            if (!path) return null
+            const mid = arcMidXY(sm, em)
             const arcDeg = ((em - sm) / FULL) * 360
             return (
               <g key={i}>
-                <path d={arcPath(sm, em, R)}
-                  fill="none" stroke={subj.color} strokeWidth={STROKE}
-                  strokeLinecap="butt" opacity={0.92} />
-                {/* 과목 약자 — 아크가 충분히 길 때만 */}
-                {arcDeg >= 10 && (
-                  <text x={mid.x} y={mid.y}
+                {/* 그림자 효과 */}
+                <path d={path} fill="none" stroke={subj.color} strokeWidth={STROKE + 4}
+                  strokeLinecap="round" opacity={0.15} />
+                {/* 메인 아크 */}
+                <path d={path} fill="none" stroke={subj.color} strokeWidth={STROKE}
+                  strokeLinecap="round" opacity={0.92} />
+                {/* 과목 약자 */}
+                {arcDeg >= 9 && (
+                  <text x={mid.x} y={mid.y - 7}
                     textAnchor="middle" dominantBaseline="central"
-                    fill="rgba(255,255,255,0.95)"
-                    fontSize={arcDeg >= 20 ? 9 : 7}
-                    fontWeight={700}
+                    fill="rgba(255,255,255,0.97)"
+                    fontSize={arcDeg >= 18 ? 9.5 : 7.5}
+                    fontWeight={800}
                     fontFamily="JetBrains Mono, monospace">
                     {subj.abbr}
+                  </text>
+                )}
+                {/* 공부시간 */}
+                {arcDeg >= 13 && (
+                  <text x={mid.x} y={mid.y + 8}
+                    textAnchor="middle" dominantBaseline="central"
+                    fill="rgba(255,255,255,0.82)"
+                    fontSize={arcDeg >= 18 ? 8 : 6.5}
+                    fontFamily="JetBrains Mono, monospace">
+                    {formatTotal(t.totalMinutes)}
                   </text>
                 )}
               </g>
             )
           })}
 
-          {/* 시간 라벨 (주요 4개) */}
-          {hourLabels.map(h => {
-            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 14)
+          {/* 시간 라벨 — 00시/06시/12시/18시 */}
+          {hourLabels.map(({ h, label }) => {
+            const pos = polarToXY(minToAngle(h * 60), LABEL_R)
             return (
               <text key={h} x={pos.x} y={pos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill="rgba(255,255,255,0.6)"
-                fontSize={12} fontWeight={700}
+                fill="#64748B" fontSize={11} fontWeight={700}
                 fontFamily="JetBrains Mono, monospace">
-                {h}
-              </text>
-            )
-          })}
-          {minorLabels.map(h => {
-            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 13)
-            return (
-              <text key={h} x={pos.x} y={pos.y}
-                textAnchor="middle" dominantBaseline="central"
-                fill="rgba(255,255,255,0.25)"
-                fontSize={9} fontWeight={400}
-                fontFamily="JetBrains Mono, monospace">
-                {h}
+                {label}
               </text>
             )
           })}
 
           {/* 현재 시각 인디케이터 */}
-          <circle cx={nowTip.x} cy={nowTip.y} r={4} fill="#E8694A" />
-          <circle cx={nowTip.x} cy={nowTip.y} r={7} fill="none" stroke="#E8694A" strokeWidth={1.2} opacity={0.4} />
+          <circle cx={nowDot.x} cy={nowDot.y} r={4.5} fill="#E8694A" />
+          <circle cx={nowDot.x} cy={nowDot.y} r={8} fill="none" stroke="#E8694A" strokeWidth={1.2} opacity={0.3} />
 
-          {/* 중앙 텍스트 */}
-          <text x={CX} y={CY - 12} textAnchor="middle" dominantBaseline="central"
-            fill="rgba(255,255,255,0.45)" fontSize={11}
-            fontFamily="JetBrains Mono, monospace" fontWeight={600}>
+          {/* 중앙 — done 카운트 */}
+          <text x={CX} y={CY - 28} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={11} fontFamily="JetBrains Mono, monospace" fontWeight={600}>
             {todos.filter(t => t.done).length}/{todos.length} done
           </text>
-          <text x={CX} y={CY + 10} textAnchor="middle" dominantBaseline="central"
-            fill="#E8694A" fontSize={20} fontFamily="JetBrains Mono, monospace" fontWeight={800}>
+          {/* 총 공부시간 */}
+          <text x={CX} y={CY - 6} textAnchor="middle" dominantBaseline="central"
+            fill="#E8694A" fontSize={24} fontFamily="JetBrains Mono, monospace" fontWeight={800}>
             {formatTotal(totalAllMins)}
           </text>
+          {/* 응원 메시지 */}
+          <text x={CX} y={CY + 20} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={9} fontFamily="Pretendard, sans-serif">
+            수현아!
+          </text>
+          <text x={CX} y={CY + 34} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={9} fontFamily="Pretendard, sans-serif">
+            오늘도 수고했어
+          </text>
         </svg>
-      </div>
-
-      {/* 과목별 범례 */}
-      <div className="flex flex-wrap justify-center gap-2 px-4 pb-4 border-t"
-        style={{ borderColor: 'rgba(255,255,255,0.07)', paddingTop: 10 }}>
-        {subjIds.map(id => {
-          const subj = getDailySubject(id)
-          return (
-            <span key={id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-              style={{ backgroundColor: subj.color + '22', fontFamily: 'JetBrains Mono, monospace' }}>
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
-              <span className="text-[10px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
-              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{formatTotal(totals[id])}</span>
-            </span>
-          )
-        })}
       </div>
     </div>
   )
