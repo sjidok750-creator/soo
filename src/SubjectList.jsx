@@ -745,15 +745,20 @@ function TodoList({ todos }) {
                   {todo.text}
                 </span>
 
-                {/* Time — 10% */}
-                <span className="flex-shrink-0 text-[10px] sm:text-[11px] text-gray-400 whitespace-nowrap tabular-nums"
-                  style={{ fontFamily: 'JetBrains Mono, monospace', width: '10%', textAlign: 'center' }}>
-                  {todo.studyStart ? todo.studyStart : ''}
-                </span>
+                {/* Time 2줄 — 시작/종료 */}
+                <div className="flex-shrink-0 flex flex-col items-center justify-center gap-px tabular-nums"
+                  style={{ width: '13%', fontFamily: 'JetBrains Mono, monospace' }}>
+                  <span className="text-[9px] sm:text-[10px] text-gray-400 leading-none">
+                    {todo.studyStart || '—'}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-gray-300 leading-none">
+                    {todo.studyEnd || ''}
+                  </span>
+                </div>
 
-                {/* Subject 한글 — 10% 우측정렬 */}
-                <span className="flex-shrink-0 text-[10px] sm:text-[11px] md:text-xs font-bold whitespace-nowrap text-right"
-                  style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '10%' }}>
+                {/* Subject 한글 — 우측정렬 */}
+                <span className="flex-shrink-0 text-[11px] sm:text-[12px] md:text-[13px] font-bold whitespace-nowrap text-right"
+                  style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '11%' }}>
                   {subj.name}
                 </span>
               </div>
