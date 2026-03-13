@@ -147,3 +147,35 @@ VITE_FIREBASE_MEASUREMENT_ID
 - 모바일 우선 (max-w-lg 제약)
 
 **Git 브랜치**: `main`(프로덕션, push 금지) · `feature/` · `fix/` · `claude/`
+
+---
+
+## 트러블슈팅 기록
+
+### [2026-03-13] 배포된 앱에서 Firestore 데이터가 보이지 않는 문제
+
+**증상**
+- `onSnapshot fired, docs: 0` — Firebase 콘솔에는 데이터가 있는데 앱에서 0개로 표시
+- 로컬 `npm run dev`에서는 데이터 쓰기/읽기 모두 정상
+
+**원인**
+GitHub Pages 배포 시 사용하는 **GitHub Secrets의 Firebase 설정값이 잘못되어** 앱이 다른(빈) Firebase 프로젝트에 연결되고 있었음.
+- 로컬 `.env` → 올바른 프로젝트 (`study-todo-app-f135d`) → 데이터 정상
+- GitHub Secrets → 잘못된 프로젝트 또는 미설정 → `onSnapshot`은 실행되지만 docs: 0
+
+**해결**
+GitHub 저장소 → Settings → Secrets and variables → Actions에서 아래 7개 Secrets를 Firebase 콘솔(`study-todo-app-f135d`) 값과 일치하도록 업데이트 후 재배포:
+```
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN          # study-todo-app-f135d.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID           # study-todo-app-f135d
+VITE_FIREBASE_STORAGE_BUCKET       # study-todo-app-f135d.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_MEASUREMENT_ID
+```
+
+**진단 패턴 (향후 참고)**
+- `onSnapshot fired, docs: 0` + Firebase 콘솔에 데이터 존재 = **프로젝트 불일치** 의심
+- `onSnapshot error: permission-denied` = Firebase 보안 규칙 문제
+- `onSnapshot` 자체가 실행 안 됨 = 네트워크 또는 초기화 오류
