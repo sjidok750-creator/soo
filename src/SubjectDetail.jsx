@@ -11,6 +11,11 @@ import {
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
+function getTodayStr() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
+}
+
 // 마감일 포맷
 function formatDueDate(dateStr) {
   if (!dateStr) return null
@@ -116,6 +121,7 @@ export default function SubjectDetail({ subject, onBack }) {
         difficulty,
         dueDate: dueDate || null,
         order: maxOrder,
+        date: getTodayStr(),
         createdAt: serverTimestamp(),
       })
       setText('')
