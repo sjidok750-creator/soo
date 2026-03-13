@@ -992,15 +992,16 @@ export default function SubjectList({ onSelectSubject }) {
     )
   }, [])
 
-  // 오늘 투두 실시간 구독 (서버 측 날짜 필터링으로 전체 컬렉션 스캔 방지)
+  // 오늘 투두 실시간 구독
   useEffect(() => {
     const today = getTodayStr()
-    const q = query(collection(db, 'study-todos'), where('date', '==', today))
+    const q = query(collection(db, 'study-todos'), orderBy('order', 'asc'))
     const unsub = onSnapshot(
       q,
       snap => {
         const items = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
+          .filter(d => d.date === today)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
         setTodayTodos(items)
         setTodosLoading(false)
