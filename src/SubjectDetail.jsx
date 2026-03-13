@@ -82,8 +82,7 @@ export default function SubjectDetail({ subject, onBack }) {
   const colRef = collection(db, 'study-todos')
 
   useEffect(() => {
-    const q = query(colRef, orderBy('order', 'asc'))
-    return onSnapshot(q, (snap) => {
+    return onSnapshot(colRef, (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       const filtered = all
         .filter(t => t.subject === subject.id)
