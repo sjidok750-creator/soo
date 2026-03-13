@@ -706,12 +706,12 @@ function TodoList({ todos }) {
 
   return (
     <>
-      <div className="px-4 pt-1 pb-2">
+      <div className="px-3 sm:px-4 pt-1 pb-2">
         {todos.map((todo, idx) => {
           const subj = getDailySubject(todo.subject)
           return (
             <div key={todo.id}
-              className={`py-3 select-none ${idx < todos.length - 1 ? 'border-b border-gray-100' : ''}`}
+              className={`py-1.5 sm:py-2 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
               onMouseDown={() => startPress(todo)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -719,49 +719,43 @@ function TodoList({ todos }) {
               onTouchEnd={cancelPress}
               onTouchMove={cancelPress}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2">
                 {/* Checkbox */}
                 <button
                   onMouseDown={e => e.stopPropagation()}
                   onTouchStart={e => e.stopPropagation()}
                   onClick={() => handleToggle(todo)}
-                  className="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all mt-0.5"
+                  className="flex-shrink-0 w-4 h-4 sm:w-[18px] sm:h-[18px] rounded border-2 flex items-center justify-center transition-all"
                   style={todo.done
                     ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
                     : { borderColor: '#D1D5DB' }}
                 >
                   {todo.done && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
                       <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </button>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  {/* Todo text */}
-                  <span
-                    className={`block text-base leading-snug ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
-                    style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
-                  >
-                    {todo.text}
-                  </span>
-                  {/* Meta row: time + subject */}
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    {todo.studyStart && todo.studyEnd && (
-                      <span className="text-xs text-gray-400 whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                        {todo.studyStart}–{todo.studyEnd}
-                        {todo.totalMinutes > 0 && (
-                          <span className="ml-1 font-semibold" style={{ color: '#E8694A' }}>({todo.totalMinutes}m)</span>
-                        )}
-                      </span>
-                    )}
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white leading-tight"
-                      style={{ backgroundColor: subj.color, fontFamily: 'JetBrains Mono, monospace' }}>
-                      {subj.abbr}
-                    </span>
-                  </div>
-                </div>
+                {/* Content — 80% */}
+                <span
+                  className={`flex-1 min-w-0 truncate text-[13px] sm:text-sm md:text-base leading-tight ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
+                  style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
+                >
+                  {todo.text}
+                </span>
+
+                {/* Time — 10% */}
+                <span className="flex-shrink-0 text-[10px] sm:text-[11px] text-gray-400 whitespace-nowrap tabular-nums"
+                  style={{ fontFamily: 'JetBrains Mono, monospace', width: '10%', textAlign: 'center' }}>
+                  {todo.studyStart ? todo.studyStart : ''}
+                </span>
+
+                {/* Subject 한글 — 10% 우측정렬 */}
+                <span className="flex-shrink-0 text-[10px] sm:text-[11px] md:text-xs font-bold whitespace-nowrap text-right"
+                  style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '10%' }}>
+                  {subj.name}
+                </span>
               </div>
             </div>
           )
@@ -769,10 +763,10 @@ function TodoList({ todos }) {
 
         {/* 합계 */}
         {totalMins > 0 && (
-          <div className="flex justify-end items-center gap-1.5 pt-2 mt-1 border-t border-dashed border-gray-100">
+          <div className="flex justify-end items-center gap-1.5 pt-1.5 mt-1 border-t border-dashed border-gray-100">
             <span className="text-[9px] text-gray-400 tracking-widest uppercase" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Total</span>
-            <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-              {totalMins}min{totalMins >= 60 && `, ${formatTotal(totalMins)}`}
+            <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+              {totalMins}min{totalMins >= 60 && ` · ${formatTotal(totalMins)}`}
             </span>
           </div>
         )}
@@ -783,7 +777,7 @@ function TodoList({ todos }) {
   )
 }
 
-/* ───── StudyTimeGraph ───── */
+/* ───── StudyTimeGraph (24h Clock Ring) ───── */
 function StudyTimeGraph({ todos }) {
   const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
   if (!ts.length) return null
@@ -793,135 +787,127 @@ function StudyTimeGraph({ todos }) {
   ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
   const totalAllMins = Object.values(totals).reduce((a, b) => a + b, 0)
 
-  // 실제 공부한 시간 범위 (±1시간 여유)
-  const allM = ts.flatMap(t => [timeToMins(t.studyStart), timeToMins(t.studyEnd)])
-  const rangeStart = Math.max(0, Math.floor((Math.min(...allM) - 60) / 60) * 60)
-  const rangeEnd = Math.min(1440, Math.ceil((Math.max(...allM) + 60) / 60) * 60)
-  const range = rangeEnd - rangeStart
+  // 시계 SVG 설정
+  const SIZE = 220
+  const CX = SIZE / 2, CY = SIZE / 2
+  const R = 85 // 메인 링 반지름
+  const STROKE = 18 // 링 두께
+  const FULL = 1440 // 24h in minutes
 
-  const pL = m => `${((m - rangeStart) / range * 100).toFixed(3)}%`
-  const pW = (s, e) => `${((e - s) / range * 100).toFixed(3)}%`
+  // 분 → 각도 (0시 = 상단 = -90도)
+  const minToAngle = m => (m / FULL) * 360 - 90
+  // 각도 → SVG 좌표
+  const polarToXY = (angle, r) => ({
+    x: CX + r * Math.cos(angle * Math.PI / 180),
+    y: CY + r * Math.sin(angle * Math.PI / 180),
+  })
 
-  const hourMarkers = []
-  for (let h = Math.ceil(rangeStart / 60); h <= Math.floor(rangeEnd / 60); h++) {
-    hourMarkers.push(h * 60)
+  // 호 경로 생성
+  function arcPath(startMin, endMin, r, sw) {
+    const a1 = minToAngle(startMin)
+    const a2 = minToAngle(endMin)
+    const p1 = polarToXY(a1, r)
+    const p2 = polarToXY(a2, r)
+    const diff = endMin - startMin
+    const large = diff > 720 ? 1 : 0
+    return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${large} 1 ${p2.x} ${p2.y}`
   }
+
+  // 현재 시각
+  const now = new Date()
+  const nowMins = now.getHours() * 60 + now.getMinutes()
+  const nowAngle = minToAngle(nowMins)
+  const nowP = polarToXY(nowAngle, R)
+  const nowTip = polarToXY(nowAngle, R + STROKE / 2 + 4)
+
+  // 시간 라벨 (0, 3, 6, 9, 12, 15, 18, 21)
+  const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21]
 
   return (
     <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background: '#0F172A' }}>
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5">
+      <div className="flex items-center justify-between px-4 pt-3.5 pb-1">
         <div className="flex items-center gap-2">
           <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: '#E8694A' }} />
-          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
-            Study Timeline
+          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
+            Study Clock
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'JetBrains Mono, monospace' }}>
+        <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+          {formatTotal(totalAllMins)}
+        </span>
+      </div>
+
+      {/* 원형 시계 */}
+      <div className="flex justify-center py-2">
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-[200px] h-[200px] sm:w-[220px] sm:h-[220px]">
+          {/* 배경 링 */}
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={STROKE} />
+
+          {/* 시간 눈금 (1시간 간격 작은 틱) */}
+          {Array.from({ length: 24 }, (_, i) => {
+            const angle = minToAngle(i * 60)
+            const inner = polarToXY(angle, R - STROKE / 2 - 1)
+            const outer = polarToXY(angle, R - STROKE / 2 + (i % 3 === 0 ? 5 : 3))
+            return (
+              <line key={i} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+                stroke={i % 6 === 0 ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}
+                strokeWidth={i % 6 === 0 ? 1.5 : 0.8} />
+            )
+          })}
+
+          {/* 공부 세션 아크 */}
+          {ts.map((t, i) => {
+            const subj = getDailySubject(t.subject)
+            const sm = timeToMins(t.studyStart), em = timeToMins(t.studyEnd)
+            return (
+              <path key={i} d={arcPath(sm, em, R, STROKE)}
+                fill="none" stroke={subj.color} strokeWidth={STROKE}
+                strokeLinecap="butt" opacity={0.85} />
+            )
+          })}
+
+          {/* 시간 라벨 */}
+          {hourLabels.map(h => {
+            const pos = polarToXY(minToAngle(h * 60), R + STROKE / 2 + 12)
+            return (
+              <text key={h} x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fill={h % 6 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.25)'}
+                fontSize={h % 6 === 0 ? 11 : 9}
+                fontWeight={h % 6 === 0 ? 700 : 400}
+                fontFamily="JetBrains Mono, monospace">
+                {h}
+              </text>
+            )
+          })}
+
+          {/* 현재 시각 인디케이터 */}
+          <circle cx={nowTip.x} cy={nowTip.y} r={3.5} fill="#E8694A" />
+          <circle cx={nowTip.x} cy={nowTip.y} r={6} fill="none" stroke="#E8694A" strokeWidth={1} opacity={0.4} />
+
+          {/* 중앙 텍스트 */}
+          <text x={CX} y={CY - 10} textAnchor="middle" dominantBaseline="central"
+            fill="rgba(255,255,255,0.6)" fontSize={10} fontFamily="JetBrains Mono, monospace" fontWeight={700}>
             {todos.filter(t => t.done).length}/{todos.length} done
-          </span>
-          <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-            {totalAllMins}min · {formatTotal(totalAllMins)}
-          </span>
-        </div>
+          </text>
+          <text x={CX} y={CY + 8} textAnchor="middle" dominantBaseline="central"
+            fill="#E8694A" fontSize={16} fontFamily="JetBrains Mono, monospace" fontWeight={700}>
+            {formatTotal(totalAllMins)}
+          </text>
+        </svg>
       </div>
 
-      {/* 차트 */}
-      <div className="px-4 pb-4">
-        <div className="flex items-start gap-2">
-          {/* Y labels */}
-          <div className="flex-shrink-0" style={{ width: 36, paddingTop: 2 }}>
-            {subjIds.map(id => {
-              const s = getDailySubject(id)
-              return (
-                <div key={id} className="flex items-center justify-end mb-1.5" style={{ height: 18 }}>
-                  <span className="text-[9px] font-bold" style={{ color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.abbr}</span>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* 바 영역 */}
-          <div className="flex-1 relative">
-            {subjIds.map(id => {
-              const subj = getDailySubject(id)
-              const sessions = ts.filter(t => t.subject === id)
-              return (
-                <div key={id} className="relative mb-1.5" style={{ height: 18 }}>
-                  {/* 트랙 배경 */}
-                  <div className="absolute inset-0 rounded-sm" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }} />
-                  {/* 그리드 라인 */}
-                  {hourMarkers.map(h => (
-                    <div key={h} className="absolute top-0 bottom-0" style={{
-                      left: pL(h), width: 1,
-                      backgroundColor: 'rgba(255,255,255,0.06)'
-                    }} />
-                  ))}
-                  {/* 세션 바 */}
-                  {sessions.map((s, i) => {
-                    const sm = timeToMins(s.studyStart), em = timeToMins(s.studyEnd)
-                    return (
-                      <div key={i}
-                        className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-center overflow-hidden"
-                        style={{ left: pL(sm), width: pW(sm, em), backgroundColor: subj.color }}>
-                        {s.totalMinutes >= 25 && (
-                          <span className="text-[7px] font-bold leading-none px-0.5"
-                            style={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'JetBrains Mono, monospace' }}>
-                            {s.totalMinutes}m
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-
-            {/* X축 */}
-            <div className="relative mt-1" style={{ height: 14 }}>
-              {hourMarkers.map(h => (
-                <span key={h}
-                  className="absolute -translate-x-1/2 text-[8px]"
-                  style={{
-                    left: pL(h),
-                    color: 'rgba(255,255,255,0.25)',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    bottom: 0,
-                  }}>
-                  {`${String(Math.floor(h / 60)).padStart(2, '0')}:00`}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* 과목별 합계 */}
-          <div className="flex-shrink-0 flex flex-col items-start gap-1.5" style={{ width: 44, paddingTop: 2 }}>
-            {subjIds.map(id => {
-              const subj = getDailySubject(id)
-              return (
-                <div key={id} className="flex items-center" style={{ height: 18 }}>
-                  <span className="text-[8px] font-bold leading-none"
-                    style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {formatTotal(totals[id])}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 하단 과목 칩 */}
-      <div className="flex flex-wrap gap-1.5 px-4 pb-3.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+      {/* 과목별 범례 */}
+      <div className="flex flex-wrap justify-center gap-2 px-4 pb-3.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)', paddingTop: 10 }}>
         {subjIds.map(id => {
           const subj = getDailySubject(id)
           return (
-            <span key={id} className="flex items-center gap-1 px-2 py-1 rounded"
-              style={{ backgroundColor: subj.color + '22', fontFamily: 'JetBrains Mono, monospace' }}>
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
-              <span className="text-[9px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
-              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{formatTotal(totals[id])}</span>
+            <span key={id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+              style={{ backgroundColor: subj.color + '18', fontFamily: 'JetBrains Mono, monospace' }}>
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
+              <span className="text-[10px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
+              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{formatTotal(totals[id])}</span>
             </span>
           )
         })}
