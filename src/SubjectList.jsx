@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
 import {
-  collection, onSnapshot, query, orderBy, addDoc, serverTimestamp,
+  collection, onSnapshot, query, orderBy, where, addDoc, serverTimestamp,
   deleteDoc, doc, updateDoc, setDoc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
@@ -921,7 +921,7 @@ function StudyTimeGraph({ todos }) {
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos }) {
+function DailyBoard({ todos, loading }) {
   const now = new Date()
   const dateLabel = `${now.getMonth() + 1}/${String(now.getDate()).padStart(2, '0')}(${DAY_ABBR[now.getDay()]})`
   return (
@@ -946,7 +946,16 @@ function DailyBoard({ todos }) {
         </span>
       </div>
       <div className="min-h-[120px]">
-        <TodoList todos={todos} />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+            <svg className="animate-spin mb-2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <p className="text-xs font-medium">불러오는 중...</p>
+          </div>
+        ) : (
+          <TodoList todos={todos} />
+        )}
       </div>
     </div>
   )
@@ -960,6 +969,7 @@ export default function SubjectList({ onSelectSubject }) {
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
+  const [todosLoading, setTodosLoading] = useState(true)
   const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -982,19 +992,24 @@ export default function SubjectList({ onSelectSubject }) {
     )
   }, [])
 
-  // 오늘 투두 실시간 구독
+  // 오늘 투두 실시간 구독 (서버 측 날짜 필터링으로 전체 컬렉션 스캔 방지)
   useEffect(() => {
+    const today = getTodayStr()
+    const q = query(collection(db, 'study-todos'), where('date', '==', today))
     return onSnapshot(
-      collection(db, 'study-todos'),
+      q,
       snap => {
-        const today = getTodayStr()
         const items = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
-          .filter(t => t.date === today)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
         setTodayTodos(items)
+        setTodosLoading(false)
       },
-      err => { console.error('Todos read error:', err); addToast(`❌ 투두 로드 실패: ${err.code}`) }
+      err => {
+        console.error('Todos read error:', err)
+        setTodosLoading(false)
+        addToast(`❌ 투두 로드 실패: ${err.code}`)
+      }
     )
   }, [])
 
@@ -1088,7 +1103,7 @@ export default function SubjectList({ onSelectSubject }) {
       </div>
 
       {/* Daily Board */}
-      <DailyBoard todos={todayTodos} />
+      <DailyBoard todos={todayTodos} loading={todosLoading} />
       <StudyTimeGraph todos={todayTodos} />
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
