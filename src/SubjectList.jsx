@@ -969,7 +969,7 @@ export default function SubjectList({ onSelectSubject }) {
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
-  const [todosLoading, setTodosLoading] = useState(true)
+  const [todosLoading, setTodosLoading] = useState(false)
   const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -996,7 +996,7 @@ export default function SubjectList({ onSelectSubject }) {
   useEffect(() => {
     const today = getTodayStr()
     const q = query(collection(db, 'study-todos'), where('date', '==', today))
-    return onSnapshot(
+    const unsub = onSnapshot(
       q,
       snap => {
         const items = snap.docs
@@ -1011,6 +1011,7 @@ export default function SubjectList({ onSelectSubject }) {
         addToast(`❌ 투두 로드 실패: ${err.code}`)
       }
     )
+    return unsub
   }, [])
 
   const todayBase = new Date()
