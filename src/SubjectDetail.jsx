@@ -11,6 +11,11 @@ import {
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
+function getTodayStr() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
+}
+
 // 마감일 포맷
 function formatDueDate(dateStr) {
   if (!dateStr) return null
@@ -77,10 +82,11 @@ export default function SubjectDetail({ subject, onBack }) {
   const colRef = collection(db, 'study-todos')
 
   useEffect(() => {
-    const q = query(colRef, orderBy('order', 'asc'), orderBy('createdAt', 'asc'))
-    return onSnapshot(q, (snap) => {
+    return onSnapshot(colRef, (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      const filtered = all.filter(t => t.subject === subject.id)
+      const filtered = all
+        .filter(t => t.subject === subject.id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0))
 
       // 새 항목 토스트 알림
       if (prevIdsRef.current !== null) {
@@ -92,6 +98,9 @@ export default function SubjectDetail({ subject, onBack }) {
       }
       prevIdsRef.current = new Set(filtered.map(t => t.id))
       setTodos(filtered)
+    }, (err) => {
+      console.error('Todos read error:', err)
+      addToast(`❌ 데이터 로드 실패: ${err.code}`)
     })
   }, [subject.id])
 
@@ -111,12 +120,16 @@ export default function SubjectDetail({ subject, onBack }) {
         difficulty,
         dueDate: dueDate || null,
         order: maxOrder,
+        date: getTodayStr(),
         createdAt: serverTimestamp(),
       })
       setText('')
       setDueDate('')
       setShowForm(false)
       addToast('할 일이 추가됐어요!', { icon: '✅' })
+    } catch (err) {
+      console.error('Todo add error:', err)
+      addToast(`❌ 저장 실패: ${err.code ?? err.message}`)
     } finally {
       setSubmitting(false)
     }
