@@ -42,8 +42,9 @@ async function idbGet(id) {
 
 // ─── Gemini API ───────────────────────────────────────────────────
 async function analyzeVocabImage(base64, mediaType) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim()
   if (!apiKey) throw new Error('VITE_GEMINI_API_KEY가 설정되지 않았습니다.')
+  console.log('[Vocab] API Key 길이:', apiKey.length, '앞4자:', apiKey.slice(0, 4))
 
   const prompt = `이 이미지는 고등학교 영어 단어장 교재 사진입니다.
 두 가지 형식 중 하나입니다. 정확하게 판단하여 처리해주세요.
@@ -83,7 +84,7 @@ async function analyzeVocabImage(base64, mediaType) {
 JSON 외 다른 텍스트 절대 금지.`
 
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
