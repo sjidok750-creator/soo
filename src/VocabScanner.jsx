@@ -42,11 +42,11 @@ async function idbGet(id) {
   })
 }
 
-// ─── Claude API (이미지 분석) ─────────────────────────────────────
+// ─── Gemini API (이미지 분석 — 무료) ─────────────────────────────
 async function analyzeVocabImage(base64, mediaType) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY
   if (!apiKey) {
-    throw new Error('VITE_ANTHROPIC_API_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.')
+    throw new Error('VITE_GEMINI_API_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.')
   }
 
   const prompt = `당신은 영어 단어장/교재 이미지에서 단어와 뜻을 정확하게 추출하는 전문가입니다.
@@ -80,35 +80,33 @@ async function analyzeVocabImage(base64, mediaType) {
 - 단어 순서는 이미지에 나타난 순서 유지
 - 이미지가 흐릿해도 최선을 다해 인식`
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-calls': 'true',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-          { type: 'text', text: prompt },
-        ],
-      }],
-    }),
-  })
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mediaType, data: base64 } },
+            { text: prompt },
+          ],
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
+      }),
+    }
+  )
 
   if (!resp.ok) {
     const errData = await resp.json().catch(() => ({}))
-    throw new Error(errData.error?.message || `API 오류 (${resp.status})`)
+    throw new Error(errData.error?.message || `Gemini API 오류 (${resp.status})`)
   }
 
   const data = await resp.json()
-  let text = data.content[0].text.trim()
-  // Remove markdown code blocks if present
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+  if (!text) throw new Error('Gemini 응답이 비어 있습니다.')
+
+  // 마크다운 코드 블록 제거
   text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
 
   return JSON.parse(text)
