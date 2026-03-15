@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
 import {
-  collection, onSnapshot, query, orderBy, addDoc, serverTimestamp,
+  collection, onSnapshot, query, orderBy, where, addDoc, serverTimestamp,
   deleteDoc, doc, updateDoc, setDoc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
@@ -19,20 +19,20 @@ const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
 const DAILY_SUBJECTS = [
-  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#EF4444', bg: '#FEF2F2' },
-  { id: 'math', name: '수학',      abbr: 'MATH', color: '#2563EB', bg: '#EFF6FF' },
-  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#059669', bg: '#ECFDF5' },
-  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#D97706', bg: '#FFFBEB' },
-  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#EA580C', bg: '#FFF7ED' },
-  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#7C3AED', bg: '#F5F3FF' },
-  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#0D9488', bg: '#F0FDFA' },
-  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#4F46E5', bg: '#EEF2FF' },
-  { id: 'sci',  name: '과학',      abbr: 'IS',   color: '#0891B2', bg: '#ECFEFF' },
-  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#6D28D9', bg: '#F5F3FF' },
-  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#DB2777', bg: '#FDF2F8' },
-  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#65A30D', bg: '#F7FEE7' },
-  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0284C7', bg: '#F0F9FF' },
-  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#6B7280', bg: '#F9FAFB' },
+  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#E53E3E', bg: '#FEF2F2' },  // 강렬한 레드
+  { id: 'math', name: '수학',      abbr: 'MATH', color: '#3B82F6', bg: '#EFF6FF' },  // 밝은 블루
+  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#10B981', bg: '#ECFDF5' },  // 에메랄드
+  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#F59E0B', bg: '#FFFBEB' },  // 앰버
+  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#F97316', bg: '#FFF7ED' },  // 오렌지
+  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#8B5CF6', bg: '#F5F3FF' },  // 바이올렛
+  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#14B8A6', bg: '#F0FDFA' },  // 틸
+  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#6366F1', bg: '#EEF2FF' },  // 인디고
+  { id: 'sci',  name: '과학',      abbr: 'SCI',  color: '#06B6D4', bg: '#ECFEFF' },  // 시안
+  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#A855F7', bg: '#FAF5FF' },  // 퍼플
+  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#EC4899', bg: '#FDF2F8' },  // 핑크
+  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#84CC16', bg: '#F7FEE7' },  // 라임
+  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0EA5E9', bg: '#F0F9FF' },  // 스카이
+  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#94A3B8', bg: '#F9FAFB' },  // 슬레이트
 ]
 
 function getTodayStr() {
@@ -595,6 +595,7 @@ function TodoInputSheet({ nickname, onClose, date }) {
   const [customName, setCustomName] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
+  const [added, setAdded] = useState(false)
   const { addToast, ToastContainer } = useToast()
 
   const totalMins = (() => {
@@ -615,7 +616,8 @@ function TodoInputSheet({ nickname, onClose, date }) {
         done: false, createdAt: serverTimestamp(), order: Date.now(),
       })
       setText('')
-      addToast('추가 완료!')
+      setAdded(true)
+      setTimeout(() => setAdded(false), 1800)
     } catch (err) {
       console.error('Firestore write error:', err)
       if (err.code === 'permission-denied') {
@@ -693,8 +695,10 @@ function TodoInputSheet({ nickname, onClose, date }) {
               <button onClick={onClose}
                 className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">닫기</button>
               <button onClick={handleAdd}
-                className="py-3 rounded-2xl text-white text-sm font-bold"
-                style={{ backgroundColor: '#E8694A', flex: 2 }}>추가</button>
+                className="py-3 rounded-2xl text-white text-sm font-bold transition-all duration-300"
+                style={{ backgroundColor: added ? '#10B981' : '#E8694A', flex: 2 }}>
+                {added ? '✓ 추가됨!' : '추가'}
+              </button>
             </div>
           </div>
         </div>
@@ -828,12 +832,12 @@ function TodoList({ todos }) {
 
   return (
     <>
-      <div className="px-4 pt-1 pb-2">
+      <div className="px-3 sm:px-4 pt-1 pb-2">
         {todos.map((todo, idx) => {
           const subj = getDailySubject(todo.subject)
           return (
             <div key={todo.id}
-              className={`flex items-center gap-2.5 py-2.5 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
+              className={`py-1.5 sm:py-2 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
               onMouseDown={() => startPress(todo)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -841,42 +845,47 @@ function TodoList({ todos }) {
               onTouchEnd={cancelPress}
               onTouchMove={cancelPress}
             >
-              {/* Checkbox */}
-              <button
-                onMouseDown={e => e.stopPropagation()}
-                onTouchStart={e => e.stopPropagation()}
-                onClick={() => handleToggle(todo)}
-                className="flex-shrink-0 w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all"
-                style={todo.done
-                  ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
-                  : { borderColor: '#D1D5DB' }}
-              >
-                {todo.done && (
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-                    <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Checkbox */}
+                <button
+                  onMouseDown={e => e.stopPropagation()}
+                  onTouchStart={e => e.stopPropagation()}
+                  onClick={() => handleToggle(todo)}
+                  className="flex-shrink-0 w-4 h-4 sm:w-[18px] sm:h-[18px] rounded border-2 flex items-center justify-center transition-all"
+                  style={todo.done
+                    ? { borderColor: '#E8694A', backgroundColor: '#E8694A' }
+                    : { borderColor: '#D1D5DB' }}
+                >
+                  {todo.done && (
+                    <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                      <polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
 
-              {/* Todo text */}
-              <span
-                className={`flex-1 text-sm leading-snug min-w-0 ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
-                style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
-              >
-                {todo.text}
-              </span>
+                {/* Content — 80% */}
+                <span
+                  className={`flex-1 min-w-0 truncate text-[13px] sm:text-sm md:text-base leading-tight ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
+                  style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
+                >
+                  {todo.text}
+                </span>
 
-              {/* Right: time + subject */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
-                {todo.studyStart && todo.studyEnd && (
-                  <span className="text-[9px] text-gray-400 leading-none whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                    {todo.studyStart}–{todo.studyEnd}
-                    {todo.totalMinutes > 0 && ` (${todo.totalMinutes}m)`}
+                {/* Time 2줄 — 시작/종료 */}
+                <div className="flex-shrink-0 flex flex-col items-center justify-center gap-px tabular-nums"
+                  style={{ width: '13%', fontFamily: 'JetBrains Mono, monospace' }}>
+                  <span className="text-[9px] sm:text-[10px] text-gray-400 leading-none">
+                    {todo.studyStart || '—'}
                   </span>
-                )}
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white leading-none"
-                  style={{ backgroundColor: subj.color, fontFamily: 'JetBrains Mono, monospace' }}>
-                  {subj.abbr}
+                  <span className="text-[9px] sm:text-[10px] text-gray-300 leading-none">
+                    {todo.studyEnd || ''}
+                  </span>
+                </div>
+
+                {/* Subject 한글 — 우측정렬 */}
+                <span className="flex-shrink-0 text-[11px] sm:text-[12px] md:text-[13px] font-bold whitespace-nowrap text-right"
+                  style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '11%' }}>
+                  {subj.name}
                 </span>
               </div>
             </div>
@@ -885,10 +894,10 @@ function TodoList({ todos }) {
 
         {/* 합계 */}
         {totalMins > 0 && (
-          <div className="flex justify-end items-center gap-1.5 pt-2 mt-1 border-t border-dashed border-gray-100">
+          <div className="flex justify-end items-center gap-1.5 pt-1.5 mt-1 border-t border-dashed border-gray-100">
             <span className="text-[9px] text-gray-400 tracking-widest uppercase" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Total</span>
-            <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-              {totalMins}min{totalMins >= 60 && `, ${formatTotal(totalMins)}`}
+            <span className="text-[10px] sm:text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+              {totalMins}min{totalMins >= 60 && ` · ${formatTotal(totalMins)}`}
             </span>
           </div>
         )}
@@ -899,155 +908,159 @@ function TodoList({ todos }) {
   )
 }
 
-/* ───── StudyTimeGraph ───── */
+/* ───── StudyTimeGraph (24h Separated Donut Clock) ───── */
 function StudyTimeGraph({ todos }) {
   const ts = todos.filter(t => t.studyStart && t.studyEnd && t.totalMinutes > 0)
   if (!ts.length) return null
 
-  const subjIds = [...new Set(ts.map(t => t.subject))]
   const totals = {}
   ts.forEach(t => { totals[t.subject] = (totals[t.subject] || 0) + (t.totalMinutes || 0) })
   const totalAllMins = Object.values(totals).reduce((a, b) => a + b, 0)
 
-  // 실제 공부한 시간 범위 (±1시간 여유)
-  const allM = ts.flatMap(t => [timeToMins(t.studyStart), timeToMins(t.studyEnd)])
-  const rangeStart = Math.max(0, Math.floor((Math.min(...allM) - 60) / 60) * 60)
-  const rangeEnd = Math.min(1440, Math.ceil((Math.max(...allM) + 60) / 60) * 60)
-  const range = rangeEnd - rangeStart
+  const SIZE = 320
+  const CX = SIZE / 2, CY = SIZE / 2   // 160, 160
+  const R = 105
+  const STROKE = 42   // 두꺼운 도넛
+  const GAP = 14      // 세그먼트 간 분리 간격 (분)
+  const FULL = 1440
 
-  const pL = m => `${((m - rangeStart) / range * 100).toFixed(3)}%`
-  const pW = (s, e) => `${((e - s) / range * 100).toFixed(3)}%`
+  const minToAngle = m => (m / FULL) * 360 - 90
+  const polarToXY = (angle, r) => ({
+    x: CX + r * Math.cos(angle * Math.PI / 180),
+    y: CY + r * Math.sin(angle * Math.PI / 180),
+  })
 
-  const hourMarkers = []
-  for (let h = Math.ceil(rangeStart / 60); h <= Math.floor(rangeEnd / 60); h++) {
-    hourMarkers.push(h * 60)
+  function arcPath(startMin, endMin) {
+    const s = startMin + GAP / 2
+    const e = endMin - GAP / 2
+    if (e - s < 4) return ''
+    const a1 = minToAngle(s), a2 = minToAngle(e)
+    const p1 = polarToXY(a1, R), p2 = polarToXY(a2, R)
+    const large = (e - s) > 720 ? 1 : 0
+    return `M ${p1.x} ${p1.y} A ${R} ${R} 0 ${large} 1 ${p2.x} ${p2.y}`
   }
 
+  function arcMidXY(startMin, endMin) {
+    return polarToXY(minToAngle((startMin + endMin) / 2), R)
+  }
+
+  const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
+  const nowDot = polarToXY(minToAngle(nowMins), R + STROKE / 2 + 7)
+
+  const LABEL_R = R + STROKE / 2 + 17
+  const hourLabels = [
+    { h: 0,  label: '00시' },
+    { h: 6,  label: '06시' },
+    { h: 12, label: '12시' },
+    { h: 18, label: '18시' },
+  ]
+
   return (
-    <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background: '#0F172A' }}>
-      {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5">
-        <div className="flex items-center gap-2">
-          <div className="w-0.5 h-3.5 rounded-full" style={{ backgroundColor: '#E8694A' }} />
-          <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'JetBrains Mono, monospace' }}>
-            Study Timeline
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'JetBrains Mono, monospace' }}>
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+      <div className="flex justify-center pt-4 pb-4">
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
+          style={{ width: '100%', maxWidth: SIZE, height: 'auto' }}>
+
+          {/* 배경 링 */}
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="#F1F5F9" strokeWidth={STROKE} />
+
+          {/* 내부 눈금 (1h 간격, 링 내부) */}
+          {Array.from({ length: 24 }, (_, i) => {
+            const angle = minToAngle(i * 60)
+            const inner = polarToXY(angle, R - STROKE / 2 - 2)
+            const outer = polarToXY(angle, R - STROKE / 2 + (i % 6 === 0 ? 9 : i % 3 === 0 ? 6 : 3))
+            return (
+              <line key={i} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+                stroke={i % 6 === 0 ? '#CBD5E1' : '#E2E8F0'}
+                strokeWidth={i % 6 === 0 ? 1.5 : 0.8} />
+            )
+          })}
+
+          {/* 공부 세션 아크 — 분리된 도넛 */}
+          {ts.map((t, i) => {
+            const subj = getDailySubject(t.subject)
+            const sm = timeToMins(t.studyStart), em = timeToMins(t.studyEnd)
+            const path = arcPath(sm, em)
+            if (!path) return null
+            const mid = arcMidXY(sm, em)
+            const arcDeg = ((em - sm) / FULL) * 360
+            return (
+              <g key={i}>
+                {/* 그림자 효과 */}
+                <path d={path} fill="none" stroke={subj.color} strokeWidth={STROKE + 4}
+                  strokeLinecap="round" opacity={0.15} />
+                {/* 메인 아크 */}
+                <path d={path} fill="none" stroke={subj.color} strokeWidth={STROKE}
+                  strokeLinecap="round" opacity={0.92} />
+                {/* 과목 약자 */}
+                {arcDeg >= 9 && (
+                  <text x={mid.x} y={mid.y - 7}
+                    textAnchor="middle" dominantBaseline="central"
+                    fill="rgba(255,255,255,0.97)"
+                    fontSize={arcDeg >= 18 ? 9.5 : 7.5}
+                    fontWeight={800}
+                    fontFamily="JetBrains Mono, monospace">
+                    {subj.abbr}
+                  </text>
+                )}
+                {/* 공부시간 */}
+                {arcDeg >= 13 && (
+                  <text x={mid.x} y={mid.y + 8}
+                    textAnchor="middle" dominantBaseline="central"
+                    fill="rgba(255,255,255,0.82)"
+                    fontSize={arcDeg >= 18 ? 8 : 6.5}
+                    fontFamily="JetBrains Mono, monospace">
+                    {formatTotal(t.totalMinutes)}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+
+          {/* 시간 라벨 — 00시/06시/12시/18시 */}
+          {hourLabels.map(({ h, label }) => {
+            const pos = polarToXY(minToAngle(h * 60), LABEL_R)
+            return (
+              <text key={h} x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fill="#64748B" fontSize={11} fontWeight={700}
+                fontFamily="JetBrains Mono, monospace">
+                {label}
+              </text>
+            )
+          })}
+
+          {/* 현재 시각 인디케이터 */}
+          <circle cx={nowDot.x} cy={nowDot.y} r={4.5} fill="#E8694A" />
+          <circle cx={nowDot.x} cy={nowDot.y} r={8} fill="none" stroke="#E8694A" strokeWidth={1.2} opacity={0.3} />
+
+          {/* 중앙 — done 카운트 */}
+          <text x={CX} y={CY - 28} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={11} fontFamily="JetBrains Mono, monospace" fontWeight={600}>
             {todos.filter(t => t.done).length}/{todos.length} done
-          </span>
-          <span className="text-[11px] font-bold" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-            {totalAllMins}min · {formatTotal(totalAllMins)}
-          </span>
-        </div>
-      </div>
-
-      {/* 차트 */}
-      <div className="px-4 pb-4">
-        <div className="flex items-start gap-2">
-          {/* Y labels */}
-          <div className="flex-shrink-0" style={{ width: 36, paddingTop: 2 }}>
-            {subjIds.map(id => {
-              const s = getDailySubject(id)
-              return (
-                <div key={id} className="flex items-center justify-end mb-1.5" style={{ height: 18 }}>
-                  <span className="text-[9px] font-bold" style={{ color: s.color, fontFamily: 'JetBrains Mono, monospace' }}>{s.abbr}</span>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* 바 영역 */}
-          <div className="flex-1 relative">
-            {subjIds.map(id => {
-              const subj = getDailySubject(id)
-              const sessions = ts.filter(t => t.subject === id)
-              return (
-                <div key={id} className="relative mb-1.5" style={{ height: 18 }}>
-                  {/* 트랙 배경 */}
-                  <div className="absolute inset-0 rounded-sm" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }} />
-                  {/* 그리드 라인 */}
-                  {hourMarkers.map(h => (
-                    <div key={h} className="absolute top-0 bottom-0" style={{
-                      left: pL(h), width: 1,
-                      backgroundColor: 'rgba(255,255,255,0.06)'
-                    }} />
-                  ))}
-                  {/* 세션 바 */}
-                  {sessions.map((s, i) => {
-                    const sm = timeToMins(s.studyStart), em = timeToMins(s.studyEnd)
-                    return (
-                      <div key={i}
-                        className="absolute top-0.5 bottom-0.5 rounded-sm flex items-center justify-center overflow-hidden"
-                        style={{ left: pL(sm), width: pW(sm, em), backgroundColor: subj.color }}>
-                        {s.totalMinutes >= 25 && (
-                          <span className="text-[7px] font-bold leading-none px-0.5"
-                            style={{ color: 'rgba(255,255,255,0.9)', fontFamily: 'JetBrains Mono, monospace' }}>
-                            {s.totalMinutes}m
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-
-            {/* X축 */}
-            <div className="relative mt-1" style={{ height: 14 }}>
-              {hourMarkers.map(h => (
-                <span key={h}
-                  className="absolute -translate-x-1/2 text-[8px]"
-                  style={{
-                    left: pL(h),
-                    color: 'rgba(255,255,255,0.25)',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    bottom: 0,
-                  }}>
-                  {`${String(Math.floor(h / 60)).padStart(2, '0')}:00`}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* 과목별 합계 */}
-          <div className="flex-shrink-0 flex flex-col items-start gap-1.5" style={{ width: 44, paddingTop: 2 }}>
-            {subjIds.map(id => {
-              const subj = getDailySubject(id)
-              return (
-                <div key={id} className="flex items-center" style={{ height: 18 }}>
-                  <span className="text-[8px] font-bold leading-none"
-                    style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'JetBrains Mono, monospace' }}>
-                    {formatTotal(totals[id])}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 하단 과목 칩 */}
-      <div className="flex flex-wrap gap-1.5 px-4 pb-3.5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        {subjIds.map(id => {
-          const subj = getDailySubject(id)
-          return (
-            <span key={id} className="flex items-center gap-1 px-2 py-1 rounded"
-              style={{ backgroundColor: subj.color + '22', fontFamily: 'JetBrains Mono, monospace' }}>
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: subj.color }} />
-              <span className="text-[9px] font-bold" style={{ color: subj.color }}>{subj.abbr}</span>
-              <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{formatTotal(totals[id])}</span>
-            </span>
-          )
-        })}
+          </text>
+          {/* 총 공부시간 */}
+          <text x={CX} y={CY - 6} textAnchor="middle" dominantBaseline="central"
+            fill="#E8694A" fontSize={24} fontFamily="JetBrains Mono, monospace" fontWeight={800}>
+            {formatTotal(totalAllMins)}
+          </text>
+          {/* 응원 메시지 */}
+          <text x={CX} y={CY + 20} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={9} fontFamily="Pretendard, sans-serif">
+            수현아!
+          </text>
+          <text x={CX} y={CY + 34} textAnchor="middle" dominantBaseline="central"
+            fill="#94A3B8" fontSize={9} fontFamily="Pretendard, sans-serif">
+            오늘도 수고했어
+          </text>
+        </svg>
       </div>
     </div>
   )
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay }) {
+function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading, heartCount }) {
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [stampShown, setStampShown] = useState(false)
   const touchStartX = useRef(null)
@@ -1152,7 +1165,19 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay }) {
           }}>
           todo list
         </span>
+        {/* 날짜 + 하트 카운터 + 이동 버튼 */}
         <div className="flex items-center gap-1.5">
+          {heartCount > 0 && (
+            <div className="flex items-center gap-1">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8694A">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+              <span className="text-[10px] font-bold tabular-nums"
+                style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+                {heartCount}
+              </span>
+            </div>
+          )}
           <button
             onClick={onPrevDay}
             className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 text-xs transition-colors"
@@ -1168,7 +1193,16 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay }) {
         </div>
       </div>
       <div className="min-h-[120px]">
-        <TodoList todos={todos} />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+            <svg className="animate-spin mb-2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <p className="text-xs font-medium">불러오는 중...</p>
+          </div>
+        ) : (
+          <TodoList todos={todos} />
+        )}
       </div>
       <p className="text-center text-[9px] text-gray-200 pb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>← 스와이프로 날짜 이동 →</p>
     </div>
@@ -1184,7 +1218,11 @@ export default function SubjectList({ onSelectSubject }) {
   const [showTodoInput, setShowTodoInput] = useState(false)
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
-  const { ToastContainer } = useToast()
+  const [todosLoading, setTodosLoading] = useState(false)
+  const [heartCount, setHeartCount] = useState(0)
+  const [floatingHearts, setFloatingHearts] = useState([])
+  const heartBtnRef = useRef(null)
+  const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
   const todayLabel = getTodayLabel()
@@ -1219,17 +1257,26 @@ export default function SubjectList({ onSelectSubject }) {
 
   // 선택 날짜 투두 실시간 구독
   useEffect(() => {
-    return onSnapshot(
-      collection(db, 'study-todos'),
+    const today = getTodayStr()
+    const colRef = collection(db, 'study-todos')
+    const unsub = onSnapshot(
+      colRef,
       snap => {
         const items = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .filter(t => t.date === selectedDate)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
+        console.log('[study-todos] filtered for today:', items.length)
         setTodayTodos(items)
+        setTodosLoading(false)
       },
-      err => { console.error('Todos read error:', err) }
+      err => {
+        console.error('[study-todos] onSnapshot error:', err.code, err.message)
+        setTodosLoading(false)
+        addToast(`❌ 투두 로드 실패: ${err.code}`)
+      }
     )
+    return unsub
   }, [selectedDate])
 
   const todayBase = new Date()
@@ -1243,6 +1290,25 @@ export default function SubjectList({ onSelectSubject }) {
   async function handleDdaySelect(value) {
     await setDoc(doc(db, 'settings', 'dday'), value)
     setShowDdayPicker(false)
+  }
+
+  function handleHeart() {
+    setHeartCount(c => c + 1)
+    // 버튼 위치 기준으로 하트 여러 개 생성
+    const btn = heartBtnRef.current
+    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight - 64 }
+    const count = 3
+    const newHearts = Array.from({ length: count }, (_, i) => ({
+      id: Date.now() + i,
+      x: rect.left + rect.width / 2 + (Math.random() - 0.5) * 40,
+      y: rect.top + rect.height / 2,
+      emoji: ['💗', '💖', '💕', '❤️', '🩷'][Math.floor(Math.random() * 5)],
+      delay: i * 80,
+    }))
+    setFloatingHearts(prev => [...prev, ...newHearts])
+    setTimeout(() => {
+      setFloatingHearts(prev => prev.filter(h => !newHearts.find(n => n.id === h.id)))
+    }, 1400)
   }
 
   return (
@@ -1335,6 +1401,8 @@ export default function SubjectList({ onSelectSubject }) {
         selectedDate={selectedDate}
         onPrevDay={prevDay}
         onNextDay={nextDay}
+        loading={todosLoading}
+        heartCount={heartCount}
       />
       <StudyTimeGraph todos={todayTodos} />
 
@@ -1342,6 +1410,14 @@ export default function SubjectList({ onSelectSubject }) {
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} date={selectedDate} />}
       <ToastContainer />
+
+      {/* 하트 플로팅 애니메이션 */}
+      {floatingHearts.map(h => (
+        <span key={h.id} className="heart-float"
+          style={{ left: h.x, top: h.y, animationDelay: `${h.delay}ms` }}>
+          {h.emoji}
+        </span>
+      ))}
 
       {/* 하단 네비게이션 바 */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-center justify-around h-16 px-1">
@@ -1372,11 +1448,16 @@ export default function SubjectList({ onSelectSubject }) {
           <span className="text-[9px] font-medium text-gray-700 leading-none">Add</span>
         </button>
         {/* Like */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <button ref={heartBtnRef} onClick={handleHeart}
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:scale-125 transition-transform">
+          <svg width="22" height="22" viewBox="0 0 24 24"
+            fill={heartCount > 0 ? '#E8694A' : 'none'}
+            stroke={heartCount > 0 ? '#E8694A' : '#111'}
+            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Like</span>
+          <span className="text-[9px] font-medium leading-none"
+            style={{ color: heartCount > 0 ? '#E8694A' : '#374151' }}>Like</span>
         </button>
         {/* Stats */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
