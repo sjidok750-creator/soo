@@ -360,6 +360,13 @@ const CHART_APIS = [
       art: e['im:image']?.[2]?.label || e['im:image']?.[1]?.label,
     })),
   },
+  {
+    url: 'https://itunes.apple.com/search?term=kpop&country=kr&media=music&limit=3&sort=recent',
+    parse: json => json?.results?.slice(0, 3).map(s => ({
+      name: s.trackName, artist: s.artistName,
+      art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
+    })),
+  },
 ]
 
 function MusicChartTop3() {
@@ -377,19 +384,22 @@ function MusicChartTop3() {
     async function tryApis() {
       for (const api of CHART_APIS) {
         try {
+          console.log('[Chart] trying:', api.url)
           const r = await fetch(api.url)
-          if (!r.ok) continue
+          if (!r.ok) { console.log('[Chart] failed:', r.status); continue }
           const json = await r.json()
           const top3 = api.parse(json)
-          if (top3?.length) {
+          if (top3?.length && top3[0].art) {
+            console.log('[Chart] success:', top3.map(s => s.name))
             localStorage.setItem(cacheKey, JSON.stringify(top3))
             localStorage.setItem(cacheKey + '-time', String(Date.now()))
             setSongs(top3)
             setLoading(false)
             return
           }
-        } catch { /* try next */ }
+        } catch (e) { console.log('[Chart] error:', e.message) }
       }
+      console.log('[Chart] all APIs failed')
       setLoading(false)
     }
     tryApis()
@@ -401,7 +411,15 @@ function MusicChartTop3() {
     </div>
   )
 
-  if (!songs.length) return null
+  if (!songs.length) return (
+    <div className="flex-1 flex items-center gap-2 min-w-0">
+      {[1,2,3].map(i => (
+        <div key={i} className="w-[72px] h-[72px] rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center flex-shrink-0 border border-gray-100">
+          <span className="text-2xl opacity-20">🎵</span>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="flex-1 flex items-center gap-2 min-w-0">
