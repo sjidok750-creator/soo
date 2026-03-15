@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import VocabSection from './VocabSection'
 import { db } from './firebase'
 import {
   collection, onSnapshot, query, orderBy, where, addDoc, serverTimestamp,
@@ -1060,7 +1061,7 @@ function StudyTimeGraph({ todos }) {
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading, heartCount }) {
+function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [stampShown, setStampShown] = useState(false)
   const touchStartX = useRef(null)
@@ -1165,19 +1166,8 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading, heartC
           }}>
           todo list
         </span>
-        {/* 날짜 + 하트 카운터 + 이동 버튼 */}
+        {/* 날짜 이동 버튼 */}
         <div className="flex items-center gap-1.5">
-          {heartCount > 0 && (
-            <div className="flex items-center gap-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#E8694A">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-              </svg>
-              <span className="text-[10px] font-bold tabular-nums"
-                style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-                {heartCount}
-              </span>
-            </div>
-          )}
           <button
             onClick={onPrevDay}
             className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 text-xs transition-colors"
@@ -1219,9 +1209,7 @@ export default function SubjectList({ onSelectSubject }) {
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
   const [todosLoading, setTodosLoading] = useState(false)
-  const [heartCount, setHeartCount] = useState(0)
-  const [floatingHearts, setFloatingHearts] = useState([])
-  const heartBtnRef = useRef(null)
+  const [activeTab, setActiveTab] = useState('todo')
   const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -1290,25 +1278,6 @@ export default function SubjectList({ onSelectSubject }) {
   async function handleDdaySelect(value) {
     await setDoc(doc(db, 'settings', 'dday'), value)
     setShowDdayPicker(false)
-  }
-
-  function handleHeart() {
-    setHeartCount(c => c + 1)
-    // 버튼 위치 기준으로 하트 여러 개 생성
-    const btn = heartBtnRef.current
-    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight - 64 }
-    const count = 3
-    const newHearts = Array.from({ length: count }, (_, i) => ({
-      id: Date.now() + i,
-      x: rect.left + rect.width / 2 + (Math.random() - 0.5) * 40,
-      y: rect.top + rect.height / 2,
-      emoji: ['💗', '💖', '💕', '❤️', '🩷'][Math.floor(Math.random() * 5)],
-      delay: i * 80,
-    }))
-    setFloatingHearts(prev => [...prev, ...newHearts])
-    setTimeout(() => {
-      setFloatingHearts(prev => prev.filter(h => !newHearts.find(n => n.id === h.id)))
-    }, 1400)
   }
 
   return (
@@ -1388,36 +1357,34 @@ export default function SubjectList({ onSelectSubject }) {
         })}
       </div>
 
-      {/* 영단어 + D-day — 동일 높이 */}
-      <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
-        <WordOfDay />
-        <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
-        <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
-      </div>
+      {/* 탭 콘텐츠 */}
+      {activeTab === 'todo' ? (
+        <>
+          {/* 영단어 + D-day */}
+          <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
+            <WordOfDay />
+            <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
+            <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
+          </div>
 
-      {/* Daily Board */}
-      <DailyBoard
-        todos={todayTodos}
-        selectedDate={selectedDate}
-        onPrevDay={prevDay}
-        onNextDay={nextDay}
-        loading={todosLoading}
-        heartCount={heartCount}
-      />
-      <StudyTimeGraph todos={todayTodos} />
+          {/* Daily Board */}
+          <DailyBoard
+            todos={todayTodos}
+            selectedDate={selectedDate}
+            onPrevDay={prevDay}
+            onNextDay={nextDay}
+            loading={todosLoading}
+          />
+          <StudyTimeGraph todos={todayTodos} />
+        </>
+      ) : (
+        <VocabSection />
+      )}
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} date={selectedDate} />}
       <ToastContainer />
-
-      {/* 하트 플로팅 애니메이션 */}
-      {floatingHearts.map(h => (
-        <span key={h.id} className="heart-float"
-          style={{ left: h.x, top: h.y, animationDelay: `${h.delay}ms` }}>
-          {h.emoji}
-        </span>
-      ))}
 
       {/* 하단 네비게이션 바 */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-center justify-around h-16 px-1">
@@ -1447,17 +1414,22 @@ export default function SubjectList({ onSelectSubject }) {
           </svg>
           <span className="text-[9px] font-medium text-gray-700 leading-none">Add</span>
         </button>
-        {/* Like */}
-        <button ref={heartBtnRef} onClick={handleHeart}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:scale-125 transition-transform">
-          <svg width="22" height="22" viewBox="0 0 24 24"
-            fill={heartCount > 0 ? '#E8694A' : 'none'}
-            stroke={heartCount > 0 ? '#E8694A' : '#111'}
+        {/* Vocab */}
+        <button
+          onClick={() => setActiveTab(t => t === 'vocab' ? 'todo' : 'vocab')}
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke={activeTab === 'vocab' ? '#E8694A' : '#111'}
             strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+            <line x1="9" y1="8" x2="15" y2="8"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="12" y2="16"/>
           </svg>
           <span className="text-[9px] font-medium leading-none"
-            style={{ color: heartCount > 0 ? '#E8694A' : '#374151' }}>Like</span>
+            style={{ color: activeTab === 'vocab' ? '#E8694A' : '#374151' }}>Vocab</span>
         </button>
         {/* Stats */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
