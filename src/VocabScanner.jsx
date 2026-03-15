@@ -45,46 +45,42 @@ async function analyzeVocabImage(base64, mediaType) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY
   if (!apiKey) throw new Error('VITE_GEMINI_API_KEY가 설정되지 않았습니다.')
 
-  // 두 케이스를 명확히 구분한 프롬프트
   const prompt = `이 이미지는 고등학교 영어 단어장 교재 사진입니다.
-반드시 아래 두 가지 형식 중 하나로 정확하게 분석해주세요.
+두 가지 형식 중 하나입니다. 정확하게 판단하여 처리해주세요.
 
-━━━ 형식 A: 단어 체크리스트 (wordlist) ━━━
-이미지에 아래 특징이 있으면 형식 A:
-- □ 체크박스와 함께 영단어가 나열된 목록
-- "Previous Check" 같은 제목이 있을 수 있음
-- 빨간색 사각형 펜으로 표시된 영역이 있음
+━━━ 공통 무시 규칙 (매우 중요) ━━━
+- 배경에 비쳐 보이는 텍스트 → 완전 무시
+- 손글씨로 쓴 메모, 추가 표기 → 완전 무시
+- 형광펜, 볼펜으로 친 밑줄/동그라미 → 무시 (단어 자체만 추출)
+- 페이지 번호, 제목, QR코드 → 무시
 
-처리 규칙:
-- 빨간색 테두리 안에 있는 영단어만 추출 (테두리 밖은 완전히 무시)
-- 배경에 비치는 다른 페이지 글자, 페이지 번호, 제목 등은 모두 무시
-- 단어들이 2~4열로 나뉘어 있어도 모두 추출
-- 각 단어의 가장 대표적인 한국어 뜻 2가지를 쉼표로 구분
+━━━ 형식 A: 단어 목록 (wordlist) ━━━
+특징: □ 체크박스와 영단어가 나열된 체크리스트. 빨간 사각형 펜으로 표시된 영역.
+예시 이미지: "Previous Check" 제목, 단어들이 2~4열로 나열
+
+처리:
+1. 빨간색 테두리 안쪽 영단어만 추출 (테두리 밖 단어는 절대 추출 금지)
+2. 인쇄된 영단어만 추출 (손글씨 무시)
+3. 추출한 각 영단어의 가장 대표적인 한국어 뜻 2가지를 네가 직접 제공
 
 ━━━ 형식 B: 단어-뜻 표 (table) ━━━
-이미지에 아래 특징이 있으면 형식 B:
-- No, Word, Meaning 열이 있는 표(table)
-- 파란색 선으로 Word 열, 빨간색 선으로 Meaning 열이 표시됨
+특징: No, Word, Meaning 등 열 구분이 있는 표. 영단어와 한국어 뜻이 함께 있음.
 
-처리 규칙:
-- Word 열의 인쇄된 영단어만 추출 (손글씨 메모, 동그라미 표시 무시)
-- Meaning 열의 인쇄된 한국어 뜻만 추출 (손글씨 메모, 형광펜 표시 무시)
-- No 열의 번호 순서 유지
-- 표 안의 모든 행을 빠짐없이 추출
+처리:
+1. Word 열(영단어가 있는 열)의 인쇄된 영단어만 추출
+2. Meaning 열(한국어 뜻이 있는 열)의 인쇄된 한국어 뜻만 추출
+3. 손글씨 메모(예: "소모시키는", "반병신적" 같은 추가 필기)는 절대 포함 금지
+4. 인쇄된 원래 뜻만 사용 (예: "소모적인", "역효과를 낳는")
+5. 표의 모든 행 추출, 번호 순서 유지
 
 ━━━ 응답 형식 ━━━
-반드시 순수 JSON만 응답 (마크다운 코드블록 없이):
+순수 JSON만 응답 (마크다운 블록 없이):
 
-형식A 예시:
-{"format":"wordlist","words":[{"word":"stimulate","meaning":"자극하다, 촉진하다"},{"word":"ritual","meaning":"의식, 의례"}]}
+형식A: {"format":"wordlist","words":[{"word":"stimulate","meaning":"자극하다, 촉진하다"},{"word":"ritual","meaning":"의식, 의례"},{"word":"embassy","meaning":"대사관, 사절단"}]}
 
-형식B 예시:
-{"format":"table","words":[{"word":"praise","meaning":"칭송하다"},{"word":"exhausting","meaning":"소모적인"}]}
+형식B: {"format":"table","words":[{"word":"praise","meaning":"칭송하다"},{"word":"exhausting","meaning":"소모적인"},{"word":"insensitivity","meaning":"무감각"}]}
 
-절대 지켜야 할 사항:
-1. JSON 외 다른 텍스트 금지
-2. 손글씨로 추가된 메모는 뜻에 포함하지 말 것
-3. 빨간 테두리 밖의 단어는 추출하지 말 것 (형식A의 경우)`
+JSON 외 다른 텍스트 절대 금지.`
 
   const resp = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
