@@ -344,215 +344,66 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
-/* ── 오늘의 영단어 ── */
-const DAILY_WORDS = [
-  'abundant','adequate','ambiguous','ambivalent','analogy',
-  'anticipate','articulate','authentic','benevolent','brevity',
-  'candid','clarity','cognitive','compassion','concise',
-  'conscientious','contemplate','courage','curiosity','dedicate',
-  'deliberate','diligent','discern','eloquent','empathy',
-  'emphasis','endeavor','ephemeral','essence','flourish',
-  'fluent','fortitude','frugal','genuine','gratitude',
-  'harmony','humility','illuminate','immense','insight',
-  'inspire','integrity','intrinsic','justice','legacy',
-  'lucid','manifest','meticulous','nuance','optimism',
-  'paradigm','patience','persevere','profound','resilience',
-  'serendipity','solitude','tangible','tenacious','tranquil',
-  'ubiquitous','versatile','vigilant','zealous','aspire',
-]
-
-const KOREAN_MEANINGS = {
-  'abundant': '풍부한, 넘치는',
-  'adequate': '적절한, 충분한',
-  'ambiguous': '모호한, 불분명한',
-  'ambivalent': '상반된 감정의, 양면적인',
-  'analogy': '유추, 비유',
-  'anticipate': '예상하다, 기대하다',
-  'articulate': '명확히 표현하다; 또렷한',
-  'authentic': '진짜의, 진실된',
-  'benevolent': '자애로운, 친절한',
-  'brevity': '간결함, 짧음',
-  'candid': '솔직한, 거리낌 없는',
-  'clarity': '명확함, 명료함',
-  'cognitive': '인지의, 인식의',
-  'compassion': '연민, 동정심',
-  'concise': '간결한, 간명한',
-  'conscientious': '성실한, 꼼꼼한',
-  'contemplate': '심사숙고하다, 명상하다',
-  'courage': '용기, 담력',
-  'curiosity': '호기심',
-  'dedicate': '헌신하다, 바치다',
-  'deliberate': '신중한; 의도적인',
-  'diligent': '근면한, 부지런한',
-  'discern': '분별하다, 인식하다',
-  'eloquent': '웅변의, 유창한',
-  'empathy': '공감, 감정이입',
-  'emphasis': '강조, 역점',
-  'endeavor': '노력, 시도하다',
-  'ephemeral': '덧없는, 일시적인',
-  'essence': '본질, 핵심',
-  'flourish': '번성하다, 잘 자라다',
-  'fluent': '유창한',
-  'fortitude': '불굴의 용기, 인내',
-  'frugal': '절약하는, 검소한',
-  'genuine': '진짜의, 진심의',
-  'gratitude': '감사함',
-  'harmony': '조화, 화합',
-  'humility': '겸손',
-  'illuminate': '밝히다, 명확히 하다',
-  'immense': '거대한, 엄청난',
-  'insight': '통찰력',
-  'inspire': '영감을 주다, 고무시키다',
-  'integrity': '성실성, 도덕성',
-  'intrinsic': '본질적인, 내재적인',
-  'justice': '정의, 공정',
-  'legacy': '유산',
-  'lucid': '명확한, 명료한',
-  'manifest': '명백한; 나타내다',
-  'meticulous': '꼼꼼한, 세심한',
-  'nuance': '뉘앙스, 미묘한 차이',
-  'optimism': '낙관주의',
-  'paradigm': '패러다임, 전형',
-  'patience': '인내심',
-  'persevere': '인내하다, 꾸준히 하다',
-  'profound': '심오한, 깊은',
-  'resilience': '회복력, 탄력성',
-  'serendipity': '뜻밖의 행운',
-  'solitude': '고독, 고요함',
-  'tangible': '유형의, 실제적인',
-  'tenacious': '끈질긴, 완강한',
-  'tranquil': '평온한, 고요한',
-  'ubiquitous': '어디에나 있는',
-  'versatile': '다재다능한, 다용도의',
-  'vigilant': '경계하는, 주의 깊은',
-  'zealous': '열성적인',
-  'aspire': '열망하다, 갈망하다',
-}
-
-function WordOfDay() {
-  const kstDay = Math.floor((Date.now() + 9 * 3600000) / 86400000)
-  const todayWord = DAILY_WORDS[kstDay % DAILY_WORDS.length]
-  const cacheKey = `wod-${todayWord}`
-  const [data, setData] = useState(null)
+/* ── 음악 차트 Top 3 ── */
+function MusicChartTop3() {
+  const [songs, setSongs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showPopup, setShowPopup] = useState(false)
 
   useEffect(() => {
+    const cacheKey = 'music-chart-top3'
     const cached = localStorage.getItem(cacheKey)
-    if (cached) { setData(JSON.parse(cached)); setLoading(false); return }
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${todayWord}`)
+    const cacheTime = localStorage.getItem(cacheKey + '-time')
+    if (cached && cacheTime && Date.now() - Number(cacheTime) < 3600000) {
+      setSongs(JSON.parse(cached)); setLoading(false); return
+    }
+    fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/3/songs.json')
       .then(r => r.ok ? r.json() : null)
       .then(json => {
-        if (!json?.[0]) { setLoading(false); return }
-        const e = json[0]
-        const phonetic = e.phonetic || e.phonetics?.find(p => p.text)?.text || ''
-        const m = e.meanings || []
-        const pos1 = m[0]?.partOfSpeech?.slice(0, 4) || ''
-        const def1 = m[0]?.definitions[0]?.definition || ''
-        const pos2 = m[1]?.partOfSpeech?.slice(0, 4) || m[0]?.partOfSpeech?.slice(0, 4) || ''
-        const def2 = m[1]?.definitions[0]?.definition || m[0]?.definitions[1]?.definition || ''
-        const result = { word: todayWord, phonetic, pos1, def1, pos2, def2 }
-        localStorage.setItem(cacheKey, JSON.stringify(result))
-        setData(result)
+        const results = json?.feed?.results
+        if (!results?.length) { setLoading(false); return }
+        const top3 = results.slice(0, 3).map(s => ({
+          name: s.name,
+          artist: s.artistName,
+          art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
+        }))
+        localStorage.setItem(cacheKey, JSON.stringify(top3))
+        localStorage.setItem(cacheKey + '-time', String(Date.now()))
+        setSongs(top3)
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
-  const koreanMeaning = KOREAN_MEANINGS[todayWord] || ''
-
   if (loading) return (
-    <div className="flex-1 flex flex-col justify-between min-w-0 animate-pulse">
-      <div className="h-2 bg-gray-100 rounded w-16" />
-      <div>
-        <div className="h-4 bg-gray-100 rounded w-24 mb-1" />
-        <div className="h-2.5 bg-gray-100 rounded w-14" />
-      </div>
-      <div className="space-y-1">
-        <div className="h-2.5 bg-gray-100 rounded w-full" />
-        <div className="h-2.5 bg-gray-100 rounded w-4/5" />
-      </div>
+    <div className="flex-1 flex items-center gap-2 min-w-0 animate-pulse">
+      {[0,1,2].map(i => <div key={i} className="w-16 h-16 bg-gray-100 rounded-xl flex-shrink-0" />)}
     </div>
   )
 
-  const d = data ?? { word: todayWord, phonetic: '', pos1: '', def1: '', pos2: '', def2: '' }
-  return (
-    <>
-      <div
-        className="flex-1 flex flex-col justify-between min-w-0 cursor-pointer active:opacity-70 transition-opacity"
-        onClick={() => setShowPopup(true)}
-      >
-        <p className="text-[8px] tracking-[0.18em] text-gray-300 uppercase leading-none">word of the day</p>
-        <div>
-          <p className="text-[15px] font-bold text-gray-700 leading-tight">{d.word}</p>
-          {d.phonetic && (
-            <p className="text-[10px] mt-0.5 leading-none" style={{ color: '#E8694A', opacity: 0.6 }}>{d.phonetic}</p>
-          )}
-        </div>
-        <div className="space-y-0.5">
-          {d.def1 && (
-            <p className="text-[10px] text-gray-500 leading-tight line-clamp-1">
-              <span className="text-gray-300 italic">{d.pos1}. </span>{d.def1}
-            </p>
-          )}
-          {d.def2 && (
-            <p className="text-[10px] text-gray-500 leading-tight line-clamp-1">
-              <span className="text-gray-300 italic">{d.pos2}. </span>{d.def2}
-            </p>
-          )}
-        </div>
-        <p className="text-[8px] mt-0.5" style={{ color: '#E8694A', opacity: 0.5 }}>탭 → 한글 뜻</p>
-      </div>
+  if (!songs.length) return null
 
-      {showPopup && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-          onClick={() => setShowPopup(false)}
-        >
+  return (
+    <div className="flex-1 flex items-center gap-2 min-w-0">
+      {songs.map((s, i) => (
+        <div key={i} className="relative flex-shrink-0">
+          <img
+            src={s.art}
+            alt={s.name}
+            className="w-[72px] h-[72px] rounded-xl object-cover shadow-sm"
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent rounded-b-xl px-1.5 pt-3 pb-1">
+            <p className="text-[8px] text-white font-bold truncate leading-tight">{s.name}</p>
+            <p className="text-[7px] text-white/70 truncate leading-tight">{s.artist}</p>
+          </div>
           <div
-            className="bg-white rounded-t-3xl w-full max-w-md shadow-2xl relative"
-            onClick={e => e.stopPropagation()}
+            className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+            style={{ backgroundColor: '#E8694A' }}
           >
-            <button
-              onClick={() => setShowPopup(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm"
-            >✕</button>
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
-            <div className="px-6 pt-3 pb-10">
-              <p className="text-[9px] tracking-[0.2em] text-gray-300 uppercase mb-3">word of the day</p>
-              <p className="text-3xl font-black text-gray-800 mb-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{d.word}</p>
-              {d.phonetic && (
-                <p className="text-sm mb-5" style={{ color: '#E8694A' }}>{d.phonetic}</p>
-              )}
-              {koreanMeaning && (
-                <div className="rounded-2xl p-4 mb-5" style={{ backgroundColor: '#FFF3F0' }}>
-                  <p className="text-[10px] text-gray-400 tracking-widest uppercase mb-1">한국어 뜻</p>
-                  <p className="text-xl font-bold" style={{ color: '#E8694A' }}>{koreanMeaning}</p>
-                </div>
-              )}
-              {(d.def1 || d.def2) && (
-                <div className="space-y-2.5">
-                  <p className="text-[10px] text-gray-400 tracking-widest uppercase">English Definition</p>
-                  {d.def1 && (
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      <span className="text-gray-300 italic text-xs">{d.pos1}. </span>{d.def1}
-                    </p>
-                  )}
-                  {d.def2 && (
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      <span className="text-gray-300 italic text-xs">{d.pos2}. </span>{d.def2}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            {i + 1}
           </div>
         </div>
-      )}
-    </>
+      ))}
+    </div>
   )
 }
 
@@ -1232,12 +1083,21 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
     return () => clearTimeout(timer)
   }, [])
 
-  // D-day 실시간 구독 (Firestore → 기기 간 동기화)
+  // D-day 실시간 구독 (Firestore → localStorage 폴백)
   useEffect(() => {
+    const saved = localStorage.getItem('study-buddy-dday')
+    if (saved) try { setDday(JSON.parse(saved)) } catch {}
     return onSnapshot(
       doc(db, 'settings', 'dday'),
-      snap => { if (snap.exists()) setDday(snap.data()) },
-      err => { console.error('D-day read error:', err) }
+      snap => {
+        if (snap.exists()) {
+          setDday(snap.data())
+          localStorage.setItem('study-buddy-dday', JSON.stringify(snap.data()))
+        }
+      },
+      err => {
+        console.error('D-day read error:', err)
+      }
     )
   }, [])
 
@@ -1274,7 +1134,9 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
   })
 
   async function handleDdaySelect(value) {
-    await setDoc(doc(db, 'settings', 'dday'), value)
+    setDday(value)
+    localStorage.setItem('study-buddy-dday', JSON.stringify(value))
+    try { await setDoc(doc(db, 'settings', 'dday'), value) } catch (e) { console.error('D-day save:', e) }
     setShowDdayPicker(false)
   }
 
@@ -1355,9 +1217,9 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         })}
       </div>
 
-      {/* 영단어 + D-day */}
+      {/* 차트 + D-day */}
       <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
-        <WordOfDay />
+        <MusicChartTop3 />
         <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
         <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
