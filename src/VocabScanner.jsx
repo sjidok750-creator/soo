@@ -152,112 +152,108 @@ function ThumbnailImage({ imageId, className = '', onClick }) {
   return <img src={url} alt="스캔" className={`object-cover ${className}`} onClick={onClick} />
 }
 
-// ─── 4열 단어 표 ──────────────────────────────────────────────────
-function VocabTable({ scan, onBack, onViewImage }) {
+// ─── 단어 표 (반응형: 모바일 두줄 / 데스크톱 4열) ────────────────
+function VocabTable({ scan }) {
   const [revealedMap, setRevealedMap] = useState({})
   const [checkedMap, setCheckedMap] = useState({})
-  const allRevealed = scan.words.every((_, i) => revealedMap[i])
 
   const toggleReveal = i => setRevealedMap(p => ({ ...p, [i]: !p[i] }))
   const toggleCheck = i => setCheckedMap(p => ({ ...p, [i]: !p[i] }))
+  const allRevealed = scan.words.every((_, i) => revealedMap[i])
   const toggleAll = () => {
     if (allRevealed) setRevealedMap({})
-    else {
-      const m = {}; scan.words.forEach((_, i) => { m[i] = true }); setRevealedMap(m)
-    }
+    else { const m = {}; scan.words.forEach((_, i) => { m[i] = true }); setRevealedMap(m) }
   }
 
-  const doneCount = Object.values(checkedMap).filter(Boolean).length
-
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* 상단 컨트롤 */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-xl"
-        >
-          ← 목록
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-400">{formatDateKo(scan.date)} · {scan.format === 'table' ? '표 형식' : '단어 목록'}</p>
-          <p className="text-sm font-bold text-gray-800">
-            {scan.words.length}개 단어
-            {doneCount > 0 && <span className="text-green-600 ml-2">✓ {doneCount}개 완료</span>}
-          </p>
-        </div>
-        {scan.imageId && (
-          <button
-            onClick={() => onViewImage(scan.imageId)}
-            className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl"
-          >📷 원본</button>
-        )}
-        <button
-          onClick={toggleAll}
-          className="px-3 py-1.5 text-xs rounded-xl font-medium"
-          style={{ backgroundColor: '#FFF3F0', color: '#E8694A', border: '1px solid #FECDBB' }}
-        >
-          {allRevealed ? '뜻 숨기기' : '뜻 전체 보기'}
-        </button>
-      </div>
-
-      {/* 표 */}
+    <div className="w-full">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-        {/* 헤더 */}
-        <div className="grid grid-cols-[44px_1fr_1fr_44px] bg-gray-800 text-white text-sm font-semibold">
-          <div className="px-2 py-3 text-center">No</div>
-          <div className="px-3 py-3">Word</div>
-          <div className="px-3 py-3">Meaning</div>
-          <div className="px-2 py-3 text-center">✓</div>
+
+        {/* ── 헤더: 모바일 3열 / 데스크톱 4열 ── */}
+        <div className="grid grid-cols-[32px_1fr_32px] sm:grid-cols-[40px_1fr_1fr_40px] bg-gray-800 text-white text-xs font-semibold">
+          <div className="px-1 py-2.5 text-center">No</div>
+          <div className="px-2 py-2.5 cursor-pointer select-none" onDoubleClick={toggleAll}>Word <span className="opacity-60 ml-1">{scan.words.length}</span> <span className="sm:hidden">{allRevealed ? '🔓' : '🔒'}</span></div>
+          <div className="hidden sm:block px-2 py-2.5 cursor-pointer select-none" onDoubleClick={toggleAll}>Meaning {allRevealed ? '🔓' : '🔒'}</div>
+          <div className="px-1 py-2.5 text-center">✓</div>
         </div>
 
-        {/* 단어 행 */}
+        {/* ── 단어 행 ── */}
         {scan.words.map((item, i) => (
           <div
             key={i}
-            className={`grid grid-cols-[44px_1fr_1fr_44px] border-b border-gray-50 last:border-0 transition-colors ${
+            className={`border-b border-gray-50 last:border-0 transition-colors cursor-pointer select-none ${
               checkedMap[i] ? 'bg-green-50' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'
             }`}
+            onClick={() => toggleReveal(i)}
           >
-            {/* 번호 */}
-            <div className="px-2 py-3 text-center text-xs text-gray-400 font-medium flex items-center justify-center">
-              {i + 1}
+            {/* 모바일: 두 줄 레이아웃 (sm 미만) */}
+            <div className="grid grid-cols-[32px_1fr_32px] sm:hidden">
+              <div className="px-1 py-2 text-center text-[10px] text-gray-400 font-medium flex items-center justify-center">
+                {i + 1}
+              </div>
+              <div className="px-2 py-2">
+                <div className={`text-sm font-semibold leading-tight ${checkedMap[i] ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                  {item.word}
+                </div>
+                <div className="mt-1">
+                  {revealedMap[i] ? (
+                    <span className="text-xs font-medium" style={{ color: '#0D9488' }}>{item.meaning}</span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold italic"
+                      style={{ backgroundColor: '#FFF3F0', color: '#E8694A', border: '1.5px solid #FECDBB' }}
+                    >
+                      view meaning
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="px-1 py-2 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => toggleCheck(i)}
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                    checkedMap[i] ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-400'
+                  }`}
+                >
+                  {checkedMap[i] && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
+                </button>
+              </div>
             </div>
-            {/* 단어 */}
-            <div className={`px-3 py-3 text-sm font-medium flex items-center ${checkedMap[i] ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-              {item.word}
-            </div>
-            {/* 뜻 — 탭하여 토글 */}
-            <div
-              className="px-3 py-3 flex items-center cursor-pointer select-none"
-              onClick={() => toggleReveal(i)}
-            >
-              {revealedMap[i] ? (
-                <span className="text-sm font-medium" style={{ color: '#0D9488' }}>{item.meaning}</span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium"
-                  style={{ backgroundColor: '#F0FDFA', color: '#0D9488', border: '1px solid #CCFBF1' }}>
-                  탭하여 확인
-                </span>
-              )}
-            </div>
-            {/* 체크박스 */}
-            <div className="px-2 py-3 flex items-center justify-center">
-              <button
-                onClick={() => toggleCheck(i)}
-                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                  checkedMap[i]
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : 'border-gray-300 hover:border-green-400'
-                }`}
-              >
-                {checkedMap[i] && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
-              </button>
+
+            {/* 데스크톱: 4열 레이아웃 (sm 이상) */}
+            <div className="hidden sm:grid grid-cols-[40px_1fr_1fr_40px]">
+              <div className="px-1 py-3 text-center text-xs text-gray-400 font-medium flex items-center justify-center">
+                {i + 1}
+              </div>
+              <div className={`px-2 py-3 text-sm font-medium flex items-center ${checkedMap[i] ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                {item.word}
+              </div>
+              <div className="px-2 py-3 flex items-center">
+                {revealedMap[i] ? (
+                  <span className="text-sm font-medium" style={{ color: '#0D9488' }}>{item.meaning}</span>
+                ) : (
+                  <span
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold italic"
+                    style={{ backgroundColor: '#FFF3F0', color: '#E8694A', border: '1.5px solid #FECDBB' }}
+                  >
+                    view meaning
+                  </span>
+                )}
+              </div>
+              <div className="px-1 py-3 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => toggleCheck(i)}
+                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                    checkedMap[i] ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-400'
+                  }`}
+                >
+                  {checkedMap[i] && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>}
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
-      <p className="text-center text-xs text-gray-400 mt-2">Meaning 칸을 탭하면 뜻이 보입니다</p>
     </div>
   )
 }
@@ -457,9 +453,9 @@ export default function VocabScanner({ onBack, nickname }) {
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
 
         {/* 좌측 75% */}
-        <div className="overflow-y-auto p-4" style={{ width: '75%' }}>
+        <div className="overflow-y-auto p-4" style={{ width: '80%' }}>
           {selectedScan ? (
-            <VocabTable scan={selectedScan} onBack={() => setSelectedScan(null)} onViewImage={handleViewImage} />
+            <VocabTable scan={selectedScan} />
           ) : mainDate && mainScans.length > 0 ? (
             <FileListView date={mainDate} scans={mainScans} onSelectScan={setSelectedScan} onViewImage={handleViewImage} />
           ) : (
@@ -468,7 +464,7 @@ export default function VocabScanner({ onBack, nickname }) {
         </div>
 
         {/* 우측 25% */}
-        <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '25%' }}>
+        <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '20%' }}>
 
           {/* 폴더 모드 */}
           {sidebarMode === 'folders' && (
@@ -516,15 +512,15 @@ export default function VocabScanner({ onBack, nickname }) {
               </div>
               <div className="flex flex-col gap-2 p-2">
                 {(scansByDate[sidebarDate] || []).map((scan) => (
-                  <div key={scan.id} className="flex flex-col gap-1">
+                  <div key={scan.id}>
                     <div
                       className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer border-2 hover:border-[#E8694A] transition-colors"
                       style={{ borderColor: selectedScan?.id === scan.id ? '#E8694A' : 'transparent' }}
                       onClick={() => { setMainDate(sidebarDate); setSelectedScan(scan) }}
+                      onDoubleClick={(e) => { e.stopPropagation(); handleViewImage(scan.imageId) }}
                     >
                       <ThumbnailImage imageId={scan.imageId} className="w-full h-full" />
                     </div>
-                    <button onClick={() => handleViewImage(scan.imageId)} className="text-[9px] text-gray-400 hover:text-gray-700 text-center">원본</button>
                   </div>
                 ))}
               </div>
