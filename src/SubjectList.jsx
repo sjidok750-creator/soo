@@ -1199,7 +1199,7 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
   )
 }
 
-export default function SubjectList({ onSelectSubject }) {
+export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -1398,13 +1398,15 @@ export default function SubjectList({ onSelectSubject }) {
           </svg>
           <span className="text-[9px] font-medium text-gray-700 leading-none">Task</span>
         </button>
-        {/* Search */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+        {/* Vocab Scanner */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={onOpenVocabScanner}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M8 7h8M8 11h5M8 15h3"/>
+            <circle cx="17" cy="15" r="2.5"/>
+            <line x1="19" y1="17" x2="21" y2="19"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Search</span>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">단어</span>
         </button>
         {/* Add (중앙) */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowTodoInput(true)}>
