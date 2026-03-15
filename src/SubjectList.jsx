@@ -345,6 +345,23 @@ function DdayPickerModal({ onSelect, onClose }) {
 }
 
 /* ── 음악 차트 Top 3 ── */
+const CHART_APIS = [
+  {
+    url: 'https://rss.applemarketingtools.com/api/v2/kr/music/most-played/3/songs.json',
+    parse: json => json?.feed?.results?.slice(0, 3).map(s => ({
+      name: s.name, artist: s.artistName,
+      art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
+    })),
+  },
+  {
+    url: 'https://itunes.apple.com/kr/rss/topsongs/limit=3/json',
+    parse: json => json?.feed?.entry?.slice(0, 3).map(e => ({
+      name: e['im:name']?.label, artist: e['im:artist']?.label,
+      art: e['im:image']?.[2]?.label || e['im:image']?.[1]?.label,
+    })),
+  },
+]
+
 function MusicChartTop3() {
   const [songs, setSongs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -356,22 +373,26 @@ function MusicChartTop3() {
     if (cached && cacheTime && Date.now() - Number(cacheTime) < 3600000) {
       setSongs(JSON.parse(cached)); setLoading(false); return
     }
-    fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/3/songs.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
-        const results = json?.feed?.results
-        if (!results?.length) { setLoading(false); return }
-        const top3 = results.slice(0, 3).map(s => ({
-          name: s.name,
-          artist: s.artistName,
-          art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
-        }))
-        localStorage.setItem(cacheKey, JSON.stringify(top3))
-        localStorage.setItem(cacheKey + '-time', String(Date.now()))
-        setSongs(top3)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+
+    async function tryApis() {
+      for (const api of CHART_APIS) {
+        try {
+          const r = await fetch(api.url)
+          if (!r.ok) continue
+          const json = await r.json()
+          const top3 = api.parse(json)
+          if (top3?.length) {
+            localStorage.setItem(cacheKey, JSON.stringify(top3))
+            localStorage.setItem(cacheKey + '-time', String(Date.now()))
+            setSongs(top3)
+            setLoading(false)
+            return
+          }
+        } catch { /* try next */ }
+      }
+      setLoading(false)
+    }
+    tryApis()
   }, [])
 
   if (loading) return (
