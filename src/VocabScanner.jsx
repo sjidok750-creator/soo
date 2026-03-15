@@ -512,15 +512,15 @@ export default function VocabScanner({ onBack, nickname }) {
               </div>
               <div className="flex flex-col gap-2 p-2">
                 {(scansByDate[sidebarDate] || []).map((scan) => (
-                  <div key={scan.id} className="flex flex-col gap-1">
+                  <div key={scan.id}>
                     <div
                       className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer border-2 hover:border-[#E8694A] transition-colors"
                       style={{ borderColor: selectedScan?.id === scan.id ? '#E8694A' : 'transparent' }}
                       onClick={() => { setMainDate(sidebarDate); setSelectedScan(scan) }}
+                      onDoubleClick={(e) => { e.stopPropagation(); handleViewImage(scan.imageId) }}
                     >
                       <ThumbnailImage imageId={scan.imageId} className="w-full h-full" />
                     </div>
-                    <button onClick={() => handleViewImage(scan.imageId)} className="text-[9px] text-gray-400 hover:text-gray-700 text-center">원본</button>
                   </div>
                 ))}
               </div>
