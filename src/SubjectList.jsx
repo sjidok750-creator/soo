@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import VocabSection from './VocabSection'
 import { db } from './firebase'
 import {
   collection, onSnapshot, query, orderBy, where, addDoc, serverTimestamp,
@@ -1209,7 +1208,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
   const [todosLoading, setTodosLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('todo')
   const { addToast, ToastContainer } = useToast()
   const calendarRef = useRef(null)
   const todayCellRef = useRef(null)
@@ -1357,29 +1355,22 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         })}
       </div>
 
-      {/* 탭 콘텐츠 */}
-      {activeTab === 'todo' ? (
-        <>
-          {/* 영단어 + D-day */}
-          <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
-            <WordOfDay />
-            <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
-            <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
-          </div>
+      {/* 영단어 + D-day */}
+      <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
+        <WordOfDay />
+        <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
+        <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
+      </div>
 
-          {/* Daily Board */}
-          <DailyBoard
-            todos={todayTodos}
-            selectedDate={selectedDate}
-            onPrevDay={prevDay}
-            onNextDay={nextDay}
-            loading={todosLoading}
-          />
-          <StudyTimeGraph todos={todayTodos} />
-        </>
-      ) : (
-        <VocabSection />
-      )}
+      {/* Daily Board */}
+      <DailyBoard
+        todos={todayTodos}
+        selectedDate={selectedDate}
+        onPrevDay={prevDay}
+        onNextDay={nextDay}
+        loading={todosLoading}
+      />
+      <StudyTimeGraph todos={todayTodos} />
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
@@ -1416,20 +1407,18 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         </button>
         {/* Vocab */}
         <button
-          onClick={() => setActiveTab(t => t === 'vocab' ? 'todo' : 'vocab')}
+          onClick={onOpenVocabScanner}
           className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-            stroke={activeTab === 'vocab' ? '#E8694A' : '#111'}
-            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
             <line x1="9" y1="8" x2="15" y2="8"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="12" y2="16"/>
           </svg>
-          <span className="text-[9px] font-medium leading-none"
-            style={{ color: activeTab === 'vocab' ? '#E8694A' : '#374151' }}>Vocab</span>
+          <span className="text-[9px] font-medium leading-none text-gray-700">Vocab</span>
         </button>
         {/* Stats */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
