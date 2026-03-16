@@ -11,16 +11,15 @@ const SUBJECT_TABS = ['수학', '영어', '국어', '과학', '사회', '기타'
 const NOTES_COL = 'notes-media'
 
 // ── Firebase Storage 업로드 ──────────────────────────────────────
-async function uploadFile(file) {
-  const ext = file.name?.split('.').pop() || 'bin'
-  const path = `notes/${Date.now()}.${ext}`
+async function uploadFile(file, index = 0) {
+  const ext = file.name?.split('.').pop() || 'jpg'
+  const path = `notes/${Date.now()}_${index}.${ext}`
   const sRef = storageRef(storage, path)
   await uploadBytes(sRef, file)
   const url = await getDownloadURL(sRef)
   return { storagePath: path, storageURL: url }
 }
 
-// ── dataURL → Blob (UploadSheet 미리보기용) ───────────────────────
 function fileToDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -37,8 +36,8 @@ function MediaPickerSheet({ onClose, onPick }) {
   const fileRef = useRef(null)
 
   function handleInput(e) {
-    const file = e.target.files?.[0]
-    if (file) onPick(file)
+    const files = Array.from(e.target.files || [])
+    if (files.length) onPick(files)
     onClose()
   }
 
@@ -51,7 +50,7 @@ function MediaPickerSheet({ onClose, onPick }) {
         <div className="px-4 py-2 space-y-1">
           {[
             { ref: photoRef, capture: 'environment', label: '사진 찍기', icon: <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></> },
-            { ref: galleryRef, capture: undefined, label: '사진보관함', icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></> },
+            { ref: galleryRef, capture: undefined, label: '사진보관함 (여러장)', icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></> },
             { ref: fileRef, capture: undefined, label: '파일 선택', icon: <><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></> },
           ].map(({ ref, capture, label, icon }) => (
             <button key={label} className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl active:bg-gray-50 transition"
@@ -63,8 +62,8 @@ function MediaPickerSheet({ onClose, onPick }) {
             </button>
           ))}
           <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInput} />
-          <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleInput} />
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleInput} />
+          <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
         </div>
         <div className="px-4 pb-2">
           <button className="w-full py-3.5 rounded-2xl text-gray-500 font-semibold text-sm bg-gray-100 active:bg-gray-200 transition" onClick={onClose}>취소</button>
@@ -75,20 +74,50 @@ function MediaPickerSheet({ onClose, onPick }) {
 }
 
 // ── 업로드 시트 ───────────────────────────────────────────────────
-function UploadSheet({ file, dataURL, uploading, onClose, onSave }) {
+function UploadSheet({ files, dataURLs, uploading, onClose, onSave }) {
   const [memo, setMemo] = useState('')
   const [subject, setSubject] = useState('')
+  const isMultiple = dataURLs.length > 1
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#000' }}>
+      {/* 미리보기 영역 */}
       <div className="flex-1 relative flex items-center justify-center overflow-hidden" style={{ background: '#111' }}>
-        <img src={dataURL} alt="" className="w-full h-full object-contain" />
-        <button className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose} disabled={uploading}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        {isMultiple ? (
+          <div className="w-full h-full overflow-y-auto p-1">
+            <div className="grid grid-cols-3 gap-0.5">
+              {dataURLs.map((url, i) => (
+                <div key={i} className="relative" style={{ aspectRatio: '1/1' }}>
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+                    <span className="text-white text-[10px] font-bold" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{i + 1}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <img src={dataURLs[0]} alt="" className="w-full h-full object-contain" />
+        )}
+
+        {/* 닫기 + 장수 표시 */}
+        <div className="absolute top-4 left-0 right-0 flex items-center justify-between px-4">
+          <button className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose} disabled={uploading}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          {isMultiple && (
+            <div className="px-3 py-1 rounded-full text-white text-xs font-bold"
+              style={{ background: 'rgba(232,105,74,0.85)', fontFamily: 'JetBrains Mono, monospace' }}>
+              {dataURLs.length}장 선택됨
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 입력 시트 */}
       <div className="bg-white rounded-t-3xl px-5 pt-5" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
         <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
         <p className="text-xs font-bold text-gray-400 mb-2 tracking-wider uppercase">과목</p>
@@ -119,7 +148,7 @@ function UploadSheet({ file, dataURL, uploading, onClose, onSave }) {
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
             </svg>
           )}
-          {uploading ? 'UPLOADING...' : '저장 →'}
+          {uploading ? 'UPLOADING...' : `저장 ${isMultiple ? `(${dataURLs.length}장)` : '→'}`}
         </button>
       </div>
     </div>
@@ -287,24 +316,20 @@ function EditNoteSheet({ item, onClose, onSave }) {
 }
 
 // ── 포스트 카드 ──────────────────────────────────────────────────
-function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onToggleBookmark, onShare, onOpenComments, onFullscreen, onLongPress }) {
-  const pressTimer = useRef(null)
+// 단일 탭 → 전체화면 / 더블 탭 → 수정·삭제 메뉴
+function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onToggleBookmark, onShare, onOpenComments, onFullscreen, onContextMenu }) {
   const lastTapRef = useRef(0)
+  const singleTapTimer = useRef(null)
 
-  // 롱프레스 → full item 전달
-  function handlePointerDown() {
-    pressTimer.current = setTimeout(() => onLongPress(item), 600)
-  }
-  function handlePointerUp() {
-    clearTimeout(pressTimer.current)
-  }
-
-  // 이미지 더블탭 → 전체화면
   function handleImageTap() {
     const now = Date.now()
     if (now - lastTapRef.current < 300) {
-      clearTimeout(pressTimer.current)
-      onFullscreen(item)
+      // 더블 탭 → 수정·삭제
+      clearTimeout(singleTapTimer.current)
+      onContextMenu(item)
+    } else {
+      // 단일 탭 → 전체화면 (더블 탭이 오면 취소됨)
+      singleTapTimer.current = setTimeout(() => onFullscreen(item), 300)
     }
     lastTapRef.current = now
   }
@@ -320,10 +345,13 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
           alt={item.memo || ''}
           className="w-full h-full object-cover cursor-pointer"
           loading="lazy"
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
           onClick={handleImageTap}
         />
+        {/* 더블탭 힌트 */}
+        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(0,0,0,0.35)' }}>
+          <span className="text-white text-[9px]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>2x tap to edit</span>
+        </div>
       </div>
 
       {/* 액션 아이콘 바 */}
@@ -382,7 +410,7 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
         </div>
       )}
 
-      {/* 댓글 미리보기 — 최대 2개 + ··· */}
+      {/* 댓글 미리보기 */}
       {item.comments && item.comments.length > 0 && (
         <div className="px-3 pb-3 space-y-0.5">
           {item.comments.slice(0, 2).map(c => (
@@ -406,15 +434,14 @@ export default function NotesPage({ onBack }) {
   const [media, setMedia] = useState([])
   const [loading, setLoading] = useState(true)
   const [showPicker, setShowPicker] = useState(false)
-  const [pendingFile, setPendingFile] = useState(null)
-  const [pendingDataURL, setPendingDataURL] = useState(null)
+  const [pendingFiles, setPendingFiles] = useState([])
+  const [pendingDataURLs, setPendingDataURLs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [contextItem, setContextItem] = useState(null)
   const [editItem, setEditItem] = useState(null)
   const [fullscreenItem, setFullscreenItem] = useState(null)
   const [commentItem, setCommentItem] = useState(null)
 
-  // 좋아요 / 즐겨찾기 → localStorage (기기 개인 취향)
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-liked') || '[]') } catch { return [] }
   })
@@ -439,7 +466,7 @@ export default function NotesPage({ onBack }) {
     return unsub
   }, [])
 
-  // commentItem을 media 변경에 맞춰 최신화
+  // commentItem 최신화
   useEffect(() => {
     if (!commentItem) return
     const updated = media.find(m => m.id === commentItem.id)
@@ -470,7 +497,6 @@ export default function NotesPage({ onBack }) {
     })
   }
 
-  // 댓글 추가 → Firestore 업데이트 (onSnapshot이 UI 반영)
   async function handleAddComment(id, text) {
     const newComment = { id: Date.now(), text, createdAt: Date.now() }
     const item = media.find(m => m.id === id)
@@ -480,30 +506,34 @@ export default function NotesPage({ onBack }) {
     } catch {}
   }
 
-  // 파일 선택
-  async function handlePick(file) {
-    const dataURL = await fileToDataURL(file)
-    setPendingFile(file)
-    setPendingDataURL(dataURL)
+  // 파일 선택 → dataURL 변환
+  async function handlePick(files) {
+    const dataURLs = await Promise.all(files.map(fileToDataURL))
+    setPendingFiles(files)
+    setPendingDataURLs(dataURLs)
   }
 
-  // 저장 → Firebase Storage 업로드 후 Firestore 저장
+  // 저장 → 여러 장 병렬 업로드
   async function handleSave({ memo, subject }) {
-    if (!pendingFile) return
+    if (!pendingFiles.length) return
     setUploading(true)
     try {
-      const { storagePath, storageURL } = await uploadFile(pendingFile)
-      await addDoc(collection(db, NOTES_COL), {
-        storagePath,
-        storageURL,
-        mimeType: pendingFile.type,
-        memo,
-        subject,
-        comments: [],
-        createdAt: Date.now(),
-      })
-      setPendingFile(null)
-      setPendingDataURL(null)
+      await Promise.all(
+        pendingFiles.map(async (file, i) => {
+          const { storagePath, storageURL } = await uploadFile(file, i)
+          await addDoc(collection(db, NOTES_COL), {
+            storagePath,
+            storageURL,
+            mimeType: file.type,
+            memo,
+            subject,
+            comments: [],
+            createdAt: Date.now() + i,
+          })
+        })
+      )
+      setPendingFiles([])
+      setPendingDataURLs([])
     } catch (e) {
       console.error('upload error', e)
     } finally {
@@ -514,9 +544,7 @@ export default function NotesPage({ onBack }) {
   // 삭제 → Storage + Firestore
   async function handleDelete(item) {
     try {
-      if (item.storagePath) {
-        await deleteObject(storageRef(storage, item.storagePath))
-      }
+      if (item.storagePath) await deleteObject(storageRef(storage, item.storagePath))
     } catch {}
     try {
       await deleteDoc(doc(db, NOTES_COL, item.id))
@@ -524,7 +552,7 @@ export default function NotesPage({ onBack }) {
     setContextItem(null)
   }
 
-  // 수정 → Firestore
+  // 수정
   async function handleEditSave({ memo, subject }) {
     try {
       await updateDoc(doc(db, NOTES_COL, editItem.id), { memo, subject })
@@ -595,7 +623,7 @@ export default function NotesPage({ onBack }) {
               onShare={handleShare}
               onOpenComments={setCommentItem}
               onFullscreen={setFullscreenItem}
-              onLongPress={setContextItem}
+              onContextMenu={setContextItem}
             />
           ))
         )}
@@ -607,12 +635,12 @@ export default function NotesPage({ onBack }) {
       )}
 
       {/* 업로드 */}
-      {pendingDataURL && (
+      {pendingDataURLs.length > 0 && (
         <UploadSheet
-          file={pendingFile}
-          dataURL={pendingDataURL}
+          files={pendingFiles}
+          dataURLs={pendingDataURLs}
           uploading={uploading}
-          onClose={() => { if (!uploading) { setPendingFile(null); setPendingDataURL(null) } }}
+          onClose={() => { if (!uploading) { setPendingFiles([]); setPendingDataURLs([]) } }}
           onSave={handleSave}
         />
       )}
@@ -631,7 +659,7 @@ export default function NotesPage({ onBack }) {
         />
       )}
 
-      {/* 롱프레스 컨텍스트 메뉴 */}
+      {/* 더블탭 컨텍스트 메뉴 */}
       {contextItem && (
         <ContextMenuSheet
           onDelete={() => handleDelete(contextItem)}
