@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SplashScreen from './SplashScreen'
 import SubjectList from './SubjectList'
 import SubjectDetail from './SubjectDetail'
 import VocabScanner from './VocabScanner'
@@ -7,11 +8,16 @@ import TaskManager from './TaskManager'
 const NICKNAME_KEY = 'study-buddy-nickname'
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false)
   const [currentSubject, setCurrentSubject]   = useState(null)
   const [showVocabScanner, setShowVocabScanner] = useState(false)
   const [showTaskManager,  setShowTaskManager]  = useState(false)
   const [showTodoInput,    setShowTodoInput]     = useState(false)
   const nickname = localStorage.getItem(NICKNAME_KEY) || '익명'
+
+  if (!splashDone) {
+    return <SplashScreen onDone={() => setSplashDone(true)} />
+  }
 
   // 어느 탭이 활성인지
   const activeTab = showTaskManager ? 'task' : showVocabScanner ? 'vocab' : 'home'
@@ -23,7 +29,6 @@ export default function App() {
     setShowTaskManager(false); setCurrentSubject(null); setShowVocabScanner(true); setShowTodoInput(false)
   }
   function navFab() {
-    // 홈이면 투두 입력 토글, 다른 탭이면 홈으로 이동 후 열기
     if (activeTab !== 'home') {
       setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null)
       setShowTodoInput(true)
