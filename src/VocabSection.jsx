@@ -155,6 +155,7 @@ function WordCard({ word, onMemorize, onRevealMeaning }) {
 /* ── 메인 VocabSection ── */
 export default function VocabSection() {
   const [sessions, setSessions] = useState([])
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingMsg, setProcessingMsg] = useState('')
   const [processingPct, setProcessingPct] = useState(0)
@@ -204,6 +205,7 @@ export default function VocabSection() {
       date: new Date().toLocaleDateString('ko-KR'),
     }
     setSessions(prev => [session, ...prev])
+    setSelectedSessionId(session.id)
     setPendingPhotos([])
     setIsProcessing(false)
   }
@@ -260,6 +262,7 @@ export default function VocabSection() {
     }))
   }
 
+  const currentSession = selectedSessionId ? sessions.find(s => s.id === selectedSessionId) : null
   const totalWords = sessions.reduce((n, s) => n + s.words.length, 0)
   const memorized = sessions.reduce((n, s) => n + s.words.filter(w => w.memorized).length, 0)
 
@@ -281,22 +284,35 @@ export default function VocabSection() {
           className="flex-shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-gray-100"
           style={{ backgroundColor: '#FAFAFA' }}
         >
-          <div>
-            <p
-              className="text-[10px] font-black tracking-[0.2em] uppercase"
+          {currentSession ? (
+            <button
+              onClick={() => setSelectedSessionId(null)}
+              className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
               style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
             >
-              Vocab Book
-            </p>
-            {totalWords > 0 && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              BACK
+            </button>
+          ) : (
+            <div>
               <p
-                className="text-[9px] tabular-nums"
-                style={{ color: '#CBD5E1', fontFamily: 'JetBrains Mono, monospace' }}
+                className="text-[10px] font-black tracking-[0.2em] uppercase"
+                style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
               >
-                {memorized}/{totalWords} done
+                Vocab Book
               </p>
-            )}
-          </div>
+              {totalWords > 0 && (
+                <p
+                  className="text-[9px] tabular-nums"
+                  style={{ color: '#CBD5E1', fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  {memorized}/{totalWords} done
+                </p>
+              )}
+            </div>
+          )}
           <button
             onClick={() => setShowAddSheet(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[11px] font-bold shadow-sm active:opacity-75 transition-opacity"
@@ -305,43 +321,50 @@ export default function VocabSection() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            추가
+            +ADD
           </button>
         </div>
 
         {/* 단어 카드 목록 */}
         <div className="flex-1 overflow-y-auto">
-          {sessions.length === 0 ? (
+          {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full pb-8 text-center px-6">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
-                style={{ backgroundColor: '#FFF3F0' }}
-              >
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </div>
-              <p className="text-xs font-bold text-gray-400 mb-1">단어장이 비어있어요</p>
-              <p className="text-[10px] text-gray-300 leading-relaxed">
-                단어장 사진을 찍으면<br/>단어가 자동으로 인식돼요
-              </p>
+              {sessions.length === 0 ? (
+                <>
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
+                    style={{ backgroundColor: '#FFF3F0' }}
+                  >
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold text-gray-400 mb-1">단어장이 비어있어요</p>
+                  <p className="text-[10px] text-gray-300 leading-relaxed">
+                    단어장 사진을 찍으면<br/>단어가 자동으로 인식돼요
+                  </p>
+                </>
+              ) : (
+                <>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mb-3">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                  </svg>
+                  <p className="text-[10px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                    Select a folder →
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="px-3 pt-2.5 pb-24">
-              {sessions.map(session => {
+              {(() => {
+                const session = currentSession
                 const done = session.words.filter(w => w.memorized).length
-                const allRevealed = session.words.every(w => w.meaningVisible)
+                const allRevealed = session.words.length > 0 && session.words.every(w => w.meaningVisible)
                 return (
-                  <div key={session.id} className="mb-6">
-                    {/* 세션 헤더 */}
+                  <div>
                     <div className="flex items-center gap-1.5 mb-2.5">
-                      <span
-                        className="text-[9px] tracking-widest"
-                        style={{ color: '#CBD5E1', fontFamily: 'JetBrains Mono, monospace' }}
-                      >
-                        {session.date}
-                      </span>
                       <div className="flex-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
                       <span
                         className="text-[9px] font-bold tabular-nums"
@@ -349,7 +372,6 @@ export default function VocabSection() {
                       >
                         {done}/{session.words.length}
                       </span>
-                      {/* 일괄 표시/숨기기 */}
                       <button
                         onClick={() => allRevealed ? hideAll(session.id) : revealAll(session.id)}
                         className="text-[9px] px-1.5 py-0.5 rounded"
@@ -363,7 +385,7 @@ export default function VocabSection() {
                         {allRevealed ? '뜻 숨기기' : '뜻 전체보기'}
                       </button>
                       <button
-                        onClick={() => deleteSession(session.id)}
+                        onClick={() => { deleteSession(session.id); setSelectedSessionId(null) }}
                         className="w-5 h-5 flex items-center justify-center rounded text-gray-200 hover:text-red-300 transition-colors"
                         style={{ fontSize: 10 }}
                       >
@@ -384,13 +406,13 @@ export default function VocabSection() {
                     )}
                   </div>
                 )
-              })}
+              })()}
             </div>
           )}
         </div>
       </div>
 
-      {/* ── 우측 25% — 사진 썸네일 ── */}
+      {/* ── 우측 25% — 날짜 폴더 ── */}
       <div
         className="flex-shrink-0 overflow-y-auto border-l"
         style={{ width: '25%', borderColor: '#F1F5F9', backgroundColor: '#FFFFFF' }}
@@ -398,32 +420,54 @@ export default function VocabSection() {
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full pb-8 gap-2">
             <div
-              className="w-10 h-14 rounded-xl border-2 border-dashed flex items-center justify-center"
+              className="w-10 h-10 rounded-xl border-2 border-dashed flex items-center justify-center"
               style={{ borderColor: '#E2E8F0' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
               </svg>
             </div>
           </div>
         ) : (
-          <div className="p-1.5 space-y-1.5 pt-2.5">
-            {sessions.flatMap((s, si) =>
-              s.photos.map((photo, pi) => (
-                <div
-                  key={`${si}-${pi}`}
-                  className="rounded-xl overflow-hidden bg-gray-50 shadow-sm"
-                  style={{ aspectRatio: '3/4' }}
+          <div className="p-1.5 pt-2.5 space-y-1.5">
+            {sessions.map(session => {
+              const isSelected = selectedSessionId === session.id
+              const done = session.words.filter(w => w.memorized).length
+              return (
+                <button
+                  key={session.id}
+                  onClick={() => setSelectedSessionId(session.id)}
+                  className="w-full rounded-xl p-2 text-left transition-all active:opacity-70 border"
+                  style={{
+                    backgroundColor: isSelected ? '#FFF3F0' : '#F8FAFC',
+                    borderColor: isSelected ? '#E8694A' : '#F1F5F9',
+                  }}
                 >
-                  <img
-                    src={photo} alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))
-            )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke={isSelected ? '#E8694A' : '#94A3B8'}
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className="mb-1"
+                  >
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                  </svg>
+                  <p
+                    className="text-[8px] font-bold leading-tight"
+                    style={{
+                      color: isSelected ? '#E8694A' : '#64748B',
+                      fontFamily: 'JetBrains Mono, monospace',
+                    }}
+                  >
+                    {session.date}
+                  </p>
+                  <p
+                    className="text-[7px] tabular-nums mt-0.5"
+                    style={{ color: '#CBD5E1', fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {done}/{session.words.length}
+                  </p>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
