@@ -156,29 +156,66 @@ function ThumbnailImage({ imageUrl, className = '', onClick }) {
 function VocabTable({ scan }) {
   const [revealedMap, setRevealedMap] = useState({})
   const [checkedMap, setCheckedMap] = useState({})
+  const [shuffledOrder, setShuffledOrder] = useState(null)
+
+  const displayWords = shuffledOrder ? shuffledOrder.map(i => scan.words[i]) : scan.words
 
   const toggleReveal = i => setRevealedMap(p => ({ ...p, [i]: !p[i] }))
   const toggleCheck = i => setCheckedMap(p => ({ ...p, [i]: !p[i] }))
-  const allRevealed = scan.words.every((_, i) => revealedMap[i])
+  const allRevealed = displayWords.every((_, i) => revealedMap[i])
   const toggleAll = () => {
     if (allRevealed) setRevealedMap({})
-    else { const m = {}; scan.words.forEach((_, i) => { m[i] = true }); setRevealedMap(m) }
+    else { const m = {}; displayWords.forEach((_, i) => { m[i] = true }); setRevealedMap(m) }
+  }
+  const toggleShuffle = () => {
+    if (shuffledOrder) {
+      setShuffledOrder(null)
+    } else {
+      const idx = scan.words.map((_, i) => i)
+      for (let i = idx.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [idx[i], idx[j]] = [idx[j], idx[i]]
+      }
+      setShuffledOrder(idx)
+    }
+    setRevealedMap({})
+    setCheckedMap({})
   }
 
   return (
     <div className="w-full">
+      {/* 셔플 토글 버튼 */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={toggleShuffle}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all active:scale-95"
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            background: shuffledOrder ? 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)' : '#F1F5F9',
+            color: shuffledOrder ? 'white' : '#64748B',
+            boxShadow: shuffledOrder ? '0 2px 8px rgba(232,105,74,0.35)' : 'none',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+            <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+          </svg>
+          SHUFFLE {shuffledOrder ? 'ON' : 'OFF'}
+        </button>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
 
         {/* ── 헤더: 모바일 3열 / 데스크톱 4열 ── */}
         <div className="grid grid-cols-[32px_1fr_32px] sm:grid-cols-[40px_1fr_1fr_40px] bg-gray-800 text-white text-xs font-semibold">
           <div className="px-1 py-2.5 text-center">No</div>
-          <div className="px-2 py-2.5 cursor-pointer select-none" onDoubleClick={toggleAll}>Word <span className="opacity-60 ml-1">{scan.words.length}</span> <span className="sm:hidden">{allRevealed ? '🔓' : '🔒'}</span></div>
+          <div className="px-2 py-2.5 cursor-pointer select-none" onDoubleClick={toggleAll}>Word <span className="opacity-60 ml-1">{displayWords.length}</span> <span className="sm:hidden">{allRevealed ? '🔓' : '🔒'}</span></div>
           <div className="hidden sm:block px-2 py-2.5 cursor-pointer select-none" onDoubleClick={toggleAll}>Meaning {allRevealed ? '🔓' : '🔒'}</div>
           <div className="px-1 py-2.5 text-center">✓</div>
         </div>
 
         {/* ── 단어 행 ── */}
-        {scan.words.map((item, i) => (
+        {displayWords.map((item, i) => (
           <div
             key={i}
             className={`border-b border-gray-50 last:border-0 transition-colors cursor-pointer select-none ${
@@ -343,7 +380,7 @@ function usePullToRefresh() {
 }
 
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
-export default function VocabScanner({ onBack, nickname }) {
+export default function VocabScanner({ onBack, nickname, addTrigger }) {
   const isRefreshing = usePullToRefresh()
   const [scans, setScans] = useState([])
   const [expandedDate, setExpandedDate] = useState(null)   // 사이드바 아코디언
@@ -373,6 +410,14 @@ export default function VocabScanner({ onBack, nickname }) {
     return acc
   }, {})
   const sortedDates = Object.keys(scansByDate).sort((a, b) => b.localeCompare(a))
+
+  // 외부 ADD 트리거 (네비 + 버튼)
+  useEffect(() => {
+    if (addTrigger > 0) {
+      setMenuAnchor({ top: window.innerHeight * 0.38, right: window.innerWidth / 2 - 86 })
+      setShowAddMenu(true)
+    }
+  }, [addTrigger])
 
   // +ADD 버튼 클릭 → 메뉴 위치 계산
   const openAddMenu = () => {
@@ -463,18 +508,22 @@ export default function VocabScanner({ onBack, nickname }) {
       )}
 
       {/* 헤더 */}
-      <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
+      <div className="flex-shrink-0 flex items-center px-4 border-b border-gray-100"
+        style={{ height: 58, backgroundColor: '#FAFAFA' }}>
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center justify-center rounded-xl p-2.5 transition hover:opacity-80"
-            style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
+            className="flex items-center justify-center rounded-xl active:opacity-70 transition-opacity"
+            style={{ width: 36, height: 36, border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2.5"/>
             </svg>
           </button>
-          <span className="text-sm font-bold" style={{ color: '#E8694A' }}>VOCAB BOOK</span>
+          <span className="font-black tracking-widest uppercase"
+            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace', fontSize: 14 }}>
+            VOCAB BOOK
+          </span>
         </div>
       </div>
 

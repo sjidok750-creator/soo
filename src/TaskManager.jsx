@@ -291,7 +291,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
                 onChange={e => setCustomName(e.target.value)}
                 placeholder="과목명 직접 입력..."
                 className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none"
-                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}
+                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}
               />
             )}
           </div>
@@ -302,7 +302,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
             <input type="text" value={taskText} onChange={e => setTaskText(e.target.value)}
               placeholder="Enter task description..."
               className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-colors"
-              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}
+              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}
               onFocus={e => e.target.style.borderColor = '#E8694A'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'}
             />
@@ -313,7 +313,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
             <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Deadline</p>
             <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-700 focus:outline-none transition-colors"
-              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}
+              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}
               onFocus={e => e.target.style.borderColor = '#E8694A'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'}
             />
@@ -428,7 +428,7 @@ function EditTaskSheet({ task, onClose }) {
               <input type="text" value={customName} onChange={e => setCustomName(e.target.value)}
                 placeholder="과목명 직접 입력..."
                 className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none"
-                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }} />
+                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }} />
             )}
           </div>
           {/* Task */}
@@ -437,7 +437,7 @@ function EditTaskSheet({ task, onClose }) {
             <input type="text" value={taskText} onChange={e => setTaskText(e.target.value)}
               placeholder="Enter task description..."
               className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-colors"
-              style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 13 }}
+              style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 16 }}
               onFocus={e => e.target.style.borderColor = '#E8694A'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
           </div>
@@ -446,7 +446,7 @@ function EditTaskSheet({ task, onClose }) {
             <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Deadline</p>
             <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-700 focus:outline-none transition-colors"
-              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}
+              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}
               onFocus={e => e.target.style.borderColor = '#E8694A'}
               onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
           </div>
@@ -596,13 +596,15 @@ function usePullToRefresh() {
 }
 
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
-export default function TaskManager({ onBack, nickname }) {
+export default function TaskManager({ onBack, nickname, addTrigger }) {
   const [tasks, setTasks]               = useState([])
   const [viewDate, setViewDate]         = useState(getTodayISO())
   const [showAdd, setShowAdd]           = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [editingTask,  setEditingTask]  = useState(null)
   const [error, setError]               = useState('')
+  // 외부 ADD 트리거
+  useEffect(() => { if (addTrigger > 0) setShowAdd(true) }, [addTrigger])
   // Firestore 구독
   useEffect(() => {
     const q = query(collection(db, 'task-board'), orderBy('createdAt', 'desc'))

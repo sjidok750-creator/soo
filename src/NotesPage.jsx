@@ -206,7 +206,7 @@ function UploadSheet({ files, dataURLs, uploading, onClose, onSave }) {
           placeholder="제목 또는 메모를 입력하세요..."
           rows={3}
           className="w-full px-4 py-3 rounded-2xl text-sm text-gray-800 placeholder-gray-300 focus:outline-none resize-none"
-          style={{ border: '2px solid #F0EDE8', fontFamily: MONO, fontSize: 12 }}
+          style={{ border: '2px solid #F0EDE8', fontFamily: MONO, fontSize: 16 }}
           onFocus={e => { e.target.style.borderColor = CORAL }}
           onBlur={e => { e.target.style.borderColor = '#F0EDE8' }}
         />
@@ -297,7 +297,7 @@ function CommentSheet({ item, onClose, onAddComment }) {
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
             placeholder="댓글 달기..."
             className="flex-1 px-4 py-2.5 rounded-full text-sm text-gray-800 placeholder-gray-300 focus:outline-none"
-            style={{ border: '1.5px solid #E5E7EB', fontFamily: MONO, fontSize: 12 }}
+            style={{ border: '1.5px solid #E5E7EB', fontFamily: MONO, fontSize: 16 }}
             onFocus={e => { e.target.style.borderColor = CORAL }}
             onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
           />
@@ -366,7 +366,7 @@ function EditNoteSheet({ item, onClose, onSave }) {
           placeholder="제목 또는 메모를 입력하세요..."
           rows={3}
           className="w-full px-4 py-3 rounded-2xl text-sm text-gray-800 placeholder-gray-300 focus:outline-none resize-none"
-          style={{ border: '2px solid #F0EDE8', fontFamily: MONO, fontSize: 12 }}
+          style={{ border: '2px solid #F0EDE8', fontFamily: MONO, fontSize: 16 }}
           onFocus={e => { e.target.style.borderColor = CORAL }}
           onBlur={e => { e.target.style.borderColor = '#F0EDE8' }}
         />
@@ -550,7 +550,7 @@ function SubjectIcon({ subject, isActive, onClick }) {
 }
 
 // ── 메인 NotesPage ─────────────────────────────────────────────────────
-export default function NotesPage({ onBack }) {
+export default function NotesPage({ onBack, addTrigger }) {
   const [media, setMedia] = useState([])
   const [loading, setLoading] = useState(true)
   const [showPicker, setShowPicker] = useState(false)
@@ -573,6 +573,8 @@ export default function NotesPage({ onBack }) {
     try { return JSON.parse(localStorage.getItem('notes-shares') || '{}') } catch { return {} }
   })
 
+  // 외부 ADD 트리거
+  useEffect(() => { if (addTrigger > 0) setShowPicker(true) }, [addTrigger])
   // Firestore 실시간 구독
   useEffect(() => {
     const q = query(collection(db, NOTES_COL), orderBy('createdAt', 'desc'))

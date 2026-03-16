@@ -15,6 +15,7 @@ export default function App() {
   const [showTaskManager,  setShowTaskManager]  = useState(false)
   const [showNotes,        setShowNotes]         = useState(false)
   const [showTodoInput,    setShowTodoInput]     = useState(false)
+  const [addTrigger,       setAddTrigger]        = useState(0)
   const nickname = localStorage.getItem(NICKNAME_KEY) || '익명'
 
   if (!splashDone) {
@@ -36,14 +37,18 @@ export default function App() {
   function navHome() {
     setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTodoInput(false)
   }
+  function handleNavAdd() {
+    if (activeTab === 'home') { setShowTodoInput(true) }
+    else { setAddTrigger(t => t + 1) }
+  }
 
   let content
   if (showVocabScanner) {
-    content = <VocabScanner onBack={() => setShowVocabScanner(false)} nickname={nickname} />
+    content = <VocabScanner onBack={() => setShowVocabScanner(false)} nickname={nickname} addTrigger={addTrigger} />
   } else if (showTaskManager) {
-    content = <TaskManager onBack={() => setShowTaskManager(false)} nickname={nickname} />
+    content = <TaskManager onBack={() => setShowTaskManager(false)} nickname={nickname} addTrigger={addTrigger} />
   } else if (showNotes) {
-    content = <NotesPage onBack={() => setShowNotes(false)} />
+    content = <NotesPage onBack={() => setShowNotes(false)} addTrigger={addTrigger} />
   } else if (currentSubject) {
     content = <SubjectDetail subject={currentSubject} onBack={() => setCurrentSubject(null)} />
   } else {
@@ -119,6 +124,17 @@ export default function App() {
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
           </div>
+        </button>
+
+        {/* + ADD */}
+        <button onClick={handleNavAdd} className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 2px 10px rgba(232,105,74,0.40)' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <span className="text-[8px] font-black tracking-wider leading-none"
+            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>ADD</span>
         </button>
 
         {/* VOCAB */}
