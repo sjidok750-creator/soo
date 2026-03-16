@@ -69,9 +69,10 @@ export default function SplashScreen({ onDone }) {
         }}
       >
         <img
-          src="/jamddal.jpg"
-          alt="잠뜰 캐릭터"
+          src="/soo/jamddal.jpg"
+          alt=""
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={e => { e.target.style.display = 'none' }}
         />
       </div>
 
