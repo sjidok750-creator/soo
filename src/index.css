@@ -9,16 +9,6 @@
   100% { opacity: 0; transform: translateY(-4px); }
 }
 
-/* 스플래시 화면 배지 회전 */
-@keyframes splashSpin {
-  0%   { opacity: 0; transform: scale(0.8) rotate(0deg); }
-  15%  { opacity: 1; transform: scale(1.05) rotate(0deg); }
-  45%  { transform: scale(1) rotate(360deg); }
-  55%  { transform: scale(1.05) rotate(360deg); }
-  85%  { transform: scale(1) rotate(720deg); }
-  95%  { opacity: 1; transform: scale(1.02) rotate(720deg); }
-  100% { opacity: 0; transform: scale(0.95) rotate(720deg); }
-}
 
 /* 드래그 중 텍스트 선택 방지 */
 .dragging-active {
