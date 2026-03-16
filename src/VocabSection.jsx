@@ -339,16 +339,50 @@ export default function VocabSection() {
           style={{ backgroundColor: '#FAFAFA' }}
         >
           {currentSession ? (
-            <button
-              onClick={() => { setSelectedSessionId(null); setShuffledOrder(null) }}
-              className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
-              style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
-              BACK
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setSelectedSessionId(null); setShuffledOrder(null) }}
+                className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
+                style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                BACK
+              </button>
+
+              {/* 셔플 토글 — BACK 라인 오른쪽 */}
+              <button
+                onClick={() => toggleShuffle(currentSession.words)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 active:scale-95"
+                style={{
+                  backgroundColor: shuffledOrder ? CORAL : '#F1F5F9',
+                  border: `1px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
+                }}
+              >
+                {/* 셔플 아이콘 */}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                  stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
+                  strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polyline points="16 3 21 3 21 8"/>
+                  <line x1="4" y1="20" x2="21" y2="3"/>
+                  <polyline points="21 16 21 21 16 21"/>
+                  <line x1="15" y1="15" x2="21" y2="21"/>
+                </svg>
+                <span
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 8,
+                    fontWeight: 900,
+                    letterSpacing: '0.08em',
+                    color: shuffledOrder ? '#fff' : '#94A3B8',
+                  }}
+                >
+                  {shuffledOrder ? 'ON' : 'SHUFFLE'}
+                </span>
+              </button>
+            </div>
           ) : (
             <div>
               <p
@@ -418,48 +452,6 @@ export default function VocabSection() {
                 const allRevealed = session.words.length > 0 && session.words.every(w => w.meaningVisible)
                 return (
                   <div>
-                    {/* 셔플 토글 배너 */}
-                    <button
-                      onClick={() => toggleShuffle(session.words)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-2 transition-all duration-200 active:scale-[0.98]"
-                      style={{
-                        backgroundColor: shuffledOrder ? CORAL : '#F8FAFC',
-                        border: `1.5px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {/* 셔플 아이콘 */}
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                          stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
-                          strokeLinecap="round" strokeLinejoin="round"
-                        >
-                          <polyline points="16 3 21 3 21 8"/>
-                          <line x1="4" y1="20" x2="21" y2="3"/>
-                          <polyline points="21 16 21 21 16 21"/>
-                          <line x1="15" y1="15" x2="21" y2="21"/>
-                        </svg>
-                        <span
-                          className="text-[10px] font-black tracking-widest"
-                          style={{ color: shuffledOrder ? '#fff' : '#94A3B8', fontFamily: MONO }}
-                        >
-                          {shuffledOrder ? 'SHUFFLE ON' : 'SHUFFLE'}
-                        </span>
-                      </div>
-                      {/* 토글 스위치 */}
-                      <div
-                        className="relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0"
-                        style={{ backgroundColor: shuffledOrder ? 'rgba(255,255,255,0.35)' : '#E2E8F0' }}
-                      >
-                        <div
-                          className="absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-200"
-                          style={{
-                            backgroundColor: shuffledOrder ? '#fff' : '#94A3B8',
-                            left: shuffledOrder ? 18 : 2,
-                          }}
-                        />
-                      </div>
-                    </button>
-
                     <div className="flex items-center gap-1.5 mb-2.5">
                       <div className="flex-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
                       <span
@@ -574,69 +566,66 @@ export default function VocabSection() {
         )}
       </div>
 
-      {/* ── 추가 시트 ── */}
+      {/* ── 추가 시트 (iPhone 액션시트 스타일) ── */}
       {showAddSheet && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          className="fixed inset-0 z-50 flex flex-col justify-end px-4"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
           onClick={() => setShowAddSheet(false)}
         >
-          <div
-            className="bg-white rounded-t-3xl w-full max-w-md pb-10 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
-            <div className="px-6 pt-3 pb-2">
-              <p
-                className="text-center text-sm font-black mb-5 tracking-widest"
-                style={{ color: CORAL, fontFamily: MONO }}
-              >
-                VOCAB BOOK 추가
+          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)' }} />
+
+          {/* 액션 카드 */}
+          <div className="relative rounded-2xl overflow-hidden mb-3 bg-white/95" style={{ backdropFilter: 'blur(20px)' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-4 pb-2">
+              <p className="text-center text-[10px] font-black tracking-widest" style={{ color: CORAL, fontFamily: MONO }}>
+                VOCAB BOOK
               </p>
-              <div className="space-y-2.5">
-                <button
-                  onClick={() => cameraRef.current?.click()}
-                  className="w-full py-4 rounded-2xl flex items-center gap-4 px-5 active:opacity-80 transition-opacity"
-                  style={{ backgroundColor: CORAL_BG }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: CORAL }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                      <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold" style={{ color: CORAL, fontFamily: MONO }}>사진 찍기</p>
-                    <p className="text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>카메라로 단어장을 촬영해요</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full py-4 rounded-2xl flex items-center gap-4 px-5 active:opacity-80 transition-opacity bg-gray-50"
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: '#F1F5F9' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold" style={{ color: '#374151', fontFamily: MONO }}>갤러리에서 선택</p>
-                    <p className="text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>저장된 사진을 불러와요</p>
-                  </div>
-                </button>
-              </div>
             </div>
+            {[
+              {
+                onClick: () => cameraRef.current?.click(),
+                label: '사진 찍기',
+                sub: '카메라로 단어장을 촬영',
+                icon: <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></>,
+              },
+              {
+                onClick: () => fileRef.current?.click(),
+                label: '갤러리에서 선택',
+                sub: '저장된 사진을 불러오기',
+                icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
+              },
+            ].map(({ onClick, label, sub, icon }, i) => (
+              <button
+                key={label}
+                className="w-full flex items-center gap-4 px-5 py-4 active:bg-gray-100/80 transition"
+                style={{ borderTop: i === 0 ? '1px solid rgba(0,0,0,0.07)' : 'none', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+                onClick={onClick}
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)` }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <p style={{ fontFamily: MONO, fontWeight: 700, fontSize: 13, color: '#111827' }}>{label}</p>
+                  <p style={{ fontFamily: MONO, fontWeight: 500, fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>{sub}</p>
+                </div>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            ))}
           </div>
+
+          {/* 취소 버튼 (분리) */}
+          <button
+            className="relative w-full py-4 rounded-2xl font-black tracking-widest transition active:opacity-70"
+            style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', color: '#374151', fontFamily: MONO, fontSize: 13 }}
+            onClick={() => setShowAddSheet(false)}
+          >
+            CANCEL
+          </button>
         </div>
       )}
 

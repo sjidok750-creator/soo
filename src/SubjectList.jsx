@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore'
 import { useToast } from './Toast'
 import { SUBJECTS, getSubject, DAILY_SUBJECTS, getDailySubject } from './subjectConfig'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
@@ -1155,7 +1156,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   // showTodoInput / onCloseTodoInput are managed by App.jsx (so nav persists across screens)
-  const isRefreshing = usePullToRefresh()
   const [playingVideo, setPlayingVideo] = useState(null)
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
@@ -1242,12 +1242,8 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
   }
 
   return (
+    <PullToRefreshWrapper onRefresh={() => setSelectedDate(getTodayStr())} bg="#F8FAF9">
     <div className="min-h-screen bg-stone-50 pb-16">
-      {isRefreshing && (
-        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
-          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#0D9488' }} />
-        </div>
-      )}
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-3 pb-2.5 border-b border-gray-100">
@@ -1363,5 +1359,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
       <ToastContainer />
 
     </div>
+    </PullToRefreshWrapper>
   )
 }

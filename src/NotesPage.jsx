@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 import {
   collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy,
 } from 'firebase/firestore'
@@ -61,7 +62,7 @@ function fileToDataURL(file) {
   })
 }
 
-// ── 미디어 선택 바텀시트 ──────────────────────────────────────────────
+// ── 미디어 선택 바텀시트 (iPhone 액션시트 스타일) ─────────────────────
 function MediaPickerSheet({ onClose, onPick }) {
   const photoRef = useRef(null)
   const galleryRef = useRef(null)
@@ -73,36 +74,74 @@ function MediaPickerSheet({ onClose, onPick }) {
     onClose()
   }
 
+  const items = [
+    {
+      ref: photoRef,
+      label: '사진 찍기',
+      sub: '카메라로 바로 촬영',
+      icon: <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></>,
+    },
+    {
+      ref: galleryRef,
+      label: '사진보관함',
+      sub: '여러 장 선택 가능',
+      icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
+    },
+    {
+      ref: fileRef,
+      label: '파일 선택',
+      sub: '저장된 파일 불러오기',
+      icon: <><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></>,
+    },
+  ]
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="relative bg-white rounded-t-3xl overflow-hidden" onClick={e => e.stopPropagation()}
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
-        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-gray-200" /></div>
-        <div className="px-4 py-2 space-y-1">
-          {[
-            { ref: photoRef, capture: 'environment', label: '사진 찍기', icon: <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></> },
-            { ref: galleryRef, capture: undefined, label: '사진보관함 (여러장)', icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></> },
-            { ref: fileRef, capture: undefined, label: '파일 선택', icon: <><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></> },
-          ].map(({ ref, capture, label, icon }) => (
-            <button key={label} className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl active:bg-gray-50 transition"
-              onClick={() => ref.current.click()}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: CORAL_BG }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-              </div>
-              <span className="text-base font-semibold text-gray-800" style={{ fontFamily: MONO, fontSize: 13 }}>{label}</span>
-            </button>
-          ))}
-          <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInput} />
-          <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
+    <div className="fixed inset-0 z-50 flex flex-col justify-end px-4"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
+      onClick={onClose}>
+      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)' }} />
+
+      {/* 액션 카드 */}
+      <div className="relative rounded-2xl overflow-hidden mb-3 bg-white/95" style={{ backdropFilter: 'blur(20px)' }}
+        onClick={e => e.stopPropagation()}>
+        <div className="px-5 pt-4 pb-2">
+          <p className="text-center text-[10px] font-black tracking-widest" style={{ color: CORAL, fontFamily: MONO }}>
+            NOTE BOARD
+          </p>
         </div>
-        <div className="px-4 pb-2">
-          <button className="w-full py-3.5 rounded-2xl font-bold text-sm transition"
-            style={{ background: '#F3F4F6', color: '#9CA3AF', fontFamily: MONO }}
-            onClick={onClose}>CLOSE</button>
-        </div>
+        {items.map(({ ref, label, sub, icon }, i) => (
+          <button
+            key={label}
+            className="w-full flex items-center gap-4 px-5 py-4 active:bg-gray-100/80 transition"
+            style={{ borderTop: i === 0 ? '1px solid rgba(0,0,0,0.07)' : 'none', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+            onClick={() => ref.current.click()}
+          >
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+            </div>
+            <div className="flex-1 text-left">
+              <p style={{ fontFamily: MONO, fontWeight: 700, fontSize: 13, color: '#111827' }}>{label}</p>
+              <p style={{ fontFamily: MONO, fontWeight: 500, fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>{sub}</p>
+            </div>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        ))}
+        <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInput} />
+        <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
       </div>
+
+      {/* 취소 버튼 (분리) */}
+      <button
+        className="relative w-full py-4 rounded-2xl font-black tracking-widest transition active:opacity-70"
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', color: '#374151', fontFamily: MONO, fontSize: 13 }}
+        onClick={onClose}
+      >
+        CANCEL
+      </button>
     </div>
   )
 }
@@ -457,9 +496,11 @@ function ThumbCard({ item, onFullscreen, onContextMenu }) {
 }
 
 // ── 과목 사이드바 아이콘 ──────────────────────────────────────────────
+const GOTHIC = "'Arial Black', 'Arial Bold', Impact, 'Haettenschweiler', sans-serif"
+
 function SubjectIcon({ subject, isActive, onClick }) {
   const abbrLen = subject.abbr.length
-  const fontSize = abbrLen === 1 ? 13 : abbrLen === 2 ? 10 : 8
+  const fontSize = abbrLen === 1 ? 17 : abbrLen === 2 ? 13 : 10
 
   return (
     <button
@@ -470,19 +511,23 @@ function SubjectIcon({ subject, isActive, onClick }) {
         className="rounded-full flex items-center justify-center transition-all duration-200"
         style={{
           width: 40, height: 40,
-          backgroundColor: isActive ? subject.color : subject.bg,
-          boxShadow: isActive ? `0 3px 10px ${subject.color}60` : 'none',
-          border: isActive ? 'none' : `1.5px solid ${subject.color}30`,
+          backgroundColor: CORAL,
+          boxShadow: isActive ? `0 3px 12px rgba(232,105,74,0.55)` : `0 1px 4px rgba(232,105,74,0.22)`,
+          outline: isActive ? `2.5px solid rgba(232,105,74,0.45)` : 'none',
+          outlineOffset: isActive ? 2 : 0,
+          opacity: isActive ? 1 : 0.72,
+          transform: isActive ? 'scale(1.08)' : 'scale(1)',
         }}
       >
         <span
           style={{
-            color: isActive ? '#fff' : subject.color,
-            fontFamily: MONO,
+            color: '#fff',
+            fontFamily: GOTHIC,
             fontWeight: 900,
             fontSize,
-            letterSpacing: '-0.02em',
+            letterSpacing: '-0.03em',
             lineHeight: 1,
+            textShadow: '0 1px 2px rgba(0,0,0,0.18)',
           }}
         >
           {subject.abbr}
@@ -490,7 +535,7 @@ function SubjectIcon({ subject, isActive, onClick }) {
       </div>
       <span
         style={{
-          color: isActive ? subject.color : '#CBD5E1',
+          color: isActive ? CORAL : '#CBD5E1',
           fontFamily: MONO,
           fontWeight: isActive ? 800 : 500,
           fontSize: 6.5,
@@ -518,8 +563,6 @@ export default function NotesPage({ onBack }) {
   const [commentItem, setCommentItem] = useState(null)
   const [selectedSubject, setSelectedSubject] = useState(null)
 
-  const rightPanelRef = useRef(null)
-
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-liked') || '[]') } catch { return [] }
   })
@@ -546,27 +589,6 @@ export default function NotesPage({ onBack }) {
     const updated = media.find(m => m.id === commentItem.id)
     if (updated) setCommentItem(updated)
   }, [media])
-
-  // Pull-to-refresh: 첫화면으로 (과목 필터 해제)
-  useEffect(() => {
-    const el = rightPanelRef.current
-    if (!el) return
-    let startY = 0, canPull = false
-    const onStart = e => {
-      startY = e.touches[0].clientY
-      canPull = el.scrollTop === 0
-    }
-    const onEnd = e => {
-      if (!canPull) return
-      if (e.changedTouches[0].clientY - startY > 80) setSelectedSubject(null)
-    }
-    el.addEventListener('touchstart', onStart, { passive: true })
-    el.addEventListener('touchend', onEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchend', onEnd)
-    }
-  }, [])
 
   function toggleLike(id) {
     setLiked(prev => {
@@ -726,8 +748,9 @@ export default function NotesPage({ onBack }) {
           </button>
         </div>
 
-        {/* ── 우측 메인 패널 (85%) ── */}
-        <div ref={rightPanelRef} className="flex-1 overflow-y-auto bg-white">
+        {/* ── 우측 메인 패널 (85%) — PTR로 첫화면 복귀 ── */}
+        <PullToRefreshWrapper onRefresh={() => setSelectedSubject(null)} bg="#fff" style={{ flex: 1, overflow: 'hidden' }}>
+        <div className="flex-1 overflow-y-auto bg-white" style={{ minHeight: '100%' }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-2">
@@ -759,7 +782,7 @@ export default function NotesPage({ onBack }) {
                   className="px-4 py-2 rounded-xl text-white font-black tracking-wider active:opacity-80"
                   style={{ background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)`, fontFamily: MONO, fontSize: 10 }}
                 >
-                  + ADD
+                  +ADD
                 </button>
               )}
             </div>
@@ -796,6 +819,7 @@ export default function NotesPage({ onBack }) {
             </div>
           )}
         </div>
+        </PullToRefreshWrapper>
       </div>
 
       {/* ── 오버레이 ── */}

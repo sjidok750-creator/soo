@@ -5,6 +5,7 @@ import {
   serverTimestamp, doc, deleteDoc, updateDoc,
 } from 'firebase/firestore'
 import { DAILY_SUBJECTS, getDailySubject } from './subjectConfig'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 
 // ─── 카테고리 ─────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -602,8 +603,6 @@ export default function TaskManager({ onBack, nickname }) {
   const [selectedTask, setSelectedTask] = useState(null)
   const [editingTask,  setEditingTask]  = useState(null)
   const [error, setError]               = useState('')
-  const isRefreshing = usePullToRefresh()
-
   // Firestore 구독
   useEffect(() => {
     const q = query(collection(db, 'task-board'), orderBy('createdAt', 'desc'))
@@ -737,14 +736,8 @@ export default function TaskManager({ onBack, nickname }) {
   const isToday  = viewDate === today
 
   return (
+    <PullToRefreshWrapper onRefresh={() => setViewDate(getTodayISO())} bg="#F8F7F5">
     <div className="min-h-screen bg-stone-50 flex flex-col" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
-
-      {/* Pull-to-refresh 인디케이터 */}
-      {isRefreshing && (
-        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
-          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#E8694A' }} />
-        </div>
-      )}
 
       {/* ── 헤더 ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
@@ -987,5 +980,6 @@ export default function TaskManager({ onBack, nickname }) {
         <EditTaskSheet task={editingTask} onClose={() => setEditingTask(null)} />
       )}
     </div>
+    </PullToRefreshWrapper>
   )
 }
