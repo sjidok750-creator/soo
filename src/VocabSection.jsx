@@ -354,15 +354,15 @@ export default function VocabSection() {
               {/* 셔플 토글 — BACK 라인 오른쪽 */}
               <button
                 onClick={() => toggleShuffle(currentSession.words)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-150 active:scale-95"
                 style={{
                   backgroundColor: shuffledOrder ? CORAL : '#F1F5F9',
-                  border: `1px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
+                  border: `1.5px solid ${shuffledOrder ? CORAL : '#D1D5DB'}`,
+                  boxShadow: shuffledOrder ? `0 2px 8px rgba(232,105,74,0.35)` : 'none',
                 }}
               >
-                {/* 셔플 아이콘 */}
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                  stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke={shuffledOrder ? '#fff' : '#64748B'} strokeWidth="2.2"
                   strokeLinecap="round" strokeLinejoin="round"
                 >
                   <polyline points="16 3 21 3 21 8"/>
@@ -373,10 +373,10 @@ export default function VocabSection() {
                 <span
                   style={{
                     fontFamily: MONO,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: 900,
-                    letterSpacing: '0.08em',
-                    color: shuffledOrder ? '#fff' : '#94A3B8',
+                    letterSpacing: '0.06em',
+                    color: shuffledOrder ? '#fff' : '#64748B',
                   }}
                 >
                   {shuffledOrder ? 'ON' : 'SHUFFLE'}
