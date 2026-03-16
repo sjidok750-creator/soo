@@ -344,64 +344,47 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
-/* ── YouTube Player Sheet ── */
-function YouTubePlayerSheet({ song, onClose }) {
-  const q = encodeURIComponent(`${song.title} ${song.artist} official MV`)
-  const embedSrc = `https://www.youtube.com/embed?listType=search&list=${q}&autoplay=1`
-  const ytSearchUrl = `https://www.youtube.com/results?search_query=${q}`
-
+/* ── 잠뜰TV 유튜브 플레이어 바텀시트 ── */
+function YouTubeVideoSheet({ video, onClose }) {
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end"
-      style={{ backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div
-        className="relative w-full rounded-t-3xl overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #111827 0%, #0F172A 100%)', maxHeight: '88vh' }}
-      >
-        <div className="flex justify-center pt-3 pb-0">
+      <div className="relative w-full rounded-t-3xl overflow-hidden" style={{ background: '#0F172A', maxHeight: '90vh' }}>
+        <div className="flex justify-center pt-3">
           <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
         </div>
-        <div className="flex items-center gap-3 px-5 pt-4 pb-4">
-          <div className="relative flex-shrink-0">
-            {song.albumArt
-              ? <img src={song.albumArt} alt={song.title} className="w-14 h-14 rounded-2xl object-cover shadow-lg" />
-              : <div className="w-14 h-14 rounded-2xl bg-gray-700 flex items-center justify-center text-2xl">🎵</div>
-            }
-            <div
-              className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-lg flex items-center justify-center font-black text-white"
-              style={{ backgroundColor: song.rank <= 3 ? '#E8694A' : '#374151', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', boxShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
-            >{song.rank}</div>
+        <div className="flex items-center gap-3 px-5 pt-3 pb-3">
+          <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-md">
+            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-[15px] leading-tight truncate">{song.title}</p>
-            <p className="text-gray-400 text-xs mt-0.5 truncate">{song.artist}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(255,0,0,0.18)' }}>
-                <svg width="7" height="7" viewBox="0 0 10 10" fill="#FF4444"><polygon points="2,1 9,5 2,9" /></svg>
-                <span className="text-[9px] font-bold" style={{ color: '#FF6B6B', fontFamily: 'JetBrains Mono, monospace' }}>YouTube</span>
+            <p className="text-white font-bold text-sm leading-tight line-clamp-1">{video.title}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,0,0,0.2)' }}>
+                <svg width="6" height="6" viewBox="0 0 10 10" fill="#FF4444"><polygon points="2,1 9,5 2,9" /></svg>
+                <span className="text-[8px] font-bold" style={{ color: '#FF6B6B', fontFamily: 'JetBrains Mono, monospace' }}>잠뜰TV</span>
               </div>
-              <span className="text-[9px] text-gray-600" style={{ fontFamily: 'JetBrains Mono, monospace' }}>자동재생</span>
+              {video.pubDate && (
+                <span className="text-[8px] text-gray-600" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  {video.pubDate.slice(0, 10)}
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
-            >✕</button>
-            <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
-              className="text-[9px] underline"
-              style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'JetBrains Mono, monospace' }}
-            >YouTube로 →</a>
-          </div>
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+          >✕</button>
         </div>
         <div style={{ position: 'relative', paddingBottom: '56.25%', backgroundColor: '#000' }}>
           <iframe
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-            src={embedSrc}
-            title={`${song.title} - ${song.artist}`}
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+            title={video.title}
             allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -412,159 +395,69 @@ function YouTubePlayerSheet({ song, onClose }) {
   )
 }
 
-/* ── 한국 음원 차트 Top 10 ── */
-function KoreanMusicChart() {
-  const [charts, setCharts] = useState([])
+/* ── 잠뜰TV 최근 영상 썸네일 ── */
+const JAMDDAL_CH = 'UCg7rkxrTnIhiHEpXY1ec9NA'
+
+function JamDdalVideos({ onSelect }) {
+  const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
-  const [playingSong, setPlayingSong] = useState(null)
 
   useEffect(() => {
-    const today = new Date().toDateString()
-    const cacheKey = `kr-music-chart-${today}`
+    const cacheKey = `jamddal-${new Date().toDateString()}`
     const cached = sessionStorage.getItem(cacheKey)
     if (cached) {
-      try { setCharts(JSON.parse(cached)); setLoading(false); return } catch {}
+      try { setVideos(JSON.parse(cached)); setLoading(false); return } catch {}
     }
-
-    function getArt(url) {
-      if (!url) return null
-      // 다양한 URL 포맷 대응: {w}x{h}bb 템플릿, 100x100bb, 100x100 등
-      return url
-        .replace('{w}x{h}bb', '600x600bb')
-        .replace('{w}x{h}', '600x600')
-        .replace('100x100bb', '600x600bb')
-        .replace('100x100', '600x600')
-    }
-
-    async function fetchChart() {
-      // 1차: Apple Music Marketing Tools
-      try {
-        const r = await fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/10/songs.json')
-        if (r.ok) {
-          const data = await r.json()
-          const results = data?.feed?.results
-          if (results?.length) {
-            return results.slice(0, 10).map((s, i) => ({
-              rank: i + 1,
-              title: s.name,
-              artist: s.artistName,
-              albumArt: getArt(s.artworkUrl100) || s.artworkUrl100 || null,
-            }))
-          }
+    const rssUrl = encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${JAMDDAL_CH}`)
+    fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.status === 'ok' && data.items?.length) {
+          const vids = data.items.slice(0, 10).map(item => {
+            const id = item.link?.split('v=')[1]?.split('&')[0]
+            return { id, title: item.title, pubDate: item.pubDate,
+              thumbnail: id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null }
+          }).filter(v => v.id && v.thumbnail)
+          sessionStorage.setItem(cacheKey, JSON.stringify(vids))
+          setVideos(vids)
         }
-      } catch {}
-      // 2차: iTunes RSS (구형 엔드포인트)
-      try {
-        const r = await fetch('https://itunes.apple.com/kr/rss/topsongs/limit=10/json')
-        if (r.ok) {
-          const data = await r.json()
-          const entries = data?.feed?.entry
-          if (entries?.length) {
-            return entries.slice(0, 10).map((e, i) => ({
-              rank: i + 1,
-              title: e['im:name']?.label || '',
-              artist: e['im:artist']?.label || '',
-              albumArt: getArt(e['im:image']?.[2]?.label) || e['im:image']?.[2]?.label || null,
-            }))
-          }
-        }
-      } catch {}
-      return null
-    }
-
-    fetchChart().then(songs => {
-      if (songs) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(songs))
-        setCharts(songs)
-      }
-      setLoading(false)
-    })
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
-  function getRankStyle(rank) {
-    if (rank === 1) return { color: '#FFD700', textShadow: '0 0 12px rgba(255,215,0,0.8), 0 1px 6px rgba(0,0,0,1)' }
-    if (rank === 2) return { color: '#E8E8E8', textShadow: '0 0 8px rgba(200,200,200,0.6), 0 1px 6px rgba(0,0,0,1)' }
-    if (rank === 3) return { color: '#F4A460', textShadow: '0 0 8px rgba(205,127,50,0.7), 0 1px 6px rgba(0,0,0,1)' }
-    return { color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 6px rgba(0,0,0,1)' }
-  }
+  if (loading) return (
+    <div className="flex-1 flex items-center gap-2 overflow-hidden">
+      {[0,1,2,3].map(i => (
+        <div key={i} className="flex-shrink-0 rounded-xl bg-gray-100 animate-pulse" style={{ width: 72, height: 40 }} />
+      ))}
+    </div>
+  )
+
+  if (!videos.length) return (
+    <div className="flex-1 flex items-center">
+      <span className="text-[10px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>영상 로드 실패</span>
+    </div>
+  )
 
   return (
-    <>
-      <div className="mt-1 border-b border-gray-100/60">
-        <div className="flex items-center justify-between px-4 pt-3 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 rounded-full" style={{ backgroundColor: '#E8694A' }} />
-            <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#9CA3AF', fontFamily: 'JetBrains Mono, monospace' }}>Music Chart</span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ color: '#E8694A', backgroundColor: '#FFF3F0', fontFamily: 'JetBrains Mono, monospace' }}>Korea · Top 10</span>
-          </div>
-          <span className="text-[9px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>← swipe →</span>
-        </div>
-        <div
-          className="flex gap-3 px-4 pb-4 overflow-x-auto"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+    <div className="flex-1 flex items-center gap-2 overflow-hidden min-w-0">
+      {videos.map(video => (
+        <button
+          key={video.id}
+          onClick={() => onSelect(video)}
+          className="flex-shrink-0 relative rounded-xl overflow-hidden active:scale-95 transition-transform shadow-sm"
+          style={{ width: 72, height: 40 }}
         >
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: 108, scrollSnapAlign: 'start' }}>
-                  <div className="rounded-2xl bg-gray-100" style={{ width: 108, height: 162 }} />
-                  <div className="mt-2 h-2.5 bg-gray-100 rounded" style={{ width: '80%' }} />
-                  <div className="mt-1 h-2 bg-gray-100 rounded" style={{ width: '55%' }} />
-                </div>
-              ))
-            : charts.map(song => (
-                <button
-                  key={song.rank}
-                  onClick={() => setPlayingSong(song)}
-                  className="flex-shrink-0 text-left active:scale-95 transition-transform"
-                  style={{ width: 108, scrollSnapAlign: 'start' }}
-                >
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ width: 108, height: 162 }}>
-                    {song.albumArt
-                      ? <img
-                          src={song.albumArt}
-                          alt={song.title}
-                          className="w-full h-full object-cover"
-                          onError={e => {
-                            e.target.onerror = null
-                            e.target.style.display = 'none'
-                            e.target.nextSibling && (e.target.nextSibling.style.display = 'flex')
-                          }}
-                        />
-                      : null
-                    }
-                    <div className="w-full h-full items-center justify-center" style={{ backgroundColor: '#1F2937', display: song.albumArt ? 'none' : 'flex' }}>
-                      <span className="text-4xl">🎵</span>
-                    </div>
-                    {/* 상단 컬러 액센트 (1~3위) */}
-                    {song.rank <= 3 && (
-                      <div className="absolute top-0 left-0 right-0" style={{
-                        height: 3,
-                        background: song.rank === 1 ? 'linear-gradient(90deg,#FFD700,#FFA500)' : song.rank === 2 ? 'linear-gradient(90deg,#C0C0C0,#A8A8A8)' : 'linear-gradient(90deg,#CD7F32,#A0522D)',
-                      }} />
-                    )}
-                    {/* 순위 숫자 */}
-                    <div className="absolute top-0 left-0 px-2 pt-1.5">
-                      <span className="font-black leading-none" style={{ fontSize: song.rank === 10 ? 19 : 23, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.05em', ...getRankStyle(song.rank) }}>{song.rank}</span>
-                    </div>
-                    {/* 하단 그라데이션 */}
-                    <div className="absolute bottom-0 inset-x-0" style={{ height: '55%', background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.45) 55%,transparent 100%)' }} />
-                    {/* 플레이 버튼 */}
-                    <div className="absolute bottom-2 right-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                        <svg width="7" height="8" viewBox="0 0 8 10" fill="white"><polygon points="1,0.5 7.5,5 1,9.5" /></svg>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-[11px] font-bold text-gray-800 leading-tight line-clamp-1 px-0.5">{song.title}</p>
-                  <p className="mt-0.5 text-[10px] text-gray-400 leading-tight line-clamp-1 px-0.5">{song.artist}</p>
-                </button>
-              ))
-          }
-          <div className="flex-shrink-0 w-4" />
-        </div>
-      </div>
-      {playingSong && <YouTubePlayerSheet song={playingSong} onClose={() => setPlayingSong(null)} />}
-    </>
+          <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.22)' }}>
+            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,0,0,0.88)' }}>
+              <svg width="6" height="7" viewBox="0 0 7 8" fill="white"><polygon points="1,0.5 6.5,4 1,7.5" /></svg>
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -1217,6 +1110,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
+  const [playingVideo, setPlayingVideo] = useState(null)
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
   const [todosLoading, setTodosLoading] = useState(false)
@@ -1378,13 +1272,18 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         })}
       </div>
 
-      {/* D-day */}
-      <div className="px-5 py-4 flex items-stretch justify-end border-b border-gray-100/60" style={{ minHeight: 72 }}>
+      {/* 잠뜰TV 최근 영상 + D-day */}
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100/60" style={{ minHeight: 72 }}>
+        <div className="flex-1 flex flex-col gap-1.5 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1">
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="#FF0000"><polygon points="2,1 9,5 2,9" /></svg>
+            <span className="text-[9px] font-bold tracking-widest" style={{ color: '#9CA3AF', fontFamily: 'JetBrains Mono, monospace' }}>잠뜰TV</span>
+          </div>
+          <JamDdalVideos onSelect={setPlayingVideo} />
+        </div>
+        <div className="w-px self-stretch bg-gray-100 flex-shrink-0" />
         <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
-
-      {/* 한국 음원 차트 Top 10 */}
-      <KoreanMusicChart />
 
       {/* Daily Board */}
       <DailyBoard
@@ -1399,6 +1298,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
       {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} date={selectedDate} />}
+      {playingVideo && <YouTubeVideoSheet video={playingVideo} onClose={() => setPlayingVideo(null)} />}
       <ToastContainer />
 
       {/* 하단 네비게이션 바 */}
