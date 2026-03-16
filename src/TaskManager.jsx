@@ -81,6 +81,101 @@ function getTaskDate(task) {
   return getTodayISO()
 }
 
+// ─── 날짜 탭 스트립 ───────────────────────────────────────────────
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+function DateTabStrip({ viewDate, tasks, onSelect }) {
+  const today    = getTodayISO()
+  const scrollRef = useRef()
+
+  // today ±7 = 15 tabs
+  const dates = Array.from({ length: 15 }, (_, i) => addDays(today, i - 7))
+
+  // task count per date (dot indicator)
+  const countByDate = tasks.reduce((acc, t) => {
+    const d = getTaskDate(t); acc[d] = (acc[d] || 0) + 1; return acc
+  }, {})
+
+  // auto-scroll active tab to center
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const active = scrollRef.current.querySelector('[data-active="true"]')
+    if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [viewDate])
+
+  return (
+    <div
+      ref={scrollRef}
+      className="flex overflow-x-auto gap-1.5 px-3 py-2.5"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+    >
+      {dates.map(iso => {
+        const d = new Date(iso + 'T12:00:00')
+        const dayNum  = parseInt(iso.split('-')[2])
+        const isSelected = iso === viewDate
+        const isToday    = iso === today
+        const hasTasks   = !!countByDate[iso]
+        const isPast     = iso < today
+
+        return (
+          <button
+            key={iso}
+            data-active={String(isSelected)}
+            onClick={() => onSelect(iso)}
+            className="flex flex-col items-center flex-shrink-0 rounded-2xl transition-all active:scale-95"
+            style={{
+              minWidth: isToday ? 46 : 38,
+              padding: isToday ? '7px 6px 5px' : '6px 5px 4px',
+              backgroundColor: isSelected ? '#E8694A' : isToday ? '#FFF3F0' : '#F9FAFB',
+              border: `1.5px solid ${isSelected ? '#E8694A' : isToday ? '#FECDC5' : '#E5E7EB'}`,
+              opacity: isPast && !isSelected && !hasTasks ? 0.5 : 1,
+            }}
+          >
+            <span
+              className="text-[8px] font-bold uppercase leading-none"
+              style={{
+                color: isSelected ? 'rgba(255,255,255,0.8)' : isToday ? '#E8694A' : '#9CA3AF',
+                fontFamily: 'JetBrains Mono, monospace',
+              }}
+            >
+              {DAYS_SHORT[d.getDay()]}
+            </span>
+            <span
+              className="font-black leading-none mt-1"
+              style={{
+                fontSize: isToday ? 17 : 14,
+                color: isSelected ? 'white' : isToday ? '#E8694A' : '#374151',
+                fontFamily: 'JetBrains Mono, monospace',
+              }}
+            >
+              {dayNum}
+            </span>
+            {isToday && (
+              <span
+                className="text-[7px] font-black mt-0.5 leading-none tracking-wide"
+                style={{
+                  color: isSelected ? 'rgba(255,255,255,0.9)' : '#E8694A',
+                  fontFamily: 'JetBrains Mono, monospace',
+                }}
+              >
+                TODAY
+              </span>
+            )}
+            <div className="h-1 flex items-center justify-center mt-0.5">
+              {hasTasks && (
+                <div
+                  className="w-[5px] h-[5px] rounded-full"
+                  style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.75)' : '#E8694A' }}
+                />
+              )}
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── 커스텀 체크박스 ──────────────────────────────────────────────
 function Checkbox({ checked, onChange }) {
   return (
@@ -567,36 +662,8 @@ export default function TaskManager({ onBack, nickname }) {
         </div>
       )}
 
-      {/* ── 날짜 네비게이션 ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <button onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-full flex items-center justify-center active:bg-gray-100 transition-colors"
-          style={{ border: '1.5px solid #E5E7EB' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-
-        <div className="flex flex-col items-center">
-          <span className={`text-[13px] font-black ${isToday ? '' : 'text-gray-600'}`}
-            style={{ color: isToday ? '#E8694A' : undefined, fontFamily: 'JetBrains Mono, monospace' }}>
-            {fmtViewDate(viewDate)}
-          </span>
-          {visibleTasks.length > 0 && (
-            <span className="text-[9px] text-gray-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-              {visibleTasks.filter(t => t.done).length}/{visibleTasks.length} done
-            </span>
-          )}
-        </div>
-
-        <button onClick={() => navigate(1)}
-          className="w-8 h-8 rounded-full flex items-center justify-center active:bg-gray-100 transition-colors"
-          style={{ border: '1.5px solid #E5E7EB' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
+      {/* ── 날짜 탭 스트립 ───────────────────────────────────────── */}
+      <DateTabStrip viewDate={viewDate} tasks={tasks} onSelect={setViewDate} />
 
       {/* ── 테이블 (스와이프 컨테이너) ─────────────────────────────── */}
       <div className="overflow-hidden px-4 pb-5 flex-1">
@@ -604,18 +671,12 @@ export default function TaskManager({ onBack, nickname }) {
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
 
             {/* 테이블 헤더 */}
-            <div className="bg-gray-900 text-white">
-              <div className="flex items-end px-3 pt-2.5">
-                <div className="px-3 py-1 rounded-t-lg text-[11px] font-black"
-                  style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.04em' }}>
-                  {fmtShort(viewDate) || fmtViewDate(viewDate)}
-                </div>
-              </div>
-              <div className="grid border-t border-gray-700" style={{ gridTemplateColumns: gridCols }}>
-                <div className="px-2 py-2 text-[10px] font-bold text-gray-400 border-r border-gray-700" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Subj.</div>
-                <div className="px-2 py-2 text-[10px] font-bold text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>The task</div>
-                <div className="px-1 py-2 text-[10px] font-bold text-gray-400 border-l border-gray-700 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>D/L</div>
-                <div className="px-1 py-2 text-[10px] font-bold text-gray-400 border-l border-gray-700 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Attc.</div>
+            <div className="bg-gray-50 border-b border-gray-100">
+              <div className="grid" style={{ gridTemplateColumns: gridCols }}>
+                <div className="px-2 py-2.5 text-[10px] font-bold text-gray-400 border-r border-gray-100" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Subj.</div>
+                <div className="px-2 py-2.5 text-[10px] font-bold text-gray-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>The task</div>
+                <div className="px-1 py-2.5 text-[10px] font-bold text-gray-400 border-l border-gray-100 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>D/L</div>
+                <div className="px-1 py-2.5 text-[10px] font-bold text-gray-400 border-l border-gray-100 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Attc.</div>
               </div>
             </div>
 

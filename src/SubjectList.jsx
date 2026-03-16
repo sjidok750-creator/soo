@@ -1134,7 +1134,6 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
           <TodoList todos={todos} />
         )}
       </div>
-      <p className="text-center text-[9px] text-gray-200 pb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>← 스와이프로 날짜 이동 →</p>
     </div>
   )
 }
