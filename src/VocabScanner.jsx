@@ -1,43 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
-import { db } from './firebase'
+import { db, storage } from './firebase'
 import {
   collection, addDoc, query, onSnapshot, orderBy,
   serverTimestamp, writeBatch, doc
 } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 
-// ─── IndexedDB (이미지 로컬 저장) ────────────────────────────────
-const IDB_NAME = 'studybuddy-vocab-imgs'
-const IDB_VER = 1
-const IDB_STORE = 'images'
+// ─── Firebase Storage 업로드 ──────────────────────────────────────
+async function uploadImage(file) {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `vocab-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const storageRef = ref(storage, path)
+  await uploadBytes(storageRef, file)
+  const url = await getDownloadURL(storageRef)
+  return { url, path }
+}
 
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, IDB_VER)
-    req.onupgradeneeded = (e) =>
-      e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id', autoIncrement: true })
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-async function idbSave(blob) {
-  const idb = await openIDB()
-  return new Promise((resolve, reject) => {
-    const tx = idb.transaction(IDB_STORE, 'readwrite')
-    const req = tx.objectStore(IDB_STORE).add({ blob })
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-    tx.oncomplete = () => idb.close()
-  })
-}
-async function idbGet(id) {
-  const idb = await openIDB()
-  return new Promise((resolve, reject) => {
-    const tx = idb.transaction(IDB_STORE, 'readonly')
-    const req = tx.objectStore(IDB_STORE).get(Number(id))
-    req.onsuccess = () => resolve(req.result?.blob || null)
-    req.onerror = () => reject(req.error)
-    tx.oncomplete = () => idb.close()
-  })
+async function deleteImage(storagePath) {
+  if (!storagePath) return
+  try { await deleteObject(ref(storage, storagePath)) } catch (_) { /* 이미 없으면 무시 */ }
 }
 
 // ─── Gemini API ───────────────────────────────────────────────────
@@ -130,22 +111,13 @@ function getTodayISO() {
 }
 
 // ─── ThumbnailImage ───────────────────────────────────────────────
-function ThumbnailImage({ imageId, className = '', onClick }) {
-  const [url, setUrl] = useState(null)
-  useEffect(() => {
-    let obj
-    idbGet(imageId).then(blob => {
-      if (blob) { obj = URL.createObjectURL(blob); setUrl(obj) }
-    })
-    return () => { if (obj) URL.revokeObjectURL(obj) }
-  }, [imageId])
-
-  if (!url) return (
+function ThumbnailImage({ imageUrl, className = '', onClick }) {
+  if (!imageUrl) return (
     <div className={`bg-gray-100 flex items-center justify-center ${className}`}>
       <span className="text-2xl opacity-20">📷</span>
     </div>
   )
-  return <img src={url} alt="스캔" className={`object-cover ${className}`} onClick={onClick} />
+  return <img src={imageUrl} alt="스캔" className={`object-cover ${className}`} onClick={onClick} />
 }
 
 // ─── 단어 표 (반응형: 모바일 두줄 / 데스크톱 4열) ────────────────
@@ -398,10 +370,10 @@ export default function VocabScanner({ onBack, nickname }) {
         r.readAsDataURL(file)
       })
       const result = await analyzeVocabImage(base64, file.type || 'image/jpeg')
-      const imageId = await idbSave(file)
+      const { url: imageUrl, path: storagePath } = await uploadImage(file)
       const today = getTodayISO()
       await addDoc(collection(db, 'vocab-scans'), {
-        date: today, imageId,
+        date: today, imageUrl, storagePath,
         format: result.format, words: result.words,
         author: nickname || '익명', createdAt: serverTimestamp(),
       })
@@ -417,7 +389,9 @@ export default function VocabScanner({ onBack, nickname }) {
   const handleDeleteFolder = async (date, e) => {
     e.stopPropagation()
     if (!window.confirm(`${date} 폴더를 삭제하시겠습니까?`)) return
-    await deleteScansForDate(scansByDate[date] || [])
+    const dateScans = scansByDate[date] || []
+    await Promise.all(dateScans.map(s => deleteImage(s.storagePath)))
+    await deleteScansForDate(dateScans)
     if (expandedDate === date) setExpandedDate(null)
     if (selectedScan?.date === date) setSelectedScan(null)
   }
@@ -425,6 +399,7 @@ export default function VocabScanner({ onBack, nickname }) {
   // 개별 스캔 삭제
   const handleDeleteScan = async (scan, e) => {
     e.stopPropagation()
+    await deleteImage(scan.storagePath)
     const batch = writeBatch(db)
     batch.delete(doc(db, 'vocab-scans', scan.id))
     await batch.commit()
@@ -432,15 +407,11 @@ export default function VocabScanner({ onBack, nickname }) {
   }
 
   // 이미지 전체보기
-  const handleViewImage = async (imageId) => {
-    const blob = await idbGet(imageId)
-    if (blob) setViewingImageUrl(URL.createObjectURL(blob))
+  const handleViewImage = (imageUrl) => {
+    if (imageUrl) setViewingImageUrl(imageUrl)
     else setError('원본 이미지를 찾을 수 없습니다.')
   }
-  const closeViewer = () => {
-    if (viewingImageUrl) URL.revokeObjectURL(viewingImageUrl)
-    setViewingImageUrl(null)
-  }
+  const closeViewer = () => setViewingImageUrl(null)
 
   // 폴더 아코디언 토글
   const toggleFolder = (date) => {
@@ -582,7 +553,7 @@ export default function VocabScanner({ onBack, nickname }) {
                               : '2px solid #F1F5F9',
                           }}
                           onClick={() => setSelectedScan(scan)}
-                          onDoubleClick={() => handleViewImage(scan.imageId)}
+                          onDoubleClick={() => handleViewImage(scan.imageUrl)}
                         >
                           {/* 삭제 X — 좌상단 */}
                           <button
@@ -597,7 +568,7 @@ export default function VocabScanner({ onBack, nickname }) {
 
                           {/* 썸네일 이미지 */}
                           <div className="w-full bg-gray-100" style={{ aspectRatio: '4/3' }}>
-                            <ThumbnailImage imageId={scan.imageId} className="w-full h-full" />
+                            <ThumbnailImage imageUrl={scan.imageUrl} className="w-full h-full" />
                           </div>
 
                           {/* 단어 수 배지 */}
