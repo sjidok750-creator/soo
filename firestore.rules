@@ -16,5 +16,8 @@ service cloud.firestore {
     match /task-board/{id} {
       allow read, write: if true;
     }
+    match /notes-media/{id} {
+      allow read, write: if true;
+    }
   }
 }
