@@ -1,24 +1,28 @@
 import { useState, useEffect, useRef } from 'react'
-import { db, storage } from './firebase'
+import { db } from './firebase'
 import {
   collection, addDoc, query, onSnapshot, orderBy,
   serverTimestamp, writeBatch, doc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 
-// ─── Firebase Storage 업로드 ──────────────────────────────────────
-async function uploadImage(file) {
-  const ext = file.name.split('.').pop() || 'jpg'
-  const path = `vocab-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  const storageRef = ref(storage, path)
-  await uploadBytes(storageRef, file)
-  const url = await getDownloadURL(storageRef)
-  return { url, path }
-}
-
-async function deleteImage(storagePath) {
-  if (!storagePath) return
-  try { await deleteObject(ref(storage, storagePath)) } catch (_) { /* 이미 없으면 무시 */ }
+// ─── 이미지 압축 (Canvas → base64, ~100KB 이하) ───────────────────
+async function compressImage(file, maxPx = 900, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const obj = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(obj)
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = reject
+    img.src = obj
+  })
 }
 
 // ─── Gemini API ───────────────────────────────────────────────────
@@ -370,10 +374,10 @@ export default function VocabScanner({ onBack, nickname }) {
         r.readAsDataURL(file)
       })
       const result = await analyzeVocabImage(base64, file.type || 'image/jpeg')
-      const { url: imageUrl, path: storagePath } = await uploadImage(file)
+      const imageUrl = await compressImage(file)
       const today = getTodayISO()
       await addDoc(collection(db, 'vocab-scans'), {
-        date: today, imageUrl, storagePath,
+        date: today, imageUrl,
         format: result.format, words: result.words,
         author: nickname || '익명', createdAt: serverTimestamp(),
       })
@@ -389,9 +393,7 @@ export default function VocabScanner({ onBack, nickname }) {
   const handleDeleteFolder = async (date, e) => {
     e.stopPropagation()
     if (!window.confirm(`${date} 폴더를 삭제하시겠습니까?`)) return
-    const dateScans = scansByDate[date] || []
-    await Promise.all(dateScans.map(s => deleteImage(s.storagePath)))
-    await deleteScansForDate(dateScans)
+    await deleteScansForDate(scansByDate[date] || [])
     if (expandedDate === date) setExpandedDate(null)
     if (selectedScan?.date === date) setSelectedScan(null)
   }
@@ -399,7 +401,6 @@ export default function VocabScanner({ onBack, nickname }) {
   // 개별 스캔 삭제
   const handleDeleteScan = async (scan, e) => {
     e.stopPropagation()
-    await deleteImage(scan.storagePath)
     const batch = writeBatch(db)
     batch.delete(doc(db, 'vocab-scans', scan.id))
     await batch.commit()
