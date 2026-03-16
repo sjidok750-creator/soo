@@ -62,9 +62,9 @@ function MediaPickerSheet({ onClose, onPick }) {
               <span className="text-base font-semibold text-gray-800">{label}</span>
             </button>
           ))}
-          <input ref={photoRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleInput} />
-          <input ref={galleryRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleInput} />
-          <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleInput} />
+          <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInput} />
+          <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleInput} />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleInput} />
         </div>
         <div className="px-4 pb-2">
           <button className="w-full py-3.5 rounded-2xl text-gray-500 font-semibold text-sm bg-gray-100 active:bg-gray-200 transition" onClick={onClose}>취소</button>
@@ -78,14 +78,10 @@ function MediaPickerSheet({ onClose, onPick }) {
 function UploadSheet({ file, dataURL, uploading, onClose, onSave }) {
   const [memo, setMemo] = useState('')
   const [subject, setSubject] = useState('')
-  const isVideo = file?.type?.startsWith('video/')
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#000' }}>
       <div className="flex-1 relative flex items-center justify-center overflow-hidden" style={{ background: '#111' }}>
-        {isVideo
-          ? <video src={dataURL} className="w-full h-full object-contain" controls />
-          : <img src={dataURL} alt="" className="w-full h-full object-contain" />}
+        <img src={dataURL} alt="" className="w-full h-full object-contain" />
         <button className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose} disabled={uploading}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
@@ -132,14 +128,9 @@ function UploadSheet({ file, dataURL, uploading, onClose, onSave }) {
 
 // ── 전체화면 모달 ─────────────────────────────────────────────────
 function FullscreenModal({ item, onClose }) {
-  const isVideo = item.mimeType?.startsWith('video/')
-  const src = item.storageURL
   return (
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={onClose}>
-      {isVideo
-        ? <video src={src} className="w-full h-full object-contain" controls autoPlay
-            onClick={e => e.stopPropagation()} />
-        : <img src={src} alt="" className="w-full h-full object-contain" />}
+      <img src={item.storageURL} alt="" className="w-full h-full object-contain" />
       <button className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm"
         onClick={onClose}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
@@ -297,24 +288,8 @@ function EditNoteSheet({ item, onClose, onSave }) {
 
 // ── 포스트 카드 ──────────────────────────────────────────────────
 function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onToggleBookmark, onShare, onOpenComments, onFullscreen, onLongPress }) {
-  const isVideo = item.mimeType?.startsWith('video/')
   const pressTimer = useRef(null)
   const lastTapRef = useRef(0)
-  const videoRef = useRef(null)
-
-  // 비디오 자동재생 (muted, loop)
-  useEffect(() => {
-    if (!isVideo || !videoRef.current) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) videoRef.current?.play().catch(() => {})
-        else videoRef.current?.pause()
-      },
-      { threshold: 0.3 }
-    )
-    observer.observe(videoRef.current)
-    return () => observer.disconnect()
-  }, [isVideo])
 
   // 롱프레스 → full item 전달
   function handlePointerDown() {
@@ -335,35 +310,20 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
   }
 
   const commentCount = item.comments?.length || 0
-  const src = item.storageURL
 
   return (
     <div className="border-b border-gray-100">
-      {/* 이미지/영상 */}
+      {/* 이미지 */}
       <div className="w-full bg-gray-100 relative" style={{ aspectRatio: '1 / 1' }}>
-        {isVideo ? (
-          <video
-            ref={videoRef}
-            src={src}
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover cursor-pointer"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onClick={() => onFullscreen(item)}
-          />
-        ) : (
-          <img
-            src={src}
-            alt={item.memo || ''}
-            className="w-full h-full object-cover cursor-pointer"
-            loading="lazy"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onClick={handleImageTap}
-          />
-        )}
+        <img
+          src={item.storageURL}
+          alt={item.memo || ''}
+          className="w-full h-full object-cover cursor-pointer"
+          loading="lazy"
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onClick={handleImageTap}
+        />
       </div>
 
       {/* 액션 아이콘 바 */}
