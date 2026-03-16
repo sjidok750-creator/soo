@@ -128,10 +128,6 @@ function getTodayISO() {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
 }
-function formatDateKo(iso) {
-  const [y, m, d] = iso.split('-')
-  return `${y}년 ${m}월 ${d}일`
-}
 
 // ─── ThumbnailImage ───────────────────────────────────────────────
 function ThumbnailImage({ imageId, className = '', onClick }) {
@@ -146,7 +142,7 @@ function ThumbnailImage({ imageId, className = '', onClick }) {
 
   if (!url) return (
     <div className={`bg-gray-100 flex items-center justify-center ${className}`}>
-      <span className="text-xl opacity-30">📷</span>
+      <span className="text-2xl opacity-20">📷</span>
     </div>
   )
   return <img src={url} alt="스캔" className={`object-cover ${className}`} onClick={onClick} />
@@ -258,45 +254,8 @@ function VocabTable({ scan }) {
   )
 }
 
-// ─── 폴더 내 파일 목록 ────────────────────────────────────────────
-function FileListView({ date, scans, onSelectScan, onViewImage }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-400 mb-3">{formatDateKo(date)} · {scans.length}개 파일</p>
-      <div className="grid grid-cols-2 gap-3">
-        {scans.map((scan) => (
-          <div
-            key={scan.id}
-            className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
-            onClick={() => onSelectScan(scan)}
-          >
-            <div className="h-32 overflow-hidden bg-gray-50">
-              <ThumbnailImage
-                imageId={scan.imageId}
-                className="w-full h-full"
-                onClick={e => { e.stopPropagation(); onViewImage(scan.imageId) }}
-              />
-            </div>
-            <div className="p-3">
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                style={{
-                  backgroundColor: scan.format === 'table' ? '#EFF6FF' : '#F0FDF4',
-                  color: scan.format === 'table' ? '#2563EB' : '#059669',
-                }}>
-                {scan.format === 'table' ? '표 형식' : '단어 목록'}
-              </span>
-              <p className="text-sm font-bold text-gray-800 mt-1">{scan.words.length}개 단어</p>
-              <p className="text-xs text-gray-400 mt-0.5">탭하여 단어 보기</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── 빈 화면 ─────────────────────────────────────────────────────
-function EmptyState({ onAdd }) {
+function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -307,29 +266,50 @@ function EmptyState({ onAdd }) {
   )
 }
 
-// ─── 추가 메뉴 (사진찍기 / 가져오기) ─────────────────────────────
-function AddMenu({ onCamera, onGallery, onClose }) {
+// ─── 아이폰 스타일 추가 메뉴 ──────────────────────────────────────
+function AddMenu({ anchor, onCamera, onGallery, onFiles, onClose }) {
+  const MENU_W = 172
+  // anchor: { top, right } — 메뉴 우측이 버튼 좌측에 맞닿도록
+  const style = {
+    position: 'fixed',
+    top: anchor.top,
+    right: anchor.right,
+    width: MENU_W,
+    zIndex: 60,
+  }
+
   return (
-    <div className="fixed inset-0 z-40" onClick={onClose}>
+    <div className="fixed inset-0 z-50" onClick={onClose}>
       <div
-        className="absolute bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-        style={{ bottom: 80, left: '50%', transform: 'translateX(-50%)', width: 200 }}
+        className="absolute bg-white rounded-2xl shadow-2xl overflow-hidden"
+        style={{ ...style, border: '1px solid rgba(0,0,0,0.08)' }}
         onClick={e => e.stopPropagation()}
       >
+        {/* 사진 찍기 */}
         <button
           onClick={onCamera}
-          className="w-full px-5 py-4 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
         >
-          <span className="text-xl">📷</span>
-          <span className="text-sm font-medium text-gray-800">사진 찍기</span>
+          <span className="text-lg leading-none">📷</span>
+          <span className="text-[13px] font-semibold text-gray-900">사진 찍기</span>
         </button>
-        <div className="border-t border-gray-100" />
+        <div className="border-t border-gray-100 mx-3" />
+        {/* 사진 보관함 */}
         <button
           onClick={onGallery}
-          className="w-full px-5 py-4 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
         >
-          <span className="text-xl">🖼️</span>
-          <span className="text-sm font-medium text-gray-800">사진 가져오기</span>
+          <span className="text-lg leading-none">🖼️</span>
+          <span className="text-[13px] font-semibold text-gray-900">사진 보관함</span>
+        </button>
+        <div className="border-t border-gray-100 mx-3" />
+        {/* 파일 선택 */}
+        <button
+          onClick={onFiles}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
+        >
+          <span className="text-lg leading-none">📂</span>
+          <span className="text-[13px] font-semibold text-gray-900">파일 선택</span>
         </button>
       </div>
     </div>
@@ -339,16 +319,18 @@ function AddMenu({ onCamera, onGallery, onClose }) {
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
 export default function VocabScanner({ onBack, nickname }) {
   const [scans, setScans] = useState([])
-  const [selectedScan, setSelectedScan] = useState(null)
-  const [sidebarMode, setSidebarMode] = useState('folders')
-  const [sidebarDate, setSidebarDate] = useState(null)
-  const [mainDate, setMainDate] = useState(null)
+  const [expandedDate, setExpandedDate] = useState(null)   // 사이드바 아코디언
+  const [selectedScan, setSelectedScan] = useState(null)   // 좌측 단어 표시
   const [viewingImageUrl, setViewingImageUrl] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
   const [showAddMenu, setShowAddMenu] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, right: 0 })
+
+  const addBtnRef = useRef()
   const cameraRef = useRef()
   const galleryRef = useRef()
+  const filesRef = useRef()
 
   // Firestore 구독
   useEffect(() => {
@@ -364,6 +346,18 @@ export default function VocabScanner({ onBack, nickname }) {
     return acc
   }, {})
   const sortedDates = Object.keys(scansByDate).sort((a, b) => b.localeCompare(a))
+
+  // +ADD 버튼 클릭 → 메뉴 위치 계산
+  const openAddMenu = () => {
+    const rect = addBtnRef.current?.getBoundingClientRect()
+    if (rect) {
+      setMenuAnchor({
+        top: rect.top,
+        right: window.innerWidth - rect.left + 6,
+      })
+    }
+    setShowAddMenu(true)
+  }
 
   // 사진 처리 공통
   const handleFile = async (e) => {
@@ -388,8 +382,7 @@ export default function VocabScanner({ onBack, nickname }) {
         format: result.format, words: result.words,
         author: nickname || '익명', createdAt: serverTimestamp(),
       })
-      setSidebarDate(today); setSidebarMode('files')
-      setMainDate(today); setSelectedScan(null)
+      setExpandedDate(today)
     } catch (err) {
       console.error(err); setError(err.message)
     } finally {
@@ -397,15 +390,25 @@ export default function VocabScanner({ onBack, nickname }) {
     }
   }
 
-  // 날짜 폴더 삭제
+  // 날짜 폴더 전체 삭제
   const handleDeleteFolder = async (date, e) => {
     e.stopPropagation()
     if (!window.confirm(`${date} 폴더를 삭제하시겠습니까?`)) return
     await deleteScansForDate(scansByDate[date] || [])
-    if (mainDate === date) { setMainDate(null); setSelectedScan(null) }
-    if (sidebarDate === date) { setSidebarDate(null); setSidebarMode('folders') }
+    if (expandedDate === date) setExpandedDate(null)
+    if (selectedScan?.date === date) setSelectedScan(null)
   }
 
+  // 개별 스캔 삭제
+  const handleDeleteScan = async (scan, e) => {
+    e.stopPropagation()
+    const batch = writeBatch(db)
+    batch.delete(doc(db, 'vocab-scans', scan.id))
+    await batch.commit()
+    if (selectedScan?.id === scan.id) setSelectedScan(null)
+  }
+
+  // 이미지 전체보기
   const handleViewImage = async (imageId) => {
     const blob = await idbGet(imageId)
     if (blob) setViewingImageUrl(URL.createObjectURL(blob))
@@ -416,12 +419,22 @@ export default function VocabScanner({ onBack, nickname }) {
     setViewingImageUrl(null)
   }
 
-  const mainScans = mainDate ? (scansByDate[mainDate] || []) : []
+  // 폴더 아코디언 토글
+  const toggleFolder = (date) => {
+    if (expandedDate === date) {
+      setExpandedDate(null)
+    } else {
+      setExpandedDate(date)
+      // 폴더 열 때 첫 스캔 자동 선택
+      const first = scansByDate[date]?.[0]
+      if (first) setSelectedScan(first)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
 
-      {/* 헤더 — 초기화면과 동일한 스타일 */}
+      {/* 헤더 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <button
@@ -450,12 +463,12 @@ export default function VocabScanner({ onBack, nickname }) {
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
 
         {/* 좌측 75% */}
-        <div className="overflow-y-auto flex flex-col" style={{ width: '80%' }}>
+        <div className="overflow-y-auto flex flex-col" style={{ width: '75%' }}>
           {selectedScan && (
             <div className="sticky top-0 z-10 flex items-center px-4 py-2.5 border-b border-gray-100"
               style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
               <button
-                onClick={() => { setSelectedScan(null); setMainDate(null) }}
+                onClick={() => setSelectedScan(null)}
                 className="flex items-center gap-1.5 text-[11px] font-bold active:opacity-60 transition-opacity"
                 style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
               >
@@ -470,18 +483,19 @@ export default function VocabScanner({ onBack, nickname }) {
             {selectedScan ? (
               <VocabTable scan={selectedScan} />
             ) : (
-              <EmptyState onAdd={() => setShowAddMenu(true)} />
+              <EmptyState />
             )}
           </div>
         </div>
 
-        {/* 우측 25% */}
-        <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '20%' }}>
+        {/* 우측 25% — 사이드바 */}
+        <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '25%' }}>
 
           {/* +ADD 버튼 */}
           <div className="flex-shrink-0 px-2 py-2 border-b border-gray-100">
             <button
-              onClick={() => setShowAddMenu(true)}
+              ref={addBtnRef}
+              onClick={openAddMenu}
               className="w-full flex items-center justify-center gap-1 py-1.5 rounded-full text-white text-[10px] font-black shadow-sm active:opacity-75 transition-opacity"
               style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
             >
@@ -492,41 +506,81 @@ export default function VocabScanner({ onBack, nickname }) {
             </button>
           </div>
 
-          {/* 날짜 폴더 목록 */}
-          <div className="flex flex-col gap-1.5 px-2 pb-2 pt-2 overflow-y-auto">
+          {/* 날짜 폴더 아코디언 목록 */}
+          <div className="flex flex-col pb-3">
             {sortedDates.length === 0 && (
-              <p className="text-[9px] text-center text-gray-300 mt-4 leading-relaxed">폴더 없음</p>
+              <p className="text-[9px] text-center text-gray-300 mt-6 leading-relaxed">폴더 없음</p>
             )}
             {sortedDates.map(date => {
               const [, m, d] = date.split('-')
-              const isSelected = mainDate === date
+              const isExpanded = expandedDate === date
+              const dateScans = scansByDate[date] || []
               return (
-                <div key={date} className="relative">
-                  <button
-                    onClick={(e) => handleDeleteFolder(date, e)}
-                    className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 text-white flex items-center justify-center transition-colors"
-                    style={{ fontSize: 9, lineHeight: 1 }}
-                  >
-                    ✕
-                  </button>
-                  <button
-                    onClick={() => {
-                      const scansForDate = scansByDate[date] || []
-                      if (scansForDate.length > 0) {
-                        setMainDate(date)
-                        setSelectedScan(scansForDate[0])
-                      }
-                    }}
-                    className="w-full rounded-xl p-2 text-center transition-all border active:opacity-70"
-                    style={{
-                      borderColor: isSelected ? '#E8694A' : '#F1F5F9',
-                      backgroundColor: isSelected ? '#FFF3F0' : '#F8FAFC',
-                    }}
-                  >
-                    <div className="text-lg">📁</div>
-                    <div className="text-[10px] font-bold" style={{ color: isSelected ? '#E8694A' : '#374151' }}>{m}/{d}</div>
-                    <div className="text-[9px] text-gray-400">{scansByDate[date].length}개</div>
-                  </button>
+                <div key={date}>
+                  {/* 폴더 버튼 */}
+                  <div className="relative px-2 pt-2">
+                    {/* 폴더 삭제 X */}
+                    <button
+                      onClick={(e) => handleDeleteFolder(date, e)}
+                      className="absolute top-3 left-3 z-10 w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 text-white flex items-center justify-center transition-colors"
+                      style={{ fontSize: 8, lineHeight: 1 }}
+                    >
+                      ✕
+                    </button>
+                    <button
+                      onClick={() => toggleFolder(date)}
+                      className="w-full rounded-xl p-2 pt-2.5 text-center transition-all border active:opacity-70"
+                      style={{
+                        borderColor: isExpanded ? '#E8694A' : '#F1F5F9',
+                        backgroundColor: isExpanded ? '#FFF3F0' : '#F8FAFC',
+                      }}
+                    >
+                      <div className="text-base">{isExpanded ? '📂' : '📁'}</div>
+                      <div className="text-[10px] font-bold mt-0.5" style={{ color: isExpanded ? '#E8694A' : '#374151' }}>{m}/{d}</div>
+                      <div className="text-[9px] text-gray-400">{dateScans.length}개</div>
+                    </button>
+                  </div>
+
+                  {/* 아코디언 — 파일 썸네일들 */}
+                  {isExpanded && (
+                    <div className="px-2 pt-1.5 pb-1 flex flex-col gap-1.5">
+                      {dateScans.map((scan) => (
+                        <div
+                          key={scan.id}
+                          className="relative rounded-xl overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
+                          style={{
+                            border: selectedScan?.id === scan.id
+                              ? '2.5px solid #E8694A'
+                              : '2px solid #F1F5F9',
+                          }}
+                          onClick={() => setSelectedScan(scan)}
+                          onDoubleClick={() => handleViewImage(scan.imageId)}
+                        >
+                          {/* 삭제 X — 좌상단 */}
+                          <button
+                            onClick={(e) => handleDeleteScan(scan, e)}
+                            className="absolute top-1 left-1 z-10 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+                            style={{ backgroundColor: 'rgba(0,0,0,0.45)', fontSize: 9 }}
+                          >
+                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                              <line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/>
+                            </svg>
+                          </button>
+
+                          {/* 썸네일 이미지 */}
+                          <div className="w-full bg-gray-100" style={{ aspectRatio: '4/3' }}>
+                            <ThumbnailImage imageId={scan.imageId} className="w-full h-full" />
+                          </div>
+
+                          {/* 단어 수 배지 */}
+                          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md text-white text-[9px] font-bold"
+                            style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+                            {scan.words.length}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -534,19 +588,21 @@ export default function VocabScanner({ onBack, nickname }) {
         </div>
       </div>
 
-      {/* 추가 메뉴 */}
+      {/* 아이폰 스타일 추가 메뉴 */}
       {showAddMenu && (
         <AddMenu
+          anchor={menuAnchor}
           onCamera={() => { setShowAddMenu(false); cameraRef.current?.click() }}
           onGallery={() => { setShowAddMenu(false); galleryRef.current?.click() }}
+          onFiles={() => { setShowAddMenu(false); filesRef.current?.click() }}
           onClose={() => setShowAddMenu(false)}
         />
       )}
 
-      {/* 숨겨진 파일 input — 카메라 */}
+      {/* 숨겨진 파일 input */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
-      {/* 숨겨진 파일 input — 갤러리 */}
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <input ref={filesRef} type="file" accept="image/*,image/heic,image/heif" className="hidden" onChange={handleFile} />
 
       {/* 분석 오버레이 */}
       {analyzing && (
