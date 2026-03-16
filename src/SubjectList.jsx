@@ -1254,27 +1254,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          {/* 앱 워드마크 */}
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 2px 8px rgba(232,105,74,0.3)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="1"/>
-                <line x1="9" y1="12" x2="15" y2="12"/>
-                <line x1="9" y1="16" x2="13" y2="16"/>
-              </svg>
-            </div>
-            <span
-              className="text-xl font-black leading-none"
-              style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
-            >짬뜰</span>
-          </div>
-          {/* 우측: 달력 + 년도 */}
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* 달력 아이콘 버튼 */}
           <button
             onClick={() => setShowCalendar(true)}
@@ -1307,7 +1287,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
-          </div>{/* end 우측 flex */}
         </div>
       </div>
 
