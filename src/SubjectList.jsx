@@ -1138,7 +1138,7 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
   )
 }
 
-export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
+export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpenTaskManager }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -1343,7 +1343,10 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         }}
       >
         {/* Task */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+        <button
+          onClick={onOpenTaskManager}
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+        >
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
