@@ -1,23 +1,49 @@
 import { useState, useEffect, useRef } from 'react'
-import { db, storage } from './firebase'
+import { db } from './firebase'
 import {
   collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy,
 } from 'firebase/firestore'
-import {
-  ref as storageRef, uploadBytes, getDownloadURL, deleteObject,
-} from 'firebase/storage'
 
 const SUBJECT_TABS = ['수학', '영어', '국어', '과학', '사회', '기타']
 const NOTES_COL = 'notes-media'
 
-// ── Firebase Storage 업로드 ──────────────────────────────────────
-async function uploadFile(file, index = 0) {
-  const ext = file.name?.split('.').pop() || 'jpg'
-  const path = `notes/${Date.now()}_${index}.${ext}`
-  const sRef = storageRef(storage, path)
-  await uploadBytes(sRef, file)
-  const url = await getDownloadURL(sRef)
-  return { storagePath: path, storageURL: url }
+// ── 이미지 압축 (Canvas → base64, Firestore 1MB 한계 대비) ────────
+// base64 700,000자 이하 보장 (≈ 실제 JPEG 525KB)
+const MAX_BASE64_CHARS = 700_000
+
+async function compressImage(file, maxPx = 900, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const obj = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(obj)
+
+      function render(px, q) {
+        const scale = Math.min(1, px / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(img.width  * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        return canvas.toDataURL('image/jpeg', q)
+      }
+
+      let dataUrl = render(maxPx, quality)
+
+      // quality 단계적 감소
+      let q = quality
+      while (dataUrl.length > MAX_BASE64_CHARS && q > 0.32) {
+        q = Math.max(0.32, q - 0.1)
+        dataUrl = render(maxPx, q)
+      }
+      // 해상도 축소
+      if (dataUrl.length > MAX_BASE64_CHARS) dataUrl = render(600, 0.5)
+      if (dataUrl.length > MAX_BASE64_CHARS) dataUrl = render(400, 0.4)
+
+      resolve(dataUrl)
+    }
+    img.onerror = reject
+    img.src = obj
+  })
 }
 
 function fileToDataURL(file) {
@@ -159,7 +185,7 @@ function UploadSheet({ files, dataURLs, uploading, onClose, onSave }) {
 function FullscreenModal({ item, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={onClose}>
-      <img src={item.storageURL} alt="" className="w-full h-full object-contain" />
+      <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
       <button className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm"
         onClick={onClose}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
@@ -341,7 +367,7 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
       {/* 이미지 */}
       <div className="w-full bg-gray-100 relative" style={{ aspectRatio: '1 / 1' }}>
         <img
-          src={item.storageURL}
+          src={item.imageUrl}
           alt={item.memo || ''}
           className="w-full h-full object-cover cursor-pointer"
           loading="lazy"
@@ -513,39 +539,32 @@ export default function NotesPage({ onBack }) {
     setPendingDataURLs(dataURLs)
   }
 
-  // 저장 → 여러 장 병렬 업로드
+  // 저장 → 압축 후 base64를 Firestore에 직접 저장
   async function handleSave({ memo, subject }) {
     if (!pendingFiles.length) return
     setUploading(true)
     try {
-      await Promise.all(
-        pendingFiles.map(async (file, i) => {
-          const { storagePath, storageURL } = await uploadFile(file, i)
-          await addDoc(collection(db, NOTES_COL), {
-            storagePath,
-            storageURL,
-            mimeType: file.type,
-            memo,
-            subject,
-            comments: [],
-            createdAt: Date.now() + i,
-          })
+      for (let i = 0; i < pendingFiles.length; i++) {
+        const imageUrl = await compressImage(pendingFiles[i])
+        await addDoc(collection(db, NOTES_COL), {
+          imageUrl,
+          memo,
+          subject,
+          comments: [],
+          createdAt: Date.now() + i,
         })
-      )
+      }
       setPendingFiles([])
       setPendingDataURLs([])
     } catch (e) {
-      console.error('upload error', e)
+      console.error('save error', e)
     } finally {
       setUploading(false)
     }
   }
 
-  // 삭제 → Storage + Firestore
+  // 삭제 → Firestore만 삭제
   async function handleDelete(item) {
-    try {
-      if (item.storagePath) await deleteObject(storageRef(storage, item.storagePath))
-    } catch {}
     try {
       await deleteDoc(doc(db, NOTES_COL, item.id))
     } catch {}
