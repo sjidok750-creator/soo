@@ -344,105 +344,176 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
-/* ── 음악 차트 Top 3 ── */
-const CHART_APIS = [
-  {
-    url: 'https://rss.applemarketingtools.com/api/v2/kr/music/most-played/3/songs.json',
-    parse: json => json?.feed?.results?.slice(0, 3).map(s => ({
-      name: s.name, artist: s.artistName,
-      art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
-    })),
-  },
-  {
-    url: 'https://itunes.apple.com/kr/rss/topsongs/limit=3/json',
-    parse: json => json?.feed?.entry?.slice(0, 3).map(e => ({
-      name: e['im:name']?.label, artist: e['im:artist']?.label,
-      art: e['im:image']?.[2]?.label || e['im:image']?.[1]?.label,
-    })),
-  },
-  {
-    url: 'https://itunes.apple.com/search?term=kpop&country=kr&media=music&limit=3&sort=recent',
-    parse: json => json?.results?.slice(0, 3).map(s => ({
-      name: s.trackName, artist: s.artistName,
-      art: s.artworkUrl100?.replace('100x100', '300x300') || s.artworkUrl100,
-    })),
-  },
-]
-
-function MusicChartTop3() {
-  const [songs, setSongs] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const cacheKey = 'music-chart-top3'
-    const cached = localStorage.getItem(cacheKey)
-    const cacheTime = localStorage.getItem(cacheKey + '-time')
-    if (cached && cacheTime && Date.now() - Number(cacheTime) < 3600000) {
-      setSongs(JSON.parse(cached)); setLoading(false); return
-    }
-
-    async function tryApis() {
-      for (const api of CHART_APIS) {
-        try {
-          console.log('[Chart] trying:', api.url)
-          const r = await fetch(api.url)
-          if (!r.ok) { console.log('[Chart] failed:', r.status); continue }
-          const json = await r.json()
-          const top3 = api.parse(json)
-          if (top3?.length && top3[0].art) {
-            console.log('[Chart] success:', top3.map(s => s.name))
-            localStorage.setItem(cacheKey, JSON.stringify(top3))
-            localStorage.setItem(cacheKey + '-time', String(Date.now()))
-            setSongs(top3)
-            setLoading(false)
-            return
-          }
-        } catch (e) { console.log('[Chart] error:', e.message) }
-      }
-      console.log('[Chart] all APIs failed')
-      setLoading(false)
-    }
-    tryApis()
-  }, [])
-
-  if (loading) return (
-    <div className="flex-1 flex items-center gap-2 min-w-0 animate-pulse">
-      {[0,1,2].map(i => <div key={i} className="w-16 h-16 bg-gray-100 rounded-xl flex-shrink-0" />)}
-    </div>
-  )
-
-  if (!songs.length) return (
-    <div className="flex-1 flex items-center gap-2 min-w-0">
-      {[1,2,3].map(i => (
-        <div key={i} className="w-[72px] h-[72px] rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center flex-shrink-0 border border-gray-100">
-          <span className="text-2xl opacity-20">🎵</span>
-        </div>
-      ))}
-    </div>
-  )
+/* ── YouTube Player Sheet ── */
+function YouTubePlayerSheet({ song, onClose }) {
+  const q = encodeURIComponent(`${song.title} ${song.artist} official MV`)
+  const embedSrc = `https://www.youtube.com/embed?listType=search&list=${q}&autoplay=1`
+  const ytSearchUrl = `https://www.youtube.com/results?search_query=${q}`
 
   return (
-    <div className="flex-1 flex items-center gap-2 min-w-0">
-      {songs.map((s, i) => (
-        <div key={i} className="relative flex-shrink-0">
-          <img
-            src={s.art}
-            alt={s.name}
-            className="w-[72px] h-[72px] rounded-xl object-cover shadow-sm"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent rounded-b-xl px-1.5 pt-3 pb-1">
-            <p className="text-[8px] text-white font-bold truncate leading-tight">{s.name}</p>
-            <p className="text-[7px] text-white/70 truncate leading-tight">{s.artist}</p>
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="relative w-full rounded-t-3xl overflow-hidden"
+        style={{ background: 'linear-gradient(180deg, #111827 0%, #0F172A 100%)', maxHeight: '88vh' }}
+      >
+        <div className="flex justify-center pt-3 pb-0">
+          <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
+        </div>
+        <div className="flex items-center gap-3 px-5 pt-4 pb-4">
+          <div className="relative flex-shrink-0">
+            {song.albumArt
+              ? <img src={song.albumArt} alt={song.title} className="w-14 h-14 rounded-2xl object-cover shadow-lg" />
+              : <div className="w-14 h-14 rounded-2xl bg-gray-700 flex items-center justify-center text-2xl">🎵</div>
+            }
+            <div
+              className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-lg flex items-center justify-center font-black text-white"
+              style={{ backgroundColor: song.rank <= 3 ? '#E8694A' : '#374151', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', boxShadow: '0 2px 8px rgba(0,0,0,0.6)' }}
+            >{song.rank}</div>
           </div>
-          <div
-            className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-            style={{ backgroundColor: '#E8694A' }}
-          >
-            {i + 1}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-[15px] leading-tight truncate">{song.title}</p>
+            <p className="text-gray-400 text-xs mt-0.5 truncate">{song.artist}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(255,0,0,0.18)' }}>
+                <svg width="7" height="7" viewBox="0 0 10 10" fill="#FF4444"><polygon points="2,1 9,5 2,9" /></svg>
+                <span className="text-[9px] font-bold" style={{ color: '#FF6B6B', fontFamily: 'JetBrains Mono, monospace' }}>YouTube</span>
+              </div>
+              <span className="text-[9px] text-gray-600" style={{ fontFamily: 'JetBrains Mono, monospace' }}>자동재생</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+            >✕</button>
+            <a href={ytSearchUrl} target="_blank" rel="noopener noreferrer"
+              className="text-[9px] underline"
+              style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'JetBrains Mono, monospace' }}
+            >YouTube로 →</a>
           </div>
         </div>
-      ))}
+        <div style={{ position: 'relative', paddingBottom: '56.25%', backgroundColor: '#000' }}>
+          <iframe
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+            src={embedSrc}
+            title={`${song.title} - ${song.artist}`}
+            allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <div style={{ height: 24, background: '#0F172A' }} />
+      </div>
     </div>
+  )
+}
+
+/* ── 한국 음원 차트 Top 10 ── */
+function KoreanMusicChart() {
+  const [charts, setCharts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [playingSong, setPlayingSong] = useState(null)
+
+  useEffect(() => {
+    const today = new Date().toDateString()
+    const cacheKey = `kr-music-chart-${today}`
+    const cached = sessionStorage.getItem(cacheKey)
+    if (cached) {
+      try { setCharts(JSON.parse(cached)); setLoading(false); return } catch {}
+    }
+    fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/10/songs.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.feed?.results?.length) { setLoading(false); return }
+        const songs = data.feed.results.slice(0, 10).map((s, i) => ({
+          rank: i + 1,
+          title: s.name,
+          artist: s.artistName,
+          albumArt: s.artworkUrl100?.replace('100x100bb', '500x500bb'),
+        }))
+        sessionStorage.setItem(cacheKey, JSON.stringify(songs))
+        setCharts(songs)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  function getRankStyle(rank) {
+    if (rank === 1) return { color: '#FFD700', textShadow: '0 0 12px rgba(255,215,0,0.8), 0 1px 6px rgba(0,0,0,1)' }
+    if (rank === 2) return { color: '#E8E8E8', textShadow: '0 0 8px rgba(200,200,200,0.6), 0 1px 6px rgba(0,0,0,1)' }
+    if (rank === 3) return { color: '#F4A460', textShadow: '0 0 8px rgba(205,127,50,0.7), 0 1px 6px rgba(0,0,0,1)' }
+    return { color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 6px rgba(0,0,0,1)' }
+  }
+
+  return (
+    <>
+      <div className="mt-1 border-b border-gray-100/60">
+        <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-0.5 h-4 rounded-full" style={{ backgroundColor: '#E8694A' }} />
+            <span className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#9CA3AF', fontFamily: 'JetBrains Mono, monospace' }}>Music Chart</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{ color: '#E8694A', backgroundColor: '#FFF3F0', fontFamily: 'JetBrains Mono, monospace' }}>Korea · Top 10</span>
+          </div>
+          <span className="text-[9px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>← swipe →</span>
+        </div>
+        <div
+          className="flex gap-3 px-4 pb-4 overflow-x-auto"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+        >
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex-shrink-0 animate-pulse" style={{ width: 108, scrollSnapAlign: 'start' }}>
+                  <div className="rounded-2xl bg-gray-100" style={{ width: 108, height: 162 }} />
+                  <div className="mt-2 h-2.5 bg-gray-100 rounded" style={{ width: '80%' }} />
+                  <div className="mt-1 h-2 bg-gray-100 rounded" style={{ width: '55%' }} />
+                </div>
+              ))
+            : charts.map(song => (
+                <button
+                  key={song.rank}
+                  onClick={() => setPlayingSong(song)}
+                  className="flex-shrink-0 text-left active:scale-95 transition-transform"
+                  style={{ width: 108, scrollSnapAlign: 'start' }}
+                >
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ width: 108, height: 162 }}>
+                    {song.albumArt
+                      ? <img src={song.albumArt} alt={song.title} className="w-full h-full object-cover" loading="lazy" />
+                      : <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#1F2937' }}><span className="text-4xl">🎵</span></div>
+                    }
+                    {/* 상단 컬러 액센트 (1~3위) */}
+                    {song.rank <= 3 && (
+                      <div className="absolute top-0 left-0 right-0" style={{
+                        height: 3,
+                        background: song.rank === 1 ? 'linear-gradient(90deg,#FFD700,#FFA500)' : song.rank === 2 ? 'linear-gradient(90deg,#C0C0C0,#A8A8A8)' : 'linear-gradient(90deg,#CD7F32,#A0522D)',
+                      }} />
+                    )}
+                    {/* 순위 숫자 */}
+                    <div className="absolute top-0 left-0 px-2 pt-1.5">
+                      <span className="font-black leading-none" style={{ fontSize: song.rank === 10 ? 19 : 23, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.05em', ...getRankStyle(song.rank) }}>{song.rank}</span>
+                    </div>
+                    {/* 하단 그라데이션 */}
+                    <div className="absolute bottom-0 inset-x-0" style={{ height: '55%', background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.45) 55%,transparent 100%)' }} />
+                    {/* 플레이 버튼 */}
+                    <div className="absolute bottom-2 right-2">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                        <svg width="7" height="8" viewBox="0 0 8 10" fill="white"><polygon points="1,0.5 7.5,5 1,9.5" /></svg>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-[11px] font-bold text-gray-800 leading-tight line-clamp-1 px-0.5">{song.title}</p>
+                  <p className="mt-0.5 text-[10px] text-gray-400 leading-tight line-clamp-1 px-0.5">{song.artist}</p>
+                </button>
+              ))
+          }
+          <div className="flex-shrink-0 w-4" />
+        </div>
+      </div>
+      {playingSong && <YouTubePlayerSheet song={playingSong} onClose={() => setPlayingSong(null)} />}
+    </>
   )
 }
 
@@ -1256,12 +1327,13 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
         })}
       </div>
 
-      {/* 차트 + D-day */}
-      <div className="px-5 py-4 flex items-stretch gap-4 border-b border-gray-100/60" style={{ minHeight: 90 }}>
-        <MusicChartTop3 />
-        <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
+      {/* D-day */}
+      <div className="px-5 py-4 flex items-stretch justify-end border-b border-gray-100/60" style={{ minHeight: 72 }}>
         <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
+
+      {/* 한국 음원 차트 Top 10 */}
+      <KoreanMusicChart />
 
       {/* Daily Board */}
       <DailyBoard
