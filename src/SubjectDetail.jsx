@@ -46,7 +46,29 @@ function Avatar({ name, size = 'sm' }) {
   )
 }
 
+function usePullToRefresh() {
+  const [refreshing, setRefreshing] = useState(false)
+  useEffect(() => {
+    let startY = 0, startX = 0, canPull = false
+    const onStart = (e) => {
+      startY = e.touches[0].clientY; startX = e.touches[0].clientX
+      canPull = (window.scrollY || document.documentElement.scrollTop) === 0
+    }
+    const onEnd = (e) => {
+      if (!canPull) return
+      const dy = e.changedTouches[0].clientY - startY
+      const dx = Math.abs(e.changedTouches[0].clientX - startX)
+      if (dy > 80 && dx < 40) { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend',   onEnd,   { passive: true })
+    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
+  }, [])
+  return refreshing
+}
+
 export default function SubjectDetail({ subject, onBack }) {
+  const isRefreshing = usePullToRefresh()
   const nickname = localStorage.getItem(NICKNAME_KEY) ?? '익명'
   const [todos, setTodos] = useState([])
   const [filter, setFilter] = useState('all') // all | active | done
@@ -236,6 +258,11 @@ export default function SubjectDetail({ subject, onBack }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50 ${dragging ? 'dragging-active' : ''}`}>
+      {isRefreshing && (
+        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
+          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#0D9488' }} />
+        </div>
+      )}
       {/* 스티키 헤더 */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3">

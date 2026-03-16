@@ -15,6 +15,30 @@ export function getSubject(id) {
   return SUBJECT_MAP[id] ?? SUBJECTS[SUBJECTS.length - 1]
 }
 
+// ─── +버튼 할일추가 / Task Board 공용 과목 목록 ──────────────────
+export const DAILY_SUBJECTS = [
+  { id: 'kor',    name: '국어',      abbr: 'KOR',  color: '#E53E3E', bg: '#FEF2F2' },
+  { id: 'math',   name: '수학',      abbr: 'MATH', color: '#3B82F6', bg: '#EFF6FF' },
+  { id: 'eng',    name: '영어',      abbr: 'ENG',  color: '#10B981', bg: '#ECFDF5' },
+  { id: 'ss',     name: '사회',      abbr: 'SS',   color: '#F59E0B', bg: '#FFFBEB' },
+  { id: 'kh',     name: '한국사',    abbr: 'KH',   color: '#F97316', bg: '#FFF7ED' },
+  { id: 'pl',     name: '정법',      abbr: 'PL',   color: '#8B5CF6', bg: '#F5F3FF' },
+  { id: 'econ',   name: '경제',      abbr: 'ECON', color: '#14B8A6', bg: '#F0FDFA' },
+  { id: 'ei',     name: '윤리와사상', abbr: 'EI',  color: '#6366F1', bg: '#EEF2FF' },
+  { id: 'sci',    name: '과학',      abbr: 'SCI',  color: '#06B6D4', bg: '#ECFEFF' },
+  { id: 'phy',    name: '물리',      abbr: 'PHY',  color: '#A855F7', bg: '#FAF5FF' },
+  { id: 'chem',   name: '화학',      abbr: 'CHEM', color: '#EC4899', bg: '#FDF2F8' },
+  { id: 'bio',    name: '생명과학',  abbr: 'BIO',  color: '#84CC16', bg: '#F7FEE7' },
+  { id: 'es',     name: '지구과학',  abbr: 'ES',   color: '#0EA5E9', bg: '#F0F9FF' },
+  { id: 'custom', name: '직접입력',  abbr: 'ETC',  color: '#94A3B8', bg: '#F9FAFB' },
+]
+
+export const DAILY_SUBJECT_MAP = Object.fromEntries(DAILY_SUBJECTS.map(s => [s.id, s]))
+
+export function getDailySubject(id) {
+  return DAILY_SUBJECT_MAP[id] ?? DAILY_SUBJECTS[DAILY_SUBJECTS.length - 1]
+}
+
 // 학습 유형 (카테고리)
 export const STUDY_TYPES = [
   { id: 'preview',  label: '예습',    emoji: '📖', badgeClass: 'bg-sky-100 text-sky-700 border-sky-200' },
