@@ -1183,7 +1183,7 @@ function DailyBoard({ todos }) {
   )
 }
 
-export default function SubjectList({ onSelectSubject }) {
+export default function SubjectList({ onSelectSubject, onOpenNotes }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -1342,13 +1342,16 @@ export default function SubjectList({ onSelectSubject }) {
           </svg>
           <span className="text-[9px] font-medium text-gray-700 leading-none">Task</span>
         </button>
-        {/* Search */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
+        {/* 오답노트 */}
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={onOpenNotes}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="13" y2="17"/>
+            <line x1="9" y1="9" x2="11" y2="9"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Search</span>
+          <span className="text-[9px] font-medium text-gray-700 leading-none">오답노트</span>
         </button>
         {/* Add (중앙) */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowTodoInput(true)}>
