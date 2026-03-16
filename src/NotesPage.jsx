@@ -1,66 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { db, storage } from './firebase'
+import {
+  collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy,
+} from 'firebase/firestore'
+import {
+  ref as storageRef, uploadBytes, getDownloadURL, deleteObject,
+} from 'firebase/storage'
 
 const SUBJECT_TABS = ['수학', '영어', '국어', '과학', '사회', '기타']
+const NOTES_COL = 'notes-media'
 
-// ── IndexedDB ──────────────────────────────────────────────────────
-const DB_NAME = 'notes-db'
-const STORE_NAME = 'media'
-const DB_VERSION = 2   // 버전 올려서 comments 필드 마이그레이션
+// ── Firebase Storage 업로드 ──────────────────────────────────────
+async function uploadFile(file) {
+  const ext = file.name?.split('.').pop() || 'bin'
+  const path = `notes/${Date.now()}.${ext}`
+  const sRef = storageRef(storage, path)
+  await uploadBytes(sRef, file)
+  const url = await getDownloadURL(sRef)
+  return { storagePath: path, storageURL: url }
+}
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onupgradeneeded = e => {
-      const db = e.target.result
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
-      }
-    }
-    req.onsuccess = e => resolve(e.target.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-async function saveMedia(item) {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite')
-    const req = tx.objectStore(STORE_NAME).add({ comments: [], ...item })
-    req.onsuccess = () => resolve(req.result)
-    tx.onerror = () => reject(tx.error)
-  })
-}
-async function getAllMedia() {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly')
-    const req = tx.objectStore(STORE_NAME).getAll()
-    req.onsuccess = () => resolve(req.result.reverse())
-    req.onerror = () => reject(req.error)
-  })
-}
-async function updateMedia(id, updates) {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite')
-    const store = tx.objectStore(STORE_NAME)
-    const req = store.get(id)
-    req.onsuccess = () => {
-      if (!req.result) return resolve()
-      store.put({ ...req.result, ...updates })
-    }
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
-}
-async function deleteMedia(id) {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite')
-    tx.objectStore(STORE_NAME).delete(id)
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
-}
+// ── dataURL → Blob (UploadSheet 미리보기용) ───────────────────────
 function fileToDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -115,7 +75,7 @@ function MediaPickerSheet({ onClose, onPick }) {
 }
 
 // ── 업로드 시트 ───────────────────────────────────────────────────
-function UploadSheet({ file, dataURL, onClose, onSave }) {
+function UploadSheet({ file, dataURL, uploading, onClose, onSave }) {
   const [memo, setMemo] = useState('')
   const [subject, setSubject] = useState('')
   const isVideo = file?.type?.startsWith('video/')
@@ -127,7 +87,7 @@ function UploadSheet({ file, dataURL, onClose, onSave }) {
           ? <video src={dataURL} className="w-full h-full object-contain" controls />
           : <img src={dataURL} alt="" className="w-full h-full object-contain" />}
         <button className="absolute top-4 left-4 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose} disabled={uploading}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -153,10 +113,17 @@ function UploadSheet({ file, dataURL, onClose, onSave }) {
           onFocus={e => { e.target.style.borderColor = '#E8694A' }}
           onBlur={e => { e.target.style.borderColor = '#F0EDE8' }}
         />
-        <button className="w-full mt-4 py-3.5 rounded-2xl text-white font-black text-[13px] tracking-widest active:opacity-80 transition-all"
-          style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 4px 18px rgba(232,105,74,0.38)', fontFamily: 'JetBrains Mono, monospace' }}
-          onClick={() => onSave({ memo, subject })}>
-          저장 →
+        <button
+          className="w-full mt-4 py-3.5 rounded-2xl text-white font-black text-[13px] tracking-widest active:opacity-80 transition-all flex items-center justify-center gap-2"
+          style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 4px 18px rgba(232,105,74,0.38)', fontFamily: 'JetBrains Mono, monospace', opacity: uploading ? 0.7 : 1 }}
+          onClick={() => onSave({ memo, subject })}
+          disabled={uploading}>
+          {uploading && (
+            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          )}
+          {uploading ? 'UPLOADING...' : '저장 →'}
         </button>
       </div>
     </div>
@@ -166,12 +133,13 @@ function UploadSheet({ file, dataURL, onClose, onSave }) {
 // ── 전체화면 모달 ─────────────────────────────────────────────────
 function FullscreenModal({ item, onClose }) {
   const isVideo = item.mimeType?.startsWith('video/')
+  const src = item.storageURL
   return (
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={onClose}>
       {isVideo
-        ? <video src={item.dataURL} className="w-full h-full object-contain" controls autoPlay
+        ? <video src={src} className="w-full h-full object-contain" controls autoPlay
             onClick={e => e.stopPropagation()} />
-        : <img src={item.dataURL} alt="" className="w-full h-full object-contain" />}
+        : <img src={src} alt="" className="w-full h-full object-contain" />}
       <button className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm"
         onClick={onClose}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
@@ -204,7 +172,6 @@ function CommentSheet({ item, onClose, onAddComment }) {
       <div className="relative bg-white rounded-t-3xl flex flex-col overflow-hidden"
         style={{ maxHeight: '70vh', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
         onClick={e => e.stopPropagation()}>
-        {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-2 shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
@@ -212,8 +179,6 @@ function CommentSheet({ item, onClose, onAddComment }) {
           style={{ fontFamily: 'JetBrains Mono, monospace' }}>
           COMMENTS
         </p>
-
-        {/* 댓글 목록 */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           {(!item.comments || item.comments.length === 0) ? (
             <p className="text-center text-gray-400 text-sm py-6" style={{ fontFamily: 'Pretendard, sans-serif' }}>
@@ -238,8 +203,6 @@ function CommentSheet({ item, onClose, onAddComment }) {
             ))
           )}
         </div>
-
-        {/* 댓글 입력 */}
         <div className="px-4 py-3 border-t border-gray-100 flex gap-2 shrink-0">
           <input
             ref={inputRef}
@@ -372,15 +335,16 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
   }
 
   const commentCount = item.comments?.length || 0
+  const src = item.storageURL
 
   return (
     <div className="border-b border-gray-100">
-      {/* 이미지/영상 — 좌우 여백 없음 */}
+      {/* 이미지/영상 */}
       <div className="w-full bg-gray-100 relative" style={{ aspectRatio: '1 / 1' }}>
         {isVideo ? (
           <video
             ref={videoRef}
-            src={item.dataURL}
+            src={src}
             muted
             loop
             playsInline
@@ -391,7 +355,7 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
           />
         ) : (
           <img
-            src={item.dataURL}
+            src={src}
             alt={item.memo || ''}
             className="w-full h-full object-cover cursor-pointer"
             loading="lazy"
@@ -405,7 +369,6 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
       {/* 액션 아이콘 바 */}
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
         <div className="flex items-center gap-4">
-          {/* 하트 + 숫자 */}
           <button className="flex items-center gap-1 active:scale-110 transition-transform" onClick={() => onToggleLike(item.id)}>
             <svg width="24" height="24" viewBox="0 0 24 24"
               fill={isLiked ? '#E8694A' : 'none'}
@@ -418,7 +381,6 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
             )}
           </button>
 
-          {/* 댓글 + 숫자 */}
           <button className="flex items-center gap-1 active:opacity-60 transition" onClick={() => onOpenComments(item)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -428,7 +390,6 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
             )}
           </button>
 
-          {/* 공유 + 숫자 */}
           <button className="flex items-center gap-1 active:opacity-60 transition" onClick={() => onShare(item.id)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
@@ -440,7 +401,6 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
           </button>
         </div>
 
-        {/* 즐겨찾기 */}
         <button className="active:scale-110 transition-transform" onClick={() => onToggleBookmark(item.id)}>
           <svg width="24" height="24" viewBox="0 0 24 24"
             fill={isBookmarked ? '#E8694A' : 'none'}
@@ -451,22 +411,18 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
         </button>
       </div>
 
-      {/* 과목 · 제목 — 한 줄, Pretendard 13px bold (투두와 동일) */}
+      {/* 과목 · 제목 */}
       {(item.subject || item.memo) && (
         <div className="px-3 pt-0 pb-1.5">
           <p className="text-[13px] leading-snug text-gray-900"
             style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 700 }}>
-            {item.subject && (
-              <span style={{ color: '#E8694A' }}>#{item.subject} </span>
-            )}
-            {item.memo && (
-              <span>#{item.memo}</span>
-            )}
+            {item.subject && <span style={{ color: '#E8694A' }}>#{item.subject} </span>}
+            {item.memo && <span>#{item.memo}</span>}
           </p>
         </div>
       )}
 
-      {/* 댓글 미리보기 — 제목 아래 최대 2개 + ... */}
+      {/* 댓글 미리보기 — 최대 2개 + ··· */}
       {item.comments && item.comments.length > 0 && (
         <div className="px-3 pb-3 space-y-0.5">
           {item.comments.slice(0, 2).map(c => (
@@ -492,28 +448,44 @@ export default function NotesPage({ onBack }) {
   const [showPicker, setShowPicker] = useState(false)
   const [pendingFile, setPendingFile] = useState(null)
   const [pendingDataURL, setPendingDataURL] = useState(null)
-  const [contextItem, setContextItem] = useState(null)   // 롱프레스 컨텍스트 메뉴
-  const [editItem, setEditItem] = useState(null)          // 노트 수정
+  const [uploading, setUploading] = useState(false)
+  const [contextItem, setContextItem] = useState(null)
+  const [editItem, setEditItem] = useState(null)
   const [fullscreenItem, setFullscreenItem] = useState(null)
   const [commentItem, setCommentItem] = useState(null)
 
-  // 좋아요 / 즐겨찾기 → localStorage
+  // 좋아요 / 즐겨찾기 → localStorage (기기 개인 취향)
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-liked') || '[]') } catch { return [] }
   })
   const [bookmarked, setBookmarked] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-bookmarked') || '[]') } catch { return [] }
   })
-  // 공유 카운트 → localStorage { [id]: number }
   const [shares, setShares] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-shares') || '{}') } catch { return {} }
   })
 
+  // Firestore 실시간 구독
   useEffect(() => {
-    getAllMedia().then(items => { setMedia(items); setLoading(false) })
+    const q = query(collection(db, NOTES_COL), orderBy('createdAt', 'desc'))
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        setMedia(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setLoading(false)
+      },
+      () => setLoading(false)
+    )
+    return unsub
   }, [])
 
-  // 좋아요 토글
+  // commentItem을 media 변경에 맞춰 최신화
+  useEffect(() => {
+    if (!commentItem) return
+    const updated = media.find(m => m.id === commentItem.id)
+    if (updated) setCommentItem(updated)
+  }, [media])
+
   function toggleLike(id) {
     setLiked(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -522,7 +494,6 @@ export default function NotesPage({ onBack }) {
     })
   }
 
-  // 즐겨찾기 토글
   function toggleBookmark(id) {
     setBookmarked(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -531,7 +502,6 @@ export default function NotesPage({ onBack }) {
     })
   }
 
-  // 공유
   function handleShare(id) {
     setShares(prev => {
       const next = { ...prev, [id]: (prev[id] || 0) + 1 }
@@ -540,19 +510,14 @@ export default function NotesPage({ onBack }) {
     })
   }
 
-  // 댓글 추가
+  // 댓글 추가 → Firestore 업데이트 (onSnapshot이 UI 반영)
   async function handleAddComment(id, text) {
     const newComment = { id: Date.now(), text, createdAt: Date.now() }
-    setMedia(prev => prev.map(m => {
-      if (m.id !== id) return m
-      const updated = { ...m, comments: [...(m.comments || []), newComment] }
-      // 댓글 모달도 최신화
-      setCommentItem(updated)
-      return updated
-    }))
-    await updateMedia(id, {
-      comments: [...((media.find(m => m.id === id)?.comments) || []), newComment]
-    })
+    const item = media.find(m => m.id === id)
+    const updatedComments = [...(item?.comments || []), newComment]
+    try {
+      await updateDoc(doc(db, NOTES_COL, id), { comments: updatedComments })
+    } catch {}
   }
 
   // 파일 선택
@@ -562,28 +527,48 @@ export default function NotesPage({ onBack }) {
     setPendingDataURL(dataURL)
   }
 
-  // 저장
+  // 저장 → Firebase Storage 업로드 후 Firestore 저장
   async function handleSave({ memo, subject }) {
-    const item = { dataURL: pendingDataURL, mimeType: pendingFile.type, memo, subject, comments: [], createdAt: Date.now() }
-    await saveMedia(item)
-    const updated = await getAllMedia()
-    setMedia(updated)
-    setPendingFile(null)
-    setPendingDataURL(null)
+    if (!pendingFile) return
+    setUploading(true)
+    try {
+      const { storagePath, storageURL } = await uploadFile(pendingFile)
+      await addDoc(collection(db, NOTES_COL), {
+        storagePath,
+        storageURL,
+        mimeType: pendingFile.type,
+        memo,
+        subject,
+        comments: [],
+        createdAt: Date.now(),
+      })
+      setPendingFile(null)
+      setPendingDataURL(null)
+    } catch (e) {
+      console.error('upload error', e)
+    } finally {
+      setUploading(false)
+    }
   }
 
-  // 삭제
-  async function handleDelete(id) {
-    await deleteMedia(id)
-    setMedia(prev => prev.filter(m => m.id !== id))
+  // 삭제 → Storage + Firestore
+  async function handleDelete(item) {
+    try {
+      if (item.storagePath) {
+        await deleteObject(storageRef(storage, item.storagePath))
+      }
+    } catch {}
+    try {
+      await deleteDoc(doc(db, NOTES_COL, item.id))
+    } catch {}
     setContextItem(null)
   }
 
-  // 노트 수정 저장
+  // 수정 → Firestore
   async function handleEditSave({ memo, subject }) {
-    const id = editItem.id
-    await updateMedia(id, { memo, subject })
-    setMedia(prev => prev.map(m => m.id === id ? { ...m, memo, subject } : m))
+    try {
+      await updateDoc(doc(db, NOTES_COL, editItem.id), { memo, subject })
+    } catch {}
     setEditItem(null)
   }
 
@@ -666,7 +651,8 @@ export default function NotesPage({ onBack }) {
         <UploadSheet
           file={pendingFile}
           dataURL={pendingDataURL}
-          onClose={() => { setPendingFile(null); setPendingDataURL(null) }}
+          uploading={uploading}
+          onClose={() => { if (!uploading) { setPendingFile(null); setPendingDataURL(null) } }}
           onSave={handleSave}
         />
       )}
@@ -688,7 +674,7 @@ export default function NotesPage({ onBack }) {
       {/* 롱프레스 컨텍스트 메뉴 */}
       {contextItem && (
         <ContextMenuSheet
-          onDelete={() => handleDelete(contextItem.id)}
+          onDelete={() => handleDelete(contextItem)}
           onEdit={() => { setEditItem(contextItem); setContextItem(null) }}
           onClose={() => setContextItem(null)}
         />
