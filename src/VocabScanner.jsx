@@ -5,20 +5,48 @@ import {
   serverTimestamp, writeBatch, doc
 } from 'firebase/firestore'
 
-// ─── 이미지 압축 (Canvas → base64, ~100KB 이하) ───────────────────
+// ─── 이미지 압축 (Canvas → base64) ───────────────────────────────
+// Firestore 문서 한계: 1MB → base64 imageUrl은 700,000자 이하로 유지
+// (base64 700KB ≈ 실제 JPEG 525KB, 나머지 fields 포함 시 ~750KB 예상)
+const MAX_BASE64_CHARS = 700_000
+
 async function compressImage(file, maxPx = 900, quality = 0.72) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const obj = URL.createObjectURL(file)
     img.onload = () => {
       URL.revokeObjectURL(obj)
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
-      const w = Math.round(img.width * scale)
-      const h = Math.round(img.height * scale)
-      const canvas = document.createElement('canvas')
-      canvas.width = w; canvas.height = h
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-      resolve(canvas.toDataURL('image/jpeg', quality))
+
+      function render(px, q) {
+        const scale = Math.min(1, px / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(img.width  * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        return canvas.toDataURL('image/jpeg', q)
+      }
+
+      // 1차: 기본 압축
+      let dataUrl = render(maxPx, quality)
+
+      // 2차: quality 단계적 감소 (0.72 → 0.62 → 0.52 → 0.42 → 0.32)
+      let q = quality
+      while (dataUrl.length > MAX_BASE64_CHARS && q > 0.32) {
+        q = Math.max(0.32, q - 0.1)
+        dataUrl = render(maxPx, q)
+      }
+
+      // 3차: 해상도까지 줄이기 (600px, 0.5)
+      if (dataUrl.length > MAX_BASE64_CHARS) {
+        dataUrl = render(600, 0.5)
+      }
+
+      // 4차: 최후 수단 (400px, 0.4)
+      if (dataUrl.length > MAX_BASE64_CHARS) {
+        dataUrl = render(400, 0.4)
+      }
+
+      resolve(dataUrl)
     }
     img.onerror = reject
     img.src = obj
