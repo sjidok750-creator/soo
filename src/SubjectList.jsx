@@ -815,17 +815,25 @@ function TodoList({ todos }) {
                 {/* Time 2줄 — 시작/종료 */}
                 <div className="flex-shrink-0 flex flex-col items-center justify-center gap-px tabular-nums"
                   style={{ width: '13%', fontFamily: 'JetBrains Mono, monospace' }}>
-                  <span className="text-[9px] sm:text-[10px] text-gray-400 leading-none">
+                  <span className="text-[9px] sm:text-[10px] leading-none" style={{ color: '#9CA3AF' }}>
                     {todo.studyStart || '—'}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] text-gray-300 leading-none">
+                  <span className="text-[9px] sm:text-[10px] leading-none" style={{ color: '#C4B8AF' }}>
                     {todo.studyEnd || ''}
                   </span>
                 </div>
 
-                {/* Subject 한글 — 우측정렬 */}
-                <span className="flex-shrink-0 text-[11px] sm:text-[12px] md:text-[13px] font-bold whitespace-nowrap text-right"
-                  style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '11%' }}>
+                {/* Subject 한글 — 배지 */}
+                <span
+                  className="flex-shrink-0 text-[10px] font-black whitespace-nowrap text-center px-1.5 py-0.5 rounded-md"
+                  style={{
+                    color: todo.done ? '#CBD5E1' : subj.color,
+                    backgroundColor: todo.done ? '#F8FAFC' : subj.bg,
+                    fontFamily: 'JetBrains Mono, monospace',
+                    maxWidth: 44,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
                   {(todo.subject === 'custom' && todo.subjectName) ? todo.subjectName : subj.name}
                 </span>
               </div>
@@ -1096,30 +1104,35 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
 
       {/* 헤더 */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-gray-50">
-        <span className="px-3 py-1 rounded-lg text-sm font-bold border-2"
-          style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            color: '#E8694A',
-            borderColor: '#E8694A',
-            backgroundColor: '#FFF7F5',
-            letterSpacing: '0.04em',
-          }}>
-          todo list
-        </span>
+        <div className="flex items-center gap-2">
+          <div className="w-[3px] h-4 rounded-full" style={{ backgroundColor: '#E8694A' }} />
+          <span
+            className="text-[13px] font-black tracking-wide"
+            style={{ fontFamily: 'JetBrains Mono, monospace', color: '#2D2018' }}
+          >todo list</span>
+        </div>
         {/* 날짜 이동 버튼 */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={onPrevDay}
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 text-xs transition-colors"
-          >◀</button>
-          <span className="text-[11px] font-bold"
-            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+            className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-orange-50"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <span className="text-[11px] font-black px-1"
+            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace', minWidth: 72, textAlign: 'center' }}>
             {dateLabel}
           </span>
           <button
             onClick={onNextDay}
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 text-xs transition-colors"
-          >▶</button>
+            className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-orange-50"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
         </div>
       </div>
       <div className="min-h-[120px]">
@@ -1241,7 +1254,27 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
+          {/* 앱 워드마크 */}
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 2px 8px rgba(232,105,74,0.3)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                <line x1="9" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="13" y2="16"/>
+              </svg>
+            </div>
+            <span
+              className="text-xl font-black leading-none"
+              style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
+            >짬뜰</span>
+          </div>
+          {/* 우측: 달력 + 년도 */}
+          <div className="flex items-center gap-2">
           {/* 달력 아이콘 버튼 */}
           <button
             onClick={() => setShowCalendar(true)}
@@ -1274,6 +1307,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
+          </div>{/* end 우측 flex */}
         </div>
       </div>
 
@@ -1292,21 +1326,36 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
             <button
               key={i}
               ref={isToday ? todayCellRef : null}
-              className="flex-shrink-0 w-9 flex flex-col items-center py-1 rounded-xl transition-colors"
+              className="flex-shrink-0 w-10 flex flex-col items-center py-1.5 rounded-xl transition-colors active:bg-orange-50"
               style={isSelected && !isToday ? { backgroundColor: '#FFF3F0' } : {}}
               onClick={() => setSelectedDate(dateStr)}
             >
-              <span className="text-[8px] font-bold text-gray-500 mb-0.5 leading-none">{DAY_ABBR[d.getDay()]}</span>
-              <span className={`text-[8px] font-semibold leading-none mb-0.5 ${isFirstOfMonth ? '' : 'invisible'}`}
+              <span
+                className="text-[9px] font-bold mb-0.5 leading-none"
+                style={{ color: isToday ? '#E8694A' : '#A8A09A' }}
+              >{DAY_ABBR[d.getDay()]}</span>
+              <span
+                className={`text-[8px] font-bold leading-none mb-0.5 ${isFirstOfMonth ? '' : 'invisible'}`}
                 style={{ color: '#E8694A' }}
               >{MONTH_EN[d.getMonth()]}</span>
-              <span
-                className={`text-[13px] leading-none font-medium ${isSelected ? 'font-bold' : 'text-gray-500'}`}
-                style={isSelected ? { color: '#E8694A' } : {}}
-              >{d.getDate()}</span>
-              {isSelected
-                ? <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: '#E8694A' }} />
-                : <div className="w-1 h-1 mt-1" />
+              <div
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: isToday ? 28 : 24,
+                  height: isToday ? 28 : 24,
+                  backgroundColor: isToday ? '#E8694A' : 'transparent',
+                }}
+              >
+                <span
+                  className="text-[13px] leading-none font-bold"
+                  style={{
+                    color: isToday ? 'white' : isSelected ? '#E8694A' : '#4B5563',
+                  }}
+                >{d.getDate()}</span>
+              </div>
+              {isSelected && !isToday
+                ? <div className="w-[5px] h-[5px] rounded-full mt-0.5" style={{ backgroundColor: '#E8694A' }} />
+                : <div className="w-[5px] h-[5px] mt-0.5" />
               }
             </button>
           )
@@ -1341,33 +1390,33 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
         className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-1"
         style={{
           height: 64,
-          background: 'rgba(255,255,255,0.88)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(232,105,74,0.1)',
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.06)',
+          background: 'rgba(255,255,255,0.94)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          boxShadow: '0 -1px 0 rgba(0,0,0,0.04), 0 -8px 32px rgba(0,0,0,0.05)',
         }}
       >
         {/* Task */}
         <button
           onClick={onOpenTaskManager}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity"
         >
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="13" y2="16"/>
           </svg>
-          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>TASK</span>
+          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>TASK</span>
         </button>
         {/* Search */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="7"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>FIND</span>
+          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>FIND</span>
         </button>
         {/* + FAB (중앙) */}
         <button
@@ -1375,16 +1424,16 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
           onClick={() => setShowTodoInput(v => !v)}
         >
           <div
-            className="w-13 h-13 rounded-full flex items-center justify-center transition-transform active:scale-90"
+            className="rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{
-              width: 52, height: 52,
-              marginTop: -20,
+              width: 54, height: 54,
+              marginTop: -22,
               background: showTodoInput
                 ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                 : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
               boxShadow: showTodoInput
-                ? '0 4px 20px rgba(16,185,129,0.45)'
-                : '0 4px 20px rgba(232,105,74,0.45)',
+                ? '0 4px 20px rgba(16,185,129,0.50), 0 0 0 3px rgba(16,185,129,0.15)'
+                : '0 4px 20px rgba(232,105,74,0.50), 0 0 0 3px rgba(232,105,74,0.15)',
             }}
           >
             {showTodoInput ? (
@@ -1392,7 +1441,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
@@ -1402,26 +1451,26 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
         {/* Vocab */}
         <button
           onClick={onOpenVocabScanner}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity"
         >
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
             <line x1="9" y1="8" x2="15" y2="8"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="12" y2="16"/>
           </svg>
-          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>VOCAB</span>
+          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>VOCAB</span>
         </button>
         {/* Stats */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"/>
             <line x1="12" y1="20" x2="12" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="14"/>
             <line x1="3" y1="20" x2="21" y2="20"/>
           </svg>
-          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>STATS</span>
+          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>STATS</span>
         </button>
       </div>
     </div>
