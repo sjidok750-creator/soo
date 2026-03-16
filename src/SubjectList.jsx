@@ -348,14 +348,19 @@ function DdayPickerModal({ onSelect, onClose }) {
 function YouTubeVideoSheet({ video, onClose }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end"
-      style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+      className="fixed inset-x-0 bottom-0 z-50"
+      style={{ top: 0 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="relative w-full rounded-t-3xl overflow-hidden" style={{ background: '#0F172A', maxHeight: '90vh' }}>
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-t-3xl overflow-hidden shadow-2xl"
+        style={{ background: '#0F172A' }}
+      >
+        {/* handle */}
         <div className="flex justify-center pt-3">
           <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
         </div>
+        {/* header */}
         <div className="flex items-center gap-3 px-5 pt-3 pb-3">
           <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-md">
             <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
@@ -380,16 +385,18 @@ function YouTubeVideoSheet({ video, onClose }) {
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           >✕</button>
         </div>
+        {/* 16:9 iframe — 광고 하단 잘림 방지를 위해 safe area 추가 */}
         <div style={{ position: 'relative', paddingBottom: '56.25%', backgroundColor: '#000' }}>
           <iframe
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0`}
             title={video.title}
-            allow="autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allow="autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
           />
         </div>
-        <div style={{ height: 24, background: '#0F172A' }} />
+        {/* safe area bottom — env(safe-area-inset-bottom)으로 기기별 최적화 */}
+        <div style={{ height: 'calc(20px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
       </div>
     </div>
   )
