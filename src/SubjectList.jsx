@@ -740,17 +740,8 @@ function EditTodoModal({ todo, onClose }) {
 /* ───── TodoList ───── */
 function TodoList({ todos }) {
   const [editingTodo, setEditingTodo] = useState(null)
-  const longPressTimer = useRef(null)
-
-  function startPress(todo) {
-    longPressTimer.current = setTimeout(() => setEditingTodo(todo), 600)
-  }
-  function cancelPress() {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-  }
 
   async function handleToggle(todo) {
-    cancelPress()
     try {
       await updateDoc(doc(db, 'study-todos', todo.id), { done: !todo.done })
     } catch {}
@@ -779,18 +770,10 @@ function TodoList({ todos }) {
           return (
             <div key={todo.id}
               className={`py-1.5 sm:py-2 select-none ${idx < todos.length - 1 ? 'border-b border-gray-200/50' : ''}`}
-              onMouseDown={() => startPress(todo)}
-              onMouseUp={cancelPress}
-              onMouseLeave={cancelPress}
-              onTouchStart={() => startPress(todo)}
-              onTouchEnd={cancelPress}
-              onTouchMove={cancelPress}
             >
               <div className="flex items-center gap-2">
                 {/* Checkbox */}
                 <button
-                  onMouseDown={e => e.stopPropagation()}
-                  onTouchStart={e => e.stopPropagation()}
                   onClick={() => handleToggle(todo)}
                   className="flex-shrink-0 w-4 h-4 sm:w-[18px] sm:h-[18px] rounded border-2 flex items-center justify-center transition-all"
                   style={todo.done
@@ -804,10 +787,11 @@ function TodoList({ todos }) {
                   )}
                 </button>
 
-                {/* Content — 80% */}
+                {/* Content — 클릭하면 수정 */}
                 <span
-                  className={`flex-1 min-w-0 truncate text-[13px] sm:text-sm md:text-base leading-tight ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
+                  className={`flex-1 min-w-0 truncate text-[13px] sm:text-sm md:text-base leading-tight cursor-pointer active:opacity-60 ${todo.done ? 'line-through text-gray-300' : 'text-gray-800'}`}
                   style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 500 }}
+                  onClick={() => setEditingTodo(todo)}
                 >
                   {todo.text}
                 </span>
