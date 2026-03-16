@@ -427,9 +427,9 @@ function JamDdalVideos({ onSelect }) {
   }, [])
 
   if (loading) return (
-    <div className="flex-1 flex items-center gap-2 overflow-hidden">
+    <div className="flex-1 flex items-center gap-2 py-3" style={{ overflowX: 'hidden' }}>
       {[0,1,2,3].map(i => (
-        <div key={i} className="flex-shrink-0 rounded-xl bg-gray-100 animate-pulse" style={{ width: 72, height: 40 }} />
+        <div key={i} className="flex-shrink-0 rounded-xl bg-gray-100 animate-pulse" style={{ width: 84, height: 48 }} />
       ))}
     </div>
   )
@@ -441,20 +441,17 @@ function JamDdalVideos({ onSelect }) {
   )
 
   return (
-    <div className="flex-1 flex items-center gap-2 overflow-hidden min-w-0">
+    <div className="flex-1 flex items-center gap-2 py-3 min-w-0"
+      style={{ overflowX: 'auto', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+    >
       {videos.map(video => (
         <button
           key={video.id}
           onClick={() => onSelect(video)}
-          className="flex-shrink-0 relative rounded-xl overflow-hidden active:scale-95 transition-transform shadow-sm"
-          style={{ width: 72, height: 40 }}
+          className="flex-shrink-0 rounded-xl overflow-hidden active:scale-95 transition-transform shadow-sm"
+          style={{ width: 84, height: 48, scrollSnapAlign: 'start' }}
         >
           <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.22)' }}>
-            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,0,0,0.88)' }}>
-              <svg width="6" height="7" viewBox="0 0 7 8" fill="white"><polygon points="1,0.5 6.5,4 1,7.5" /></svg>
-            </div>
-          </div>
         </button>
       ))}
     </div>
@@ -542,19 +539,18 @@ function TodoInputSheet({ nickname, onClose, date }) {
             {/* handle */}
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
             {/* header */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-bold text-gray-800">오늘의 할 일 추가</span>
+            <div className="flex items-center justify-end mb-4">
               <button onClick={onClose}
                 className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
             </div>
             {/* text */}
             <textarea value={text} onChange={e => setText(e.target.value)}
-              placeholder="할 일 내용을 입력하세요..."
+              placeholder="What to study..."
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#E8694A] mb-4"
               rows={2} />
             {/* subjects */}
             <div className="mb-4">
-              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">과목 선택</span>
+              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">SUBJECT</span>
               <div className="flex flex-wrap gap-1.5">
                 {DAILY_SUBJECTS.map(s => {
                   const sel = subject === s.id
@@ -576,16 +572,16 @@ function TodoInputSheet({ nickname, onClose, date }) {
             </div>
             {/* time */}
             <div className="mb-5">
-              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">공부 시간</span>
+              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">STUDY TIME</span>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
-                  <span className="text-[10px] text-gray-400 font-medium shrink-0">시작</span>
+                  <span className="text-[10px] text-gray-400 font-medium shrink-0">START</span>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
                 </div>
                 <span className="text-gray-300 text-base shrink-0">→</span>
                 <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
-                  <span className="text-[10px] text-gray-400 font-medium shrink-0">종료</span>
+                  <span className="text-[10px] text-gray-400 font-medium shrink-0">END</span>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
                 </div>
@@ -598,11 +594,11 @@ function TodoInputSheet({ nickname, onClose, date }) {
             {/* buttons */}
             <div className="flex gap-2">
               <button onClick={onClose}
-                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">닫기</button>
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">CANCEL</button>
               <button onClick={handleAdd}
                 className="py-3 rounded-2xl text-white text-sm font-bold transition-all duration-300"
                 style={{ backgroundColor: added ? '#10B981' : '#E8694A', flex: 2 }}>
-                {added ? '✓ 추가됨!' : '추가'}
+                {added ? '✓ DONE!' : 'ADD'}
               </button>
             </div>
           </div>
@@ -790,7 +786,7 @@ function TodoList({ todos }) {
                 {/* Subject 한글 — 우측정렬 */}
                 <span className="flex-shrink-0 text-[11px] sm:text-[12px] md:text-[13px] font-bold whitespace-nowrap text-right"
                   style={{ color: subj.color, fontFamily: 'Pretendard, sans-serif', width: '11%' }}>
-                  {subj.name}
+                  {(todo.subject === 'custom' && todo.subjectName) ? todo.subjectName : subj.name}
                 </span>
               </div>
             </div>
@@ -1273,15 +1269,9 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
       </div>
 
       {/* 잠뜰TV 최근 영상 + D-day */}
-      <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100/60" style={{ minHeight: 72 }}>
-        <div className="flex-1 flex flex-col gap-1.5 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-1">
-            <svg width="8" height="8" viewBox="0 0 10 10" fill="#FF0000"><polygon points="2,1 9,5 2,9" /></svg>
-            <span className="text-[9px] font-bold tracking-widest" style={{ color: '#9CA3AF', fontFamily: 'JetBrains Mono, monospace' }}>잠뜰TV</span>
-          </div>
-          <JamDdalVideos onSelect={setPlayingVideo} />
-        </div>
-        <div className="w-px self-stretch bg-gray-100 flex-shrink-0" />
+      <div className="px-4 flex items-stretch gap-3 border-b border-gray-100/60" style={{ minHeight: 72 }}>
+        <JamDdalVideos onSelect={setPlayingVideo} />
+        <div className="w-px bg-gray-100 flex-shrink-0" />
         <DdayCard dday={dday} onClick={() => setShowDdayPicker(true)} />
       </div>
 
