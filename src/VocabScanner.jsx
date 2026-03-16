@@ -298,14 +298,11 @@ function FileListView({ date, scans, onSelectScan, onViewImage }) {
 // ─── 빈 화면 ─────────────────────────────────────────────────────
 function EmptyState({ onAdd }) {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <button
-        onClick={onAdd}
-        className="px-10 py-3 text-white rounded-2xl font-bold text-base hover:opacity-90 transition-opacity shadow-sm"
-        style={{ backgroundColor: '#E8694A' }}
-      >
-        추가
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+      </svg>
+      <p className="text-[10px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Select a folder →</p>
     </div>
   )
 }
@@ -453,79 +450,87 @@ export default function VocabScanner({ onBack, nickname }) {
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 65px)' }}>
 
         {/* 좌측 75% */}
-        <div className="overflow-y-auto p-4" style={{ width: '80%' }}>
-          {selectedScan ? (
-            <VocabTable scan={selectedScan} />
-          ) : mainDate && mainScans.length > 0 ? (
-            <FileListView date={mainDate} scans={mainScans} onSelectScan={setSelectedScan} onViewImage={handleViewImage} />
-          ) : (
-            <EmptyState onAdd={() => setShowAddMenu(true)} />
+        <div className="overflow-y-auto flex flex-col" style={{ width: '80%' }}>
+          {selectedScan && (
+            <div className="sticky top-0 z-10 flex items-center px-4 py-2.5 border-b border-gray-100"
+              style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
+              <button
+                onClick={() => { setSelectedScan(null); setMainDate(null) }}
+                className="flex items-center gap-1.5 text-[11px] font-bold active:opacity-60 transition-opacity"
+                style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                BACK
+              </button>
+            </div>
           )}
+          <div className="p-4 flex-1">
+            {selectedScan ? (
+              <VocabTable scan={selectedScan} />
+            ) : (
+              <EmptyState onAdd={() => setShowAddMenu(true)} />
+            )}
+          </div>
         </div>
 
         {/* 우측 25% */}
         <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '20%' }}>
 
-          {/* 폴더 모드 */}
-          {sidebarMode === 'folders' && (
-            <>
-              <p className="text-[9px] text-center text-gray-400 font-medium py-2">날짜 폴더</p>
-              <div className="flex flex-col gap-1.5 px-2 pb-2">
-                {sortedDates.length === 0 && (
-                  <p className="text-[9px] text-center text-gray-300 mt-4 leading-relaxed">폴더 없음</p>
-                )}
-                {sortedDates.map(date => {
-                  const [, m, d] = date.split('-')
-                  const isSelected = mainDate === date
-                  return (
-                    <div key={date} className="relative">
-                      {/* X 삭제 버튼 */}
-                      <button
-                        onClick={(e) => handleDeleteFolder(date, e)}
-                        className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full bg-gray-400 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
-                        style={{ fontSize: 9, lineHeight: 1 }}
-                      >
-                        ✕
-                      </button>
-                      <button
-                        onClick={() => { setSidebarDate(date); setSidebarMode('files'); setMainDate(date); setSelectedScan(null) }}
-                        className={`w-full rounded-xl p-2 text-center transition-all border ${
-                          isSelected ? 'border-[#E8694A] bg-[#FFF3F0]' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'
-                        }`}
-                      >
-                        <div className="text-lg">📁</div>
-                        <div className="text-[10px] font-bold" style={{ color: isSelected ? '#E8694A' : '#374151' }}>{m}/{d}</div>
-                        <div className="text-[9px] text-gray-400">{scansByDate[date].length}개</div>
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
+          {/* +ADD 버튼 */}
+          <div className="flex-shrink-0 px-2 py-2 border-b border-gray-100">
+            <button
+              onClick={() => setShowAddMenu(true)}
+              className="w-full flex items-center justify-center gap-1 py-1.5 rounded-full text-white text-[10px] font-black shadow-sm active:opacity-75 transition-opacity"
+              style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
+            >
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              +ADD
+            </button>
+          </div>
 
-          {/* 파일 모드 */}
-          {sidebarMode === 'files' && sidebarDate && (
-            <>
-              <div className="px-2 py-2 border-b border-gray-100">
-                <button onClick={() => setSidebarMode('folders')} className="text-[10px] text-gray-500 hover:text-gray-800 font-medium">← 폴더</button>
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                {(scansByDate[sidebarDate] || []).map((scan) => (
-                  <div key={scan.id}>
-                    <div
-                      className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer border-2 hover:border-[#E8694A] transition-colors"
-                      style={{ borderColor: selectedScan?.id === scan.id ? '#E8694A' : 'transparent' }}
-                      onClick={() => { setMainDate(sidebarDate); setSelectedScan(scan) }}
-                      onDoubleClick={(e) => { e.stopPropagation(); handleViewImage(scan.imageId) }}
-                    >
-                      <ThumbnailImage imageId={scan.imageId} className="w-full h-full" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          {/* 날짜 폴더 목록 */}
+          <div className="flex flex-col gap-1.5 px-2 pb-2 pt-2 overflow-y-auto">
+            {sortedDates.length === 0 && (
+              <p className="text-[9px] text-center text-gray-300 mt-4 leading-relaxed">폴더 없음</p>
+            )}
+            {sortedDates.map(date => {
+              const [, m, d] = date.split('-')
+              const isSelected = mainDate === date
+              return (
+                <div key={date} className="relative">
+                  <button
+                    onClick={(e) => handleDeleteFolder(date, e)}
+                    className="absolute top-1 left-1 z-10 w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 text-white flex items-center justify-center transition-colors"
+                    style={{ fontSize: 9, lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                  <button
+                    onClick={() => {
+                      const scansForDate = scansByDate[date] || []
+                      if (scansForDate.length > 0) {
+                        setMainDate(date)
+                        setSelectedScan(scansForDate[0])
+                      }
+                    }}
+                    className="w-full rounded-xl p-2 text-center transition-all border active:opacity-70"
+                    style={{
+                      borderColor: isSelected ? '#E8694A' : '#F1F5F9',
+                      backgroundColor: isSelected ? '#FFF3F0' : '#F8FAFC',
+                    }}
+                  >
+                    <div className="text-lg">📁</div>
+                    <div className="text-[10px] font-bold" style={{ color: isSelected ? '#E8694A' : '#374151' }}>{m}/{d}</div>
+                    <div className="text-[9px] text-gray-400">{scansByDate[date].length}개</div>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
