@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 /* ── 형광펜 색상 팔레트 ── */
 const HIGHLIGHT_COLORS = [
@@ -164,6 +164,10 @@ function WordCard({ word, index, onMemorize, onRevealMeaning }) {
   )
 }
 
+const MONO = 'JetBrains Mono, monospace'
+const CORAL = '#E8694A'
+const CORAL_BG = '#FFF3F0'
+
 /* ── 메인 VocabSection ── */
 export default function VocabSection() {
   const [sessions, setSessions] = useState([])
@@ -178,6 +182,31 @@ export default function VocabSection() {
 
   const cameraRef = useRef(null)
   const fileRef = useRef(null)
+  const scrollRef = useRef(null)
+
+  // Pull-to-refresh: 단어장 첫화면으로 (세션 선택 해제)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let startY = 0, canPull = false
+    const onStart = e => {
+      startY = e.touches[0].clientY
+      canPull = el.scrollTop === 0
+    }
+    const onEnd = e => {
+      if (!canPull) return
+      if (e.changedTouches[0].clientY - startY > 80) {
+        setSelectedSessionId(null)
+        setShuffledOrder(null)
+      }
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [])
 
   /* OCR 실행 */
   async function runOCR(photos) {
@@ -351,22 +380,22 @@ export default function VocabSection() {
         </div>
 
         {/* 단어 카드 목록 */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full pb-8 text-center px-6">
               {sessions.length === 0 ? (
                 <>
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
-                    style={{ backgroundColor: '#FFF3F0' }}
+                    style={{ backgroundColor: CORAL_BG }}
                   >
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
                       <circle cx="12" cy="13" r="4"/>
                     </svg>
                   </div>
-                  <p className="text-xs font-bold text-gray-400 mb-1">단어장이 비어있어요</p>
-                  <p className="text-[10px] text-gray-300 leading-relaxed">
+                  <p className="text-xs font-bold mb-1" style={{ color: CORAL, fontFamily: MONO }}>단어장이 비어있어요</p>
+                  <p className="text-[10px] leading-relaxed" style={{ color: '#CBD5E1', fontFamily: MONO }}>
                     단어장 사진을 찍으면<br/>단어가 자동으로 인식돼요
                   </p>
                 </>
@@ -375,7 +404,7 @@ export default function VocabSection() {
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mb-3">
                     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
                   </svg>
-                  <p className="text-[10px] text-gray-300" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                  <p className="text-[10px]" style={{ color: '#CBD5E1', fontFamily: MONO }}>
                     Select a folder →
                   </p>
                 </>
@@ -389,48 +418,78 @@ export default function VocabSection() {
                 const allRevealed = session.words.length > 0 && session.words.every(w => w.meaningVisible)
                 return (
                   <div>
+                    {/* 셔플 토글 배너 */}
+                    <button
+                      onClick={() => toggleShuffle(session.words)}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-2 transition-all duration-200 active:scale-[0.98]"
+                      style={{
+                        backgroundColor: shuffledOrder ? CORAL : '#F8FAFC',
+                        border: `1.5px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* 셔플 아이콘 */}
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                          stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
+                          strokeLinecap="round" strokeLinejoin="round"
+                        >
+                          <polyline points="16 3 21 3 21 8"/>
+                          <line x1="4" y1="20" x2="21" y2="3"/>
+                          <polyline points="21 16 21 21 16 21"/>
+                          <line x1="15" y1="15" x2="21" y2="21"/>
+                        </svg>
+                        <span
+                          className="text-[10px] font-black tracking-widest"
+                          style={{ color: shuffledOrder ? '#fff' : '#94A3B8', fontFamily: MONO }}
+                        >
+                          {shuffledOrder ? 'SHUFFLE ON' : 'SHUFFLE'}
+                        </span>
+                      </div>
+                      {/* 토글 스위치 */}
+                      <div
+                        className="relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0"
+                        style={{ backgroundColor: shuffledOrder ? 'rgba(255,255,255,0.35)' : '#E2E8F0' }}
+                      >
+                        <div
+                          className="absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-200"
+                          style={{
+                            backgroundColor: shuffledOrder ? '#fff' : '#94A3B8',
+                            left: shuffledOrder ? 18 : 2,
+                          }}
+                        />
+                      </div>
+                    </button>
+
                     <div className="flex items-center gap-1.5 mb-2.5">
                       <div className="flex-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
                       <span
                         className="text-[9px] font-bold tabular-nums"
-                        style={{ color: '#CBD5E1', fontFamily: 'JetBrains Mono, monospace' }}
+                        style={{ color: '#CBD5E1', fontFamily: MONO }}
                       >
                         {done}/{session.words.length}
                       </span>
                       <button
-                        onClick={() => toggleShuffle(session.words)}
-                        className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
-                        style={{
-                          color: shuffledOrder ? '#E8694A' : '#94A3B8',
-                          fontFamily: 'JetBrains Mono, monospace',
-                          backgroundColor: shuffledOrder ? '#FFF3F0' : '#F8FAFC',
-                          border: `1px solid ${shuffledOrder ? '#E8694A' : '#E2E8F0'}`,
-                        }}
-                      >
-                        {shuffledOrder ? '순서복원' : '섞기'}
-                      </button>
-                      <button
                         onClick={() => allRevealed ? hideAll(session.id) : revealAll(session.id)}
                         className="text-[9px] px-1.5 py-0.5 rounded"
                         style={{
-                          color: '#94A3B8',
-                          fontFamily: 'JetBrains Mono, monospace',
-                          backgroundColor: '#F8FAFC',
-                          border: '1px solid #E2E8F0',
+                          color: CORAL,
+                          fontFamily: MONO,
+                          backgroundColor: CORAL_BG,
+                          border: `1px solid ${CORAL}`,
                         }}
                       >
                         {allRevealed ? '뜻 숨기기' : '뜻 전체보기'}
                       </button>
                       <button
                         onClick={() => { deleteSession(session.id); setSelectedSessionId(null); setShuffledOrder(null) }}
-                        className="w-5 h-5 flex items-center justify-center rounded text-gray-200 hover:text-red-300 transition-colors"
-                        style={{ fontSize: 10 }}
+                        className="w-5 h-5 flex items-center justify-center rounded transition-colors"
+                        style={{ color: '#E2E8F0', fontSize: 10, fontFamily: MONO }}
                       >
                         ✕
                       </button>
                     </div>
                     {session.words.length === 0 ? (
-                      <p className="text-xs text-gray-300 text-center py-4">인식된 단어가 없습니다</p>
+                      <p className="text-xs text-center py-4" style={{ color: '#CBD5E1', fontFamily: MONO }}>인식된 단어가 없습니다</p>
                     ) : (
                       (() => {
                         const displayWords = shuffledOrder
@@ -531,8 +590,8 @@ export default function VocabSection() {
             </div>
             <div className="px-6 pt-3 pb-2">
               <p
-                className="text-center text-sm font-black text-gray-700 mb-5 tracking-wide"
-                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                className="text-center text-sm font-black mb-5 tracking-widest"
+                style={{ color: CORAL, fontFamily: MONO }}
               >
                 VOCAB BOOK 추가
               </p>
@@ -540,11 +599,11 @@ export default function VocabSection() {
                 <button
                   onClick={() => cameraRef.current?.click()}
                   className="w-full py-4 rounded-2xl flex items-center gap-4 px-5 active:opacity-80 transition-opacity"
-                  style={{ backgroundColor: '#FFF3F0' }}
+                  style={{ backgroundColor: CORAL_BG }}
                 >
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: '#E8694A' }}
+                    style={{ backgroundColor: CORAL }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
@@ -552,8 +611,8 @@ export default function VocabSection() {
                     </svg>
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-bold text-gray-800">사진 찍기</p>
-                    <p className="text-[11px] text-gray-400">카메라로 단어장을 촬영해요</p>
+                    <p className="text-sm font-bold" style={{ color: CORAL, fontFamily: MONO }}>사진 찍기</p>
+                    <p className="text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>카메라로 단어장을 촬영해요</p>
                   </div>
                 </button>
                 <button
@@ -571,8 +630,8 @@ export default function VocabSection() {
                     </svg>
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-bold text-gray-700">갤러리에서 선택</p>
-                    <p className="text-[11px] text-gray-400">저장된 사진을 불러와요</p>
+                    <p className="text-sm font-bold" style={{ color: '#374151', fontFamily: MONO }}>갤러리에서 선택</p>
+                    <p className="text-[11px]" style={{ color: '#94A3B8', fontFamily: MONO }}>저장된 사진을 불러와요</p>
                   </div>
                 </button>
               </div>
@@ -597,24 +656,24 @@ export default function VocabSection() {
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </div>
-            <p className="text-center font-black text-gray-800 mb-1">
+            <p className="text-center font-black mb-1" style={{ color: CORAL, fontFamily: MONO }}>
               {pendingPhotos.length}장 촬영됨
             </p>
-            <p className="text-center text-sm text-gray-400 mb-6 leading-relaxed">
+            <p className="text-center text-sm mb-6 leading-relaxed" style={{ color: '#94A3B8', fontFamily: MONO }}>
               추가로 찍을 사진이 있나요?
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => { setShowMoreDialog(false); runOCR(pendingPhotos) }}
-                className="flex-1 py-3 rounded-2xl border-2 text-sm font-bold text-gray-500 transition-colors"
-                style={{ borderColor: '#E5E7EB' }}
+                className="flex-1 py-3 rounded-2xl border-2 text-sm font-bold transition-colors"
+                style={{ borderColor: '#E2E8F0', color: '#94A3B8', fontFamily: MONO }}
               >
                 없어요
               </button>
               <button
                 onClick={() => { setShowMoreDialog(false); cameraRef.current?.click() }}
                 className="flex-1 py-3 rounded-2xl text-white text-sm font-bold shadow-sm active:opacity-80"
-                style={{ backgroundColor: '#E8694A' }}
+                style={{ backgroundColor: CORAL, fontFamily: MONO }}
               >
                 더 찍기
               </button>
@@ -635,10 +694,10 @@ export default function VocabSection() {
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
               </svg>
             </div>
-            <p className="text-center font-black text-gray-800 mb-1">단어 인식 중</p>
+            <p className="text-center font-black mb-1" style={{ color: CORAL, fontFamily: MONO }}>단어 인식 중</p>
             <p
-              className="text-center text-xs text-gray-400 mb-4 h-4"
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}
+              className="text-center text-xs mb-4 h-4"
+              style={{ color: '#94A3B8', fontFamily: MONO }}
             >
               {processingMsg}
             </p>
