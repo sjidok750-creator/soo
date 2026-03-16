@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 import {
   collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy,
 } from 'firebase/firestore'
@@ -518,8 +519,6 @@ export default function NotesPage({ onBack }) {
   const [commentItem, setCommentItem] = useState(null)
   const [selectedSubject, setSelectedSubject] = useState(null)
 
-  const rightPanelRef = useRef(null)
-
   const [liked, setLiked] = useState(() => {
     try { return JSON.parse(localStorage.getItem('notes-liked') || '[]') } catch { return [] }
   })
@@ -546,27 +545,6 @@ export default function NotesPage({ onBack }) {
     const updated = media.find(m => m.id === commentItem.id)
     if (updated) setCommentItem(updated)
   }, [media])
-
-  // Pull-to-refresh: 첫화면으로 (과목 필터 해제)
-  useEffect(() => {
-    const el = rightPanelRef.current
-    if (!el) return
-    let startY = 0, canPull = false
-    const onStart = e => {
-      startY = e.touches[0].clientY
-      canPull = el.scrollTop === 0
-    }
-    const onEnd = e => {
-      if (!canPull) return
-      if (e.changedTouches[0].clientY - startY > 80) setSelectedSubject(null)
-    }
-    el.addEventListener('touchstart', onStart, { passive: true })
-    el.addEventListener('touchend', onEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchend', onEnd)
-    }
-  }, [])
 
   function toggleLike(id) {
     setLiked(prev => {
@@ -726,8 +704,9 @@ export default function NotesPage({ onBack }) {
           </button>
         </div>
 
-        {/* ── 우측 메인 패널 (85%) ── */}
-        <div ref={rightPanelRef} className="flex-1 overflow-y-auto bg-white">
+        {/* ── 우측 메인 패널 (85%) — PTR로 첫화면 복귀 ── */}
+        <PullToRefreshWrapper onRefresh={() => setSelectedSubject(null)} bg="#fff" style={{ flex: 1, overflow: 'hidden' }}>
+        <div className="flex-1 overflow-y-auto bg-white" style={{ minHeight: '100%' }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-2">
@@ -759,7 +738,7 @@ export default function NotesPage({ onBack }) {
                   className="px-4 py-2 rounded-xl text-white font-black tracking-wider active:opacity-80"
                   style={{ background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)`, fontFamily: MONO, fontSize: 10 }}
                 >
-                  + ADD
+                  +ADD
                 </button>
               )}
             </div>
@@ -796,6 +775,7 @@ export default function NotesPage({ onBack }) {
             </div>
           )}
         </div>
+        </PullToRefreshWrapper>
       </div>
 
       {/* ── 오버레이 ── */}

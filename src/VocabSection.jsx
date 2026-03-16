@@ -339,16 +339,50 @@ export default function VocabSection() {
           style={{ backgroundColor: '#FAFAFA' }}
         >
           {currentSession ? (
-            <button
-              onClick={() => { setSelectedSessionId(null); setShuffledOrder(null) }}
-              className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
-              style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
-              BACK
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setSelectedSessionId(null); setShuffledOrder(null) }}
+                className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
+                style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                BACK
+              </button>
+
+              {/* 셔플 토글 — BACK 라인 오른쪽 */}
+              <button
+                onClick={() => toggleShuffle(currentSession.words)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 active:scale-95"
+                style={{
+                  backgroundColor: shuffledOrder ? CORAL : '#F1F5F9',
+                  border: `1px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
+                }}
+              >
+                {/* 셔플 아이콘 */}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                  stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
+                  strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polyline points="16 3 21 3 21 8"/>
+                  <line x1="4" y1="20" x2="21" y2="3"/>
+                  <polyline points="21 16 21 21 16 21"/>
+                  <line x1="15" y1="15" x2="21" y2="21"/>
+                </svg>
+                <span
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 8,
+                    fontWeight: 900,
+                    letterSpacing: '0.08em',
+                    color: shuffledOrder ? '#fff' : '#94A3B8',
+                  }}
+                >
+                  {shuffledOrder ? 'ON' : 'SHUFFLE'}
+                </span>
+              </button>
+            </div>
           ) : (
             <div>
               <p
@@ -418,48 +452,6 @@ export default function VocabSection() {
                 const allRevealed = session.words.length > 0 && session.words.every(w => w.meaningVisible)
                 return (
                   <div>
-                    {/* 셔플 토글 배너 */}
-                    <button
-                      onClick={() => toggleShuffle(session.words)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl mb-2 transition-all duration-200 active:scale-[0.98]"
-                      style={{
-                        backgroundColor: shuffledOrder ? CORAL : '#F8FAFC',
-                        border: `1.5px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {/* 셔플 아이콘 */}
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                          stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
-                          strokeLinecap="round" strokeLinejoin="round"
-                        >
-                          <polyline points="16 3 21 3 21 8"/>
-                          <line x1="4" y1="20" x2="21" y2="3"/>
-                          <polyline points="21 16 21 21 16 21"/>
-                          <line x1="15" y1="15" x2="21" y2="21"/>
-                        </svg>
-                        <span
-                          className="text-[10px] font-black tracking-widest"
-                          style={{ color: shuffledOrder ? '#fff' : '#94A3B8', fontFamily: MONO }}
-                        >
-                          {shuffledOrder ? 'SHUFFLE ON' : 'SHUFFLE'}
-                        </span>
-                      </div>
-                      {/* 토글 스위치 */}
-                      <div
-                        className="relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0"
-                        style={{ backgroundColor: shuffledOrder ? 'rgba(255,255,255,0.35)' : '#E2E8F0' }}
-                      >
-                        <div
-                          className="absolute top-0.5 w-3 h-3 rounded-full shadow-sm transition-all duration-200"
-                          style={{
-                            backgroundColor: shuffledOrder ? '#fff' : '#94A3B8',
-                            left: shuffledOrder ? 18 : 2,
-                          }}
-                        />
-                      </div>
-                    </button>
-
                     <div className="flex items-center gap-1.5 mb-2.5">
                       <div className="flex-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
                       <span
