@@ -267,21 +267,66 @@ function CommentSheet({ item, onClose, onAddComment }) {
   )
 }
 
-// ── 삭제 확인 시트 ────────────────────────────────────────────────
-function DeleteSheet({ onDelete, onCancel }) {
+// ── 롱프레스 컨텍스트 메뉴 (Delete / Edit / Close) ────────────────
+function ContextMenuSheet({ onDelete, onEdit, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative bg-white rounded-t-3xl overflow-hidden"
         onClick={e => e.stopPropagation()}
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
         <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-gray-200" /></div>
         <div className="px-4 py-3 space-y-2">
-          <button className="w-full py-4 rounded-2xl text-base font-bold text-white" style={{ background: '#E8694A' }}
-            onClick={onDelete}>삭제</button>
-          <button className="w-full py-4 rounded-2xl text-base font-semibold text-gray-500 bg-gray-100"
-            onClick={onCancel}>취소</button>
+          <button className="w-full py-4 rounded-2xl text-base font-bold text-white tracking-widest"
+            style={{ background: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
+            onClick={onDelete}>DELETE</button>
+          <button className="w-full py-4 rounded-2xl text-base font-bold tracking-widest"
+            style={{ background: '#F3F4F6', color: '#374151', fontFamily: 'JetBrains Mono, monospace' }}
+            onClick={onEdit}>EDIT</button>
+          <button className="w-full py-4 rounded-2xl text-base font-semibold tracking-widest"
+            style={{ color: '#9CA3AF', fontFamily: 'JetBrains Mono, monospace' }}
+            onClick={onClose}>CLOSE</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 노트 수정 시트 ────────────────────────────────────────────────
+function EditNoteSheet({ item, onClose, onSave }) {
+  const [memo, setMemo] = useState(item.memo || '')
+  const [subject, setSubject] = useState(item.subject || '')
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative bg-white rounded-t-3xl px-5 pt-5"
+        onClick={e => e.stopPropagation()}
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
+        <p className="text-xs font-bold text-gray-400 mb-2 tracking-wider uppercase">Subject</p>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
+          {SUBJECT_TABS.map(t => (
+            <button key={t} onClick={() => setSubject(subject === t ? '' : t)}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition"
+              style={{ background: subject === t ? '#E8694A' : '#F5F5F5', color: subject === t ? 'white' : '#888' }}>
+              {t}
+            </button>
+          ))}
+        </div>
+        <textarea value={memo} onChange={e => setMemo(e.target.value)}
+          placeholder="제목 또는 메모를 입력하세요..."
+          rows={3}
+          className="w-full px-4 py-3 rounded-2xl text-sm text-gray-800 placeholder-gray-300 focus:outline-none resize-none"
+          style={{ border: '2px solid #F0EDE8', fontFamily: 'Pretendard, sans-serif' }}
+          onFocus={e => { e.target.style.borderColor = '#E8694A' }}
+          onBlur={e => { e.target.style.borderColor = '#F0EDE8' }}
+        />
+        <button className="w-full mt-4 py-3.5 rounded-2xl text-white font-black text-[13px] tracking-widest active:opacity-80 transition-all"
+          style={{ background: 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)', boxShadow: '0 4px 18px rgba(232,105,74,0.38)', fontFamily: 'JetBrains Mono, monospace' }}
+          onClick={() => onSave({ memo, subject })}>
+          SAVE →
+        </button>
       </div>
     </div>
   )
@@ -308,9 +353,9 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
     return () => observer.disconnect()
   }, [isVideo])
 
-  // 롱프레스
+  // 롱프레스 → full item 전달
   function handlePointerDown() {
-    pressTimer.current = setTimeout(() => onLongPress(item.id), 600)
+    pressTimer.current = setTimeout(() => onLongPress(item), 600)
   }
   function handlePointerUp() {
     clearTimeout(pressTimer.current)
@@ -408,7 +453,7 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
 
       {/* 과목 · 제목 — 한 줄, Pretendard 13px bold (투두와 동일) */}
       {(item.subject || item.memo) && (
-        <div className="px-3 pb-3">
+        <div className="px-3 pt-0 pb-1.5">
           <p className="text-[13px] leading-snug text-gray-900"
             style={{ fontFamily: 'Pretendard, sans-serif', fontWeight: 700 }}>
             {item.subject && (
@@ -418,6 +463,22 @@ function PostCard({ item, isLiked, isBookmarked, shareCount, onToggleLike, onTog
               <span>#{item.memo}</span>
             )}
           </p>
+        </div>
+      )}
+
+      {/* 댓글 미리보기 — 제목 아래 최대 2개 + ... */}
+      {item.comments && item.comments.length > 0 && (
+        <div className="px-3 pb-3 space-y-0.5">
+          {item.comments.slice(0, 2).map(c => (
+            <p key={c.id} className="text-[12px] leading-snug truncate"
+              style={{ fontFamily: 'Pretendard, sans-serif', color: '#374151' }}>
+              <span className="font-bold" style={{ color: '#9CA3AF' }}>· </span>
+              {c.text}
+            </p>
+          ))}
+          {item.comments.length > 2 && (
+            <p className="text-[11px] font-bold" style={{ color: '#D1D5DB', fontFamily: 'JetBrains Mono, monospace' }}>···</p>
+          )}
         </div>
       )}
     </div>
@@ -431,7 +492,8 @@ export default function NotesPage({ onBack }) {
   const [showPicker, setShowPicker] = useState(false)
   const [pendingFile, setPendingFile] = useState(null)
   const [pendingDataURL, setPendingDataURL] = useState(null)
-  const [deleteTargetId, setDeleteTargetId] = useState(null)
+  const [contextItem, setContextItem] = useState(null)   // 롱프레스 컨텍스트 메뉴
+  const [editItem, setEditItem] = useState(null)          // 노트 수정
   const [fullscreenItem, setFullscreenItem] = useState(null)
   const [commentItem, setCommentItem] = useState(null)
 
@@ -514,7 +576,15 @@ export default function NotesPage({ onBack }) {
   async function handleDelete(id) {
     await deleteMedia(id)
     setMedia(prev => prev.filter(m => m.id !== id))
-    setDeleteTargetId(null)
+    setContextItem(null)
+  }
+
+  // 노트 수정 저장
+  async function handleEditSave({ memo, subject }) {
+    const id = editItem.id
+    await updateMedia(id, { memo, subject })
+    setMedia(prev => prev.map(m => m.id === id ? { ...m, memo, subject } : m))
+    setEditItem(null)
   }
 
   return (
@@ -580,7 +650,7 @@ export default function NotesPage({ onBack }) {
               onShare={handleShare}
               onOpenComments={setCommentItem}
               onFullscreen={setFullscreenItem}
-              onLongPress={setDeleteTargetId}
+              onLongPress={setContextItem}
             />
           ))
         )}
@@ -615,11 +685,21 @@ export default function NotesPage({ onBack }) {
         />
       )}
 
-      {/* 삭제 확인 */}
-      {deleteTargetId !== null && (
-        <DeleteSheet
-          onDelete={() => handleDelete(deleteTargetId)}
-          onCancel={() => setDeleteTargetId(null)}
+      {/* 롱프레스 컨텍스트 메뉴 */}
+      {contextItem && (
+        <ContextMenuSheet
+          onDelete={() => handleDelete(contextItem.id)}
+          onEdit={() => { setEditItem(contextItem); setContextItem(null) }}
+          onClose={() => setContextItem(null)}
+        />
+      )}
+
+      {/* 노트 수정 */}
+      {editItem && (
+        <EditNoteSheet
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSave={handleEditSave}
         />
       )}
     </div>
