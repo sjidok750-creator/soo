@@ -619,7 +619,7 @@ export default function TaskManager({ onBack, nickname }) {
   const isToday  = viewDate === today
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="min-h-screen bg-stone-50 flex flex-col" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
 
       {/* Pull-to-refresh 인디케이터 */}
       {isRefreshing && (
@@ -668,15 +668,15 @@ export default function TaskManager({ onBack, nickname }) {
       {/* ── 테이블 (스와이프 컨테이너) ─────────────────────────────── */}
       <div className="overflow-hidden px-4 pb-5 flex-1">
         <div ref={tableContainerRef} className="w-full will-change-transform">
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+          <div className="rounded-2xl overflow-hidden" style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}>
 
             {/* 테이블 헤더 */}
-            <div className="bg-gray-50 border-b border-gray-100">
+            <div className="border-b border-gray-200/40" style={{ backgroundColor: 'rgba(232,105,74,0.07)' }}>
               <div className="grid" style={{ gridTemplateColumns: gridCols }}>
-                <div className="px-2 py-2.5 text-[10px] font-bold text-gray-400 border-r border-gray-100" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Subj.</div>
-                <div className="px-2 py-2.5 text-[10px] font-bold text-gray-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>The task</div>
-                <div className="px-1 py-2.5 text-[10px] font-bold text-gray-400 border-l border-gray-100 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>D/L</div>
-                <div className="px-1 py-2.5 text-[10px] font-bold text-gray-400 border-l border-gray-100 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Attc.</div>
+                <div className="px-2 py-2.5 text-[10px] font-bold text-[#C4845A] border-r border-gray-200/40" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Subj.</div>
+                <div className="px-2 py-2.5 text-[10px] font-bold text-[#C4845A]" style={{ fontFamily: 'JetBrains Mono, monospace' }}>The task</div>
+                <div className="px-1 py-2.5 text-[10px] font-bold text-[#C4845A] border-l border-gray-200/40 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>D/L</div>
+                <div className="px-1 py-2.5 text-[10px] font-bold text-[#C4845A] border-l border-gray-200/40 text-center" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Attc.</div>
               </div>
             </div>
 
@@ -704,8 +704,8 @@ export default function TaskManager({ onBack, nickname }) {
                   {catTasks.length === 0 && (
                     <>
                       {[0, 1].map(i => (
-                        <div key={i} className="grid border-b border-gray-50" style={{ gridTemplateColumns: gridCols, minHeight: 34 }}>
-                          <div className="border-r border-gray-50" /><div /><div className="border-l border-gray-50" /><div className="border-l border-gray-50" />
+                        <div key={i} className="grid border-b border-gray-200/40" style={{ gridTemplateColumns: gridCols, minHeight: 34 }}>
+                          <div className="border-r border-gray-200/40" /><div /><div className="border-l border-gray-200/40" /><div className="border-l border-gray-200/40" />
                         </div>
                       ))}
                     </>
@@ -716,12 +716,12 @@ export default function TaskManager({ onBack, nickname }) {
                     const s = getDailySubject(task.subject)
                     return (
                       <div key={task.id}
-                        className="grid border-b border-gray-50 last:border-0 cursor-pointer active:bg-gray-50/70 transition-colors"
-                        style={{ gridTemplateColumns: gridCols, minHeight: 42 }}
+                        className="grid border-b border-gray-200/40 last:border-0 cursor-pointer active:bg-orange-50/60 transition-colors"
+                        style={{ gridTemplateColumns: gridCols, minHeight: 38 }}
                         onClick={() => setSelectedTask(task)}>
 
                         {/* Subj. — 한글 과목명 */}
-                        <div className="px-1.5 py-2 border-r border-gray-100 flex items-center justify-center">
+                        <div className="px-1.5 py-2 border-r border-gray-200/40 flex items-center justify-center">
                           <span
                             className="text-[9px] font-black text-center leading-tight px-1.5 py-0.5 rounded-md"
                             style={{
@@ -756,7 +756,7 @@ export default function TaskManager({ onBack, nickname }) {
                         </div>
 
                         {/* D/L */}
-                        <div className="px-1 py-2 border-l border-gray-100 flex items-center justify-center">
+                        <div className="px-1 py-2 border-l border-gray-200/40 flex items-center justify-center">
                           <span className="text-[10px] font-semibold"
                             style={{ color: task.done ? '#CBD5E1' : '#6B7280', fontFamily: 'JetBrains Mono, monospace' }}>
                             {fmtShort(task.deadline) || '—'}
@@ -764,7 +764,7 @@ export default function TaskManager({ onBack, nickname }) {
                         </div>
 
                         {/* Attc. */}
-                        <div className="px-1 py-2 border-l border-gray-100 flex items-center justify-center">
+                        <div className="px-1 py-2 border-l border-gray-200/40 flex items-center justify-center">
                           {task.attachmentName && (
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
                               stroke={task.done ? '#CBD5E1' : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
