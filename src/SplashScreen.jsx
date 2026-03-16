@@ -92,7 +92,7 @@ export default function SplashScreen({ onDone }) {
           filter: phase >= 3 ? 'blur(0px)' : 'blur(4px)',
         }}
       >
-        For. 수현
+        For. L.S.HYEON
       </p>
     </div>
   )
