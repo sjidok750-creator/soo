@@ -5,7 +5,7 @@ import {
   deleteDoc, doc, updateDoc, setDoc
 } from 'firebase/firestore'
 import { useToast } from './Toast'
-import { SUBJECTS, getSubject } from './subjectConfig'
+import { SUBJECTS, getSubject, DAILY_SUBJECTS, getDailySubject } from './subjectConfig'
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
@@ -18,23 +18,6 @@ const FIXED_HOLIDAYS = {
 const DAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
-const DAILY_SUBJECTS = [
-  { id: 'kor',  name: '국어',      abbr: 'KOR',  color: '#E53E3E', bg: '#FEF2F2' },  // 강렬한 레드
-  { id: 'math', name: '수학',      abbr: 'MATH', color: '#3B82F6', bg: '#EFF6FF' },  // 밝은 블루
-  { id: 'eng',  name: '영어',      abbr: 'ENG',  color: '#10B981', bg: '#ECFDF5' },  // 에메랄드
-  { id: 'ss',   name: '사회',      abbr: 'SS',   color: '#F59E0B', bg: '#FFFBEB' },  // 앰버
-  { id: 'kh',   name: '한국사',    abbr: 'KH',   color: '#F97316', bg: '#FFF7ED' },  // 오렌지
-  { id: 'pl',   name: '정법',      abbr: 'PL',   color: '#8B5CF6', bg: '#F5F3FF' },  // 바이올렛
-  { id: 'econ', name: '경제',      abbr: 'ECON', color: '#14B8A6', bg: '#F0FDFA' },  // 틸
-  { id: 'ei',   name: '윤리와사상', abbr: 'EI',  color: '#6366F1', bg: '#EEF2FF' },  // 인디고
-  { id: 'sci',  name: '과학',      abbr: 'SCI',  color: '#06B6D4', bg: '#ECFEFF' },  // 시안
-  { id: 'phy',  name: '물리',      abbr: 'PHY',  color: '#A855F7', bg: '#FAF5FF' },  // 퍼플
-  { id: 'chem', name: '화학',      abbr: 'CHEM', color: '#EC4899', bg: '#FDF2F8' },  // 핑크
-  { id: 'bio',  name: '생명과학',  abbr: 'BIO',  color: '#84CC16', bg: '#F7FEE7' },  // 라임
-  { id: 'es',   name: '지구과학',  abbr: 'ES',   color: '#0EA5E9', bg: '#F0F9FF' },  // 스카이
-  { id: 'custom', name: '직접입력', abbr: 'ETC', color: '#94A3B8', bg: '#F9FAFB' },  // 슬레이트
-]
-
 function getTodayStr() {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
@@ -43,9 +26,6 @@ function timeToMins(str) {
   if (!str) return 0
   const [h, m] = str.split(':').map(Number)
   return h * 60 + m
-}
-function getDailySubject(id) {
-  return DAILY_SUBJECTS.find(s => s.id === id) || DAILY_SUBJECTS.at(-1)
 }
 
 function getTodayLabel() {
@@ -60,6 +40,27 @@ function formatTotal(mins) {
   if (mins < 60) return `${mins}min`
   const h = Math.floor(mins / 60), m = mins % 60
   return m > 0 ? `${h}h${m}min` : `${h}h`
+}
+
+function usePullToRefresh() {
+  const [refreshing, setRefreshing] = useState(false)
+  useEffect(() => {
+    let startY = 0, startX = 0, canPull = false
+    const onStart = (e) => {
+      startY = e.touches[0].clientY; startX = e.touches[0].clientX
+      canPull = (window.scrollY || document.documentElement.scrollTop) === 0
+    }
+    const onEnd = (e) => {
+      if (!canPull) return
+      const dy = e.changedTouches[0].clientY - startY
+      const dx = Math.abs(e.changedTouches[0].clientX - startX)
+      if (dy > 80 && dx < 40) { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend',   onEnd,   { passive: true })
+    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
+  }, [])
+  return refreshing
 }
 
 function parseDday(raw) {
@@ -1133,7 +1134,6 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
           <TodoList todos={todos} />
         )}
       </div>
-      <p className="text-center text-[9px] text-gray-200 pb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>← 스와이프로 날짜 이동 →</p>
     </div>
   )
 }
@@ -1145,6 +1145,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
   const [showTodoInput, setShowTodoInput] = useState(false)
+  const isRefreshing = usePullToRefresh()
   const [playingVideo, setPlayingVideo] = useState(null)
   const [todayTodos, setTodayTodos] = useState([])
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
@@ -1232,6 +1233,11 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
   return (
     <div className="min-h-screen bg-stone-50 pb-16">
+      {isRefreshing && (
+        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
+          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#0D9488' }} />
+        </div>
+      )}
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">

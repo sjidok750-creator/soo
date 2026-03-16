@@ -316,8 +316,31 @@ function AddMenu({ anchor, onCamera, onGallery, onFiles, onClose }) {
   )
 }
 
+// ─── Pull-to-Refresh 훅 ───────────────────────────────────────────
+function usePullToRefresh() {
+  const [refreshing, setRefreshing] = useState(false)
+  useEffect(() => {
+    let startY = 0, startX = 0, canPull = false
+    const onStart = (e) => {
+      startY = e.touches[0].clientY; startX = e.touches[0].clientX
+      canPull = (window.scrollY || document.documentElement.scrollTop) === 0
+    }
+    const onEnd = (e) => {
+      if (!canPull) return
+      const dy = e.changedTouches[0].clientY - startY
+      const dx = Math.abs(e.changedTouches[0].clientX - startX)
+      if (dy > 80 && dx < 40) { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend',   onEnd,   { passive: true })
+    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
+  }, [])
+  return refreshing
+}
+
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
 export default function VocabScanner({ onBack, nickname }) {
+  const isRefreshing = usePullToRefresh()
   const [scans, setScans] = useState([])
   const [expandedDate, setExpandedDate] = useState(null)   // 사이드바 아코디언
   const [selectedScan, setSelectedScan] = useState(null)   // 좌측 단어 표시
@@ -433,6 +456,11 @@ export default function VocabScanner({ onBack, nickname }) {
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
+      {isRefreshing && (
+        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
+          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#E8694A' }} />
+        </div>
+      )}
 
       {/* 헤더 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
