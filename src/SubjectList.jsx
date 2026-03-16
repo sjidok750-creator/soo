@@ -1152,6 +1152,7 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
 export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpenTaskManager, showTodoInput, onCloseTodoInput }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
+  const [localShowTodo, setLocalShowTodo] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
@@ -1247,7 +1248,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-3 pb-2.5 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2.5">
           {/* 달력 아이콘 버튼 — 조금 작게 */}
           <button
             onClick={() => setShowCalendar(true)}
@@ -1280,6 +1281,17 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
+          {/* 할일 추가 버튼 */}
+          <button
+            onClick={() => setLocalShowTodo(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-[11px] font-black shadow-sm active:opacity-75 transition-opacity flex-shrink-0"
+            style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            ADD
+          </button>
         </div>
       </div>
 
@@ -1354,7 +1366,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
-      {showTodoInput && <TodoInputSheet nickname={nickname} onClose={onCloseTodoInput} date={selectedDate} />}
+      {(showTodoInput || localShowTodo) && <TodoInputSheet nickname={nickname} onClose={() => { onCloseTodoInput?.(); setLocalShowTodo(false) }} date={selectedDate} />}
       {playingVideo && <YouTubeVideoSheet video={playingVideo} onClose={() => setPlayingVideo(null)} />}
       <ToastContainer />
 

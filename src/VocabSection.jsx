@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 
 /* ── 형광펜 색상 팔레트 ── */
 const HIGHLIGHT_COLORS = [
@@ -182,31 +183,6 @@ export default function VocabSection() {
 
   const cameraRef = useRef(null)
   const fileRef = useRef(null)
-  const scrollRef = useRef(null)
-
-  // Pull-to-refresh: 단어장 첫화면으로 (세션 선택 해제)
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    let startY = 0, canPull = false
-    const onStart = e => {
-      startY = e.touches[0].clientY
-      canPull = el.scrollTop === 0
-    }
-    const onEnd = e => {
-      if (!canPull) return
-      if (e.changedTouches[0].clientY - startY > 80) {
-        setSelectedSessionId(null)
-        setShuffledOrder(null)
-      }
-    }
-    el.addEventListener('touchstart', onStart, { passive: true })
-    el.addEventListener('touchend', onEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchend', onEnd)
-    }
-  }, [])
 
   /* OCR 실행 */
   async function runOCR(photos) {
@@ -354,15 +330,15 @@ export default function VocabSection() {
               {/* 셔플 토글 — BACK 라인 오른쪽 */}
               <button
                 onClick={() => toggleShuffle(currentSession.words)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-150 active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-150 active:scale-95"
                 style={{
                   backgroundColor: shuffledOrder ? CORAL : '#F1F5F9',
-                  border: `1px solid ${shuffledOrder ? CORAL : '#E2E8F0'}`,
+                  border: `1.5px solid ${shuffledOrder ? CORAL : '#D1D5DB'}`,
+                  boxShadow: shuffledOrder ? `0 2px 8px rgba(232,105,74,0.35)` : 'none',
                 }}
               >
-                {/* 셔플 아이콘 */}
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                  stroke={shuffledOrder ? '#fff' : '#94A3B8'} strokeWidth="2.2"
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke={shuffledOrder ? '#fff' : '#64748B'} strokeWidth="2.2"
                   strokeLinecap="round" strokeLinejoin="round"
                 >
                   <polyline points="16 3 21 3 21 8"/>
@@ -373,10 +349,10 @@ export default function VocabSection() {
                 <span
                   style={{
                     fontFamily: MONO,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: 900,
-                    letterSpacing: '0.08em',
-                    color: shuffledOrder ? '#fff' : '#94A3B8',
+                    letterSpacing: '0.06em',
+                    color: shuffledOrder ? '#fff' : '#64748B',
                   }}
                 >
                   {shuffledOrder ? 'ON' : 'SHUFFLE'}
@@ -409,12 +385,13 @@ export default function VocabSection() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            +ADD
+            ADD
           </button>
         </div>
 
         {/* 단어 카드 목록 */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <PullToRefreshWrapper onRefresh={() => { setSelectedSessionId(null); setShuffledOrder(null) }} bg="#F9FAFB">
+        <div className="flex-1 overflow-y-auto">
           {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full pb-8 text-center px-6">
               {sessions.length === 0 ? (
@@ -504,6 +481,7 @@ export default function VocabSection() {
             </div>
           )}
         </div>
+        </PullToRefreshWrapper>
       </div>
 
       {/* ── 우측 25% — 날짜 폴더 ── */}
