@@ -69,9 +69,10 @@ export default function SplashScreen({ onDone }) {
         }}
       >
         <img
-          src="/jamddal.jpg"
-          alt="잠뜰 캐릭터"
+          src="/soo/jamddal.jpg"
+          alt=""
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={e => { e.target.style.display = 'none' }}
         />
       </div>
 
@@ -91,7 +92,24 @@ export default function SplashScreen({ onDone }) {
           filter: phase >= 3 ? 'blur(0px)' : 'blur(4px)',
         }}
       >
-        For. 수현
+        For. L.S.HYEON
+      </p>
+
+      {/* 부제 */}
+      <p
+        style={{
+          fontFamily: mono,
+          color: '#B0A9A4',
+          fontSize: '0.68rem',
+          fontWeight: '400',
+          letterSpacing: '0.14em',
+          margin: 0,
+          marginTop: '-0.6rem',
+          opacity: phase >= 3 ? 1 : 0,
+          transition: 'opacity 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}
+      >
+        in celebration of your 2026 birthday
       </p>
     </div>
   )

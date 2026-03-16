@@ -4,6 +4,7 @@ import SubjectList from './SubjectList'
 import SubjectDetail from './SubjectDetail'
 import VocabScanner from './VocabScanner'
 import TaskManager from './TaskManager'
+import NotesPage from './NotesPage'
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
@@ -12,6 +13,7 @@ export default function App() {
   const [currentSubject, setCurrentSubject]   = useState(null)
   const [showVocabScanner, setShowVocabScanner] = useState(false)
   const [showTaskManager,  setShowTaskManager]  = useState(false)
+  const [showNotes,        setShowNotes]         = useState(false)
   const [showTodoInput,    setShowTodoInput]     = useState(false)
   const nickname = localStorage.getItem(NICKNAME_KEY) || '익명'
 
@@ -20,17 +22,20 @@ export default function App() {
   }
 
   // 어느 탭이 활성인지
-  const activeTab = showTaskManager ? 'task' : showVocabScanner ? 'vocab' : 'home'
+  const activeTab = showTaskManager ? 'task' : showVocabScanner ? 'vocab' : showNotes ? 'notes' : 'home'
 
   function navTask() {
-    setShowVocabScanner(false); setCurrentSubject(null); setShowTaskManager(true); setShowTodoInput(false)
+    setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTaskManager(true); setShowTodoInput(false)
   }
   function navVocab() {
-    setShowTaskManager(false); setCurrentSubject(null); setShowVocabScanner(true); setShowTodoInput(false)
+    setShowTaskManager(false); setShowNotes(false); setCurrentSubject(null); setShowVocabScanner(true); setShowTodoInput(false)
+  }
+  function navNotes() {
+    setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null); setShowNotes(true); setShowTodoInput(false)
   }
   function navFab() {
     if (activeTab !== 'home') {
-      setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null)
+      setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null)
       setShowTodoInput(true)
     } else {
       setShowTodoInput(v => !v)
@@ -42,6 +47,8 @@ export default function App() {
     content = <VocabScanner onBack={() => setShowVocabScanner(false)} nickname={nickname} />
   } else if (showTaskManager) {
     content = <TaskManager onBack={() => setShowTaskManager(false)} nickname={nickname} />
+  } else if (showNotes) {
+    content = <NotesPage onBack={() => setShowNotes(false)} />
   } else if (currentSubject) {
     content = <SubjectDetail subject={currentSubject} onBack={() => setCurrentSubject(null)} />
   } else {
@@ -85,15 +92,17 @@ export default function App() {
             style={{ color: activeTab === 'task' ? '#E8694A' : '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>TASK</span>
         </button>
 
-        {/* FIND */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
+        {/* NOTES (오답노트) */}
+        <button onClick={navNotes} className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            stroke={activeTab === 'notes' ? '#E8694A' : '#8B7E76'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="13" y2="17"/>
           </svg>
           <span className="text-[8px] font-black tracking-wider leading-none"
-            style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>FIND</span>
+            style={{ color: activeTab === 'notes' ? '#E8694A' : '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>NOTES</span>
         </button>
 
         {/* + FAB */}

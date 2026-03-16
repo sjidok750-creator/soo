@@ -1499,13 +1499,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-3 pb-2.5 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          {/* 앱 로고 */}
-          <img
-            src={`${import.meta.env.BASE_URL}icon.svg`}
-            alt="logo"
-            className="flex-shrink-0 rounded-xl"
-            style={{ width: 40, height: 40 }}
-          />
           {/* 달력 아이콘 버튼 — 조금 작게 */}
           <button
             onClick={() => setShowCalendar(true)}
