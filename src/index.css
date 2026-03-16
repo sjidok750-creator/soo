@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 브라우저 기본 pull-to-refresh 비활성화 (커스텀 PTR 사용) */
+html, body {
+  overscroll-behavior: none;
+}
+
 @keyframes craftFadeInOut {
   0%   { opacity: 0; transform: translateY(-4px); }
   12%  { opacity: 1; transform: translateY(0); }

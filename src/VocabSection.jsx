@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 /* ── 형광펜 색상 팔레트 ── */
 const HIGHLIGHT_COLORS = [
@@ -182,6 +182,31 @@ export default function VocabSection() {
 
   const cameraRef = useRef(null)
   const fileRef = useRef(null)
+  const scrollRef = useRef(null)
+
+  // Pull-to-refresh: 단어장 첫화면으로 (세션 선택 해제)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let startY = 0, canPull = false
+    const onStart = e => {
+      startY = e.touches[0].clientY
+      canPull = el.scrollTop === 0
+    }
+    const onEnd = e => {
+      if (!canPull) return
+      if (e.changedTouches[0].clientY - startY > 80) {
+        setSelectedSessionId(null)
+        setShuffledOrder(null)
+      }
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [])
 
   /* OCR 실행 */
   async function runOCR(photos) {
@@ -355,7 +380,7 @@ export default function VocabSection() {
         </div>
 
         {/* 단어 카드 목록 */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full pb-8 text-center px-6">
               {sessions.length === 0 ? (
