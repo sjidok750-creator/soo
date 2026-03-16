@@ -33,13 +33,8 @@ export default function App() {
   function navNotes() {
     setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null); setShowNotes(true); setShowTodoInput(false)
   }
-  function navFab() {
-    if (activeTab !== 'home') {
-      setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null)
-      setShowTodoInput(true)
-    } else {
-      setShowTodoInput(v => !v)
-    }
+  function navHome() {
+    setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTodoInput(false)
   }
 
   let content
@@ -105,30 +100,24 @@ export default function App() {
             style={{ color: activeTab === 'notes' ? '#E8694A' : '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>NOTES</span>
         </button>
 
-        {/* + FAB */}
-        <button className="flex flex-col items-center justify-center flex-1 h-full relative" onClick={navFab}>
+        {/* HOME (중앙 FAB) */}
+        <button className="flex flex-col items-center justify-center flex-1 h-full relative" onClick={navHome}>
           <div
             className="rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{
               width: 54, height: 54, marginTop: -22,
-              background: (activeTab === 'home' && showTodoInput)
-                ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
-              boxShadow: (activeTab === 'home' && showTodoInput)
-                ? '0 4px 20px rgba(16,185,129,0.50), 0 0 0 3px rgba(16,185,129,0.15)'
-                : '0 4px 20px rgba(232,105,74,0.50), 0 0 0 3px rgba(232,105,74,0.15)',
+              background: activeTab === 'home'
+                ? 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)'
+                : 'linear-gradient(135deg, #c2b8b0 0%, #8B7E76 100%)',
+              boxShadow: activeTab === 'home'
+                ? '0 4px 20px rgba(232,105,74,0.50), 0 0 0 3px rgba(232,105,74,0.15)'
+                : '0 4px 16px rgba(0,0,0,0.18)',
             }}
           >
-            {(activeTab === 'home' && showTodoInput) ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            )}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
           </div>
         </button>
 
@@ -144,19 +133,6 @@ export default function App() {
           </svg>
           <span className="text-[8px] font-black tracking-wider leading-none"
             style={{ color: activeTab === 'vocab' ? '#E8694A' : '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>VOCAB</span>
-        </button>
-
-        {/* STATS */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-            <line x1="3" y1="20" x2="21" y2="20"/>
-          </svg>
-          <span className="text-[8px] font-black tracking-wider leading-none"
-            style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>STATS</span>
         </button>
       </div>
     </>
