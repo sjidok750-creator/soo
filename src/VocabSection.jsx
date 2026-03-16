@@ -51,7 +51,7 @@ function parseVocabText(raw) {
 }
 
 /* ── 단어 카드 ── */
-function WordCard({ word, onMemorize, onRevealMeaning }) {
+function WordCard({ word, index, onMemorize, onRevealMeaning }) {
   return (
     <div
       className={`mb-1.5 rounded-2xl overflow-hidden transition-all duration-200 ${
@@ -64,6 +64,18 @@ function WordCard({ word, onMemorize, onRevealMeaning }) {
         className="px-3 pt-2.5 pb-1.5 flex items-center gap-2 cursor-pointer active:bg-gray-50/70 select-none"
         onClick={onMemorize}
       >
+        <span
+          style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontWeight: 700,
+            fontSize: 9,
+            color: '#CBD5E1',
+            minWidth: 14,
+            flexShrink: 0,
+          }}
+        >
+          {index}
+        </span>
         {word.memorized ? (
           <span
             style={{
@@ -162,6 +174,7 @@ export default function VocabSection() {
   const [pendingPhotos, setPendingPhotos] = useState([])
   const [showMoreDialog, setShowMoreDialog] = useState(false)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [shuffledOrder, setShuffledOrder] = useState(null) // null = 원래 순서
 
   const cameraRef = useRef(null)
   const fileRef = useRef(null)
@@ -261,6 +274,18 @@ export default function VocabSection() {
       ...s, words: s.words.map(w => ({ ...w, meaningVisible: false }))
     }))
   }
+  function toggleShuffle(words) {
+    if (shuffledOrder) {
+      setShuffledOrder(null)
+    } else {
+      const indices = words.map((_, i) => i)
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]]
+      }
+      setShuffledOrder(indices)
+    }
+  }
 
   const currentSession = selectedSessionId ? sessions.find(s => s.id === selectedSessionId) : null
   const totalWords = sessions.reduce((n, s) => n + s.words.length, 0)
@@ -286,7 +311,7 @@ export default function VocabSection() {
         >
           {currentSession ? (
             <button
-              onClick={() => setSelectedSessionId(null)}
+              onClick={() => { setSelectedSessionId(null); setShuffledOrder(null) }}
               className="flex items-center gap-1.5 text-[10px] font-bold active:opacity-60 transition-opacity"
               style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}
             >
@@ -373,6 +398,18 @@ export default function VocabSection() {
                         {done}/{session.words.length}
                       </span>
                       <button
+                        onClick={() => toggleShuffle(session.words)}
+                        className="text-[9px] px-1.5 py-0.5 rounded transition-colors"
+                        style={{
+                          color: shuffledOrder ? '#E8694A' : '#94A3B8',
+                          fontFamily: 'JetBrains Mono, monospace',
+                          backgroundColor: shuffledOrder ? '#FFF3F0' : '#F8FAFC',
+                          border: `1px solid ${shuffledOrder ? '#E8694A' : '#E2E8F0'}`,
+                        }}
+                      >
+                        {shuffledOrder ? '순서복원' : '섞기'}
+                      </button>
+                      <button
                         onClick={() => allRevealed ? hideAll(session.id) : revealAll(session.id)}
                         className="text-[9px] px-1.5 py-0.5 rounded"
                         style={{
@@ -385,7 +422,7 @@ export default function VocabSection() {
                         {allRevealed ? '뜻 숨기기' : '뜻 전체보기'}
                       </button>
                       <button
-                        onClick={() => { deleteSession(session.id); setSelectedSessionId(null) }}
+                        onClick={() => { deleteSession(session.id); setSelectedSessionId(null); setShuffledOrder(null) }}
                         className="w-5 h-5 flex items-center justify-center rounded text-gray-200 hover:text-red-300 transition-colors"
                         style={{ fontSize: 10 }}
                       >
@@ -395,14 +432,20 @@ export default function VocabSection() {
                     {session.words.length === 0 ? (
                       <p className="text-xs text-gray-300 text-center py-4">인식된 단어가 없습니다</p>
                     ) : (
-                      session.words.map(word => (
-                        <WordCard
-                          key={word.id}
-                          word={word}
-                          onMemorize={() => toggleMemorized(session.id, word.id)}
-                          onRevealMeaning={() => toggleMeaning(session.id, word.id)}
-                        />
-                      ))
+                      (() => {
+                        const displayWords = shuffledOrder
+                          ? shuffledOrder.map(i => session.words[i])
+                          : session.words
+                        return displayWords.map((word, idx) => (
+                          <WordCard
+                            key={word.id}
+                            word={word}
+                            index={idx + 1}
+                            onMemorize={() => toggleMemorized(session.id, word.id)}
+                            onRevealMeaning={() => toggleMeaning(session.id, word.id)}
+                          />
+                        ))
+                      })()
                     )}
                   </div>
                 )
