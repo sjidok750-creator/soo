@@ -425,21 +425,60 @@ function KoreanMusicChart() {
     if (cached) {
       try { setCharts(JSON.parse(cached)); setLoading(false); return } catch {}
     }
-    fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/10/songs.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data?.feed?.results?.length) { setLoading(false); return }
-        const songs = data.feed.results.slice(0, 10).map((s, i) => ({
-          rank: i + 1,
-          title: s.name,
-          artist: s.artistName,
-          albumArt: s.artworkUrl100?.replace('100x100bb', '500x500bb'),
-        }))
+
+    function getArt(url) {
+      if (!url) return null
+      // 다양한 URL 포맷 대응: {w}x{h}bb 템플릿, 100x100bb, 100x100 등
+      return url
+        .replace('{w}x{h}bb', '600x600bb')
+        .replace('{w}x{h}', '600x600')
+        .replace('100x100bb', '600x600bb')
+        .replace('100x100', '600x600')
+    }
+
+    async function fetchChart() {
+      // 1차: Apple Music Marketing Tools
+      try {
+        const r = await fetch('https://rss.applemarketingtools.com/api/v2/kr/music/most-played/10/songs.json')
+        if (r.ok) {
+          const data = await r.json()
+          const results = data?.feed?.results
+          if (results?.length) {
+            return results.slice(0, 10).map((s, i) => ({
+              rank: i + 1,
+              title: s.name,
+              artist: s.artistName,
+              albumArt: getArt(s.artworkUrl100) || s.artworkUrl100 || null,
+            }))
+          }
+        }
+      } catch {}
+      // 2차: iTunes RSS (구형 엔드포인트)
+      try {
+        const r = await fetch('https://itunes.apple.com/kr/rss/topsongs/limit=10/json')
+        if (r.ok) {
+          const data = await r.json()
+          const entries = data?.feed?.entry
+          if (entries?.length) {
+            return entries.slice(0, 10).map((e, i) => ({
+              rank: i + 1,
+              title: e['im:name']?.label || '',
+              artist: e['im:artist']?.label || '',
+              albumArt: getArt(e['im:image']?.[2]?.label) || e['im:image']?.[2]?.label || null,
+            }))
+          }
+        }
+      } catch {}
+      return null
+    }
+
+    fetchChart().then(songs => {
+      if (songs) {
         sessionStorage.setItem(cacheKey, JSON.stringify(songs))
         setCharts(songs)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+      }
+      setLoading(false)
+    })
   }, [])
 
   function getRankStyle(rank) {
@@ -481,9 +520,21 @@ function KoreanMusicChart() {
                 >
                   <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ width: 108, height: 162 }}>
                     {song.albumArt
-                      ? <img src={song.albumArt} alt={song.title} className="w-full h-full object-cover" loading="lazy" />
-                      : <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#1F2937' }}><span className="text-4xl">🎵</span></div>
+                      ? <img
+                          src={song.albumArt}
+                          alt={song.title}
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            e.target.onerror = null
+                            e.target.style.display = 'none'
+                            e.target.nextSibling && (e.target.nextSibling.style.display = 'flex')
+                          }}
+                        />
+                      : null
                     }
+                    <div className="w-full h-full items-center justify-center" style={{ backgroundColor: '#1F2937', display: song.albumArt ? 'none' : 'flex' }}>
+                      <span className="text-4xl">🎵</span>
+                    </div>
                     {/* 상단 컬러 액센트 (1~3위) */}
                     {song.rank <= 3 && (
                       <div className="absolute top-0 left-0 right-0" style={{
