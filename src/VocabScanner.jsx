@@ -455,7 +455,7 @@ export default function VocabScanner({ onBack, nickname }) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-stone-50 flex flex-col pb-16">
       {isRefreshing && (
         <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
           <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#E8694A' }} />

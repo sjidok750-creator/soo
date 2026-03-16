@@ -778,7 +778,7 @@ function TodoList({ todos }) {
           const subj = getDailySubject(todo.subject)
           return (
             <div key={todo.id}
-              className={`py-1.5 sm:py-2 select-none ${idx < todos.length - 1 ? 'border-b border-gray-50' : ''}`}
+              className={`py-1.5 sm:py-2 select-none ${idx < todos.length - 1 ? 'border-b border-gray-200/50' : ''}`}
               onMouseDown={() => startPress(todo)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -1052,7 +1052,8 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
 
   return (
     <div
-      className="mx-4 mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3 relative"
+      className="mx-4 mt-3 rounded-2xl overflow-hidden mb-3 relative"
+      style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -1103,7 +1104,7 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
       )}
 
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-gray-50">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-gray-200/40">
         <div className="flex items-center gap-2">
           <div className="w-[3px] h-4 rounded-full" style={{ backgroundColor: '#E8694A' }} />
           <span
@@ -1151,13 +1152,13 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
   )
 }
 
-export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpenTaskManager }) {
+export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpenTaskManager, showTodoInput, onCloseTodoInput }) {
   const [nickname] = useState(() => localStorage.getItem(NICKNAME_KEY) || '익명')
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
-  const [showTodoInput, setShowTodoInput] = useState(false)
+  // showTodoInput / onCloseTodoInput are managed by App.jsx (so nav persists across screens)
   const isRefreshing = usePullToRefresh()
   const [playingVideo, setPlayingVideo] = useState(null)
   const [todayTodos, setTodayTodos] = useState([])
@@ -1360,98 +1361,10 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
-      {showTodoInput && <TodoInputSheet nickname={nickname} onClose={() => setShowTodoInput(false)} date={selectedDate} />}
+      {showTodoInput && <TodoInputSheet nickname={nickname} onClose={onCloseTodoInput} date={selectedDate} />}
       {playingVideo && <YouTubeVideoSheet video={playingVideo} onClose={() => setPlayingVideo(null)} />}
       <ToastContainer />
 
-      {/* 하단 네비게이션 바 */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-1"
-        style={{
-          height: 64,
-          background: 'rgba(255,255,255,0.94)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
-          boxShadow: '0 -1px 0 rgba(0,0,0,0.04), 0 -8px 32px rgba(0,0,0,0.05)',
-        }}
-      >
-        {/* Task */}
-        <button
-          onClick={onOpenTaskManager}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <line x1="9" y1="12" x2="15" y2="12"/>
-            <line x1="9" y1="16" x2="13" y2="16"/>
-          </svg>
-          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>TASK</span>
-        </button>
-        {/* Search */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>FIND</span>
-        </button>
-        {/* + FAB (중앙) */}
-        <button
-          className="flex flex-col items-center justify-center flex-1 h-full relative"
-          onClick={() => setShowTodoInput(v => !v)}
-        >
-          <div
-            className="rounded-full flex items-center justify-center transition-all active:scale-90"
-            style={{
-              width: 54, height: 54,
-              marginTop: -22,
-              background: showTodoInput
-                ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
-              boxShadow: showTodoInput
-                ? '0 4px 20px rgba(16,185,129,0.50), 0 0 0 3px rgba(16,185,129,0.15)'
-                : '0 4px 20px rgba(232,105,74,0.50), 0 0 0 3px rgba(232,105,74,0.15)',
-            }}
-          >
-            {showTodoInput ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            )}
-          </div>
-        </button>
-        {/* Vocab */}
-        <button
-          onClick={onOpenVocabScanner}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
-            <line x1="9" y1="8" x2="15" y2="8"/>
-            <line x1="9" y1="12" x2="15" y2="12"/>
-            <line x1="9" y1="16" x2="12" y2="16"/>
-          </svg>
-          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>VOCAB</span>
-        </button>
-        {/* Stats */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full active:opacity-60 transition-opacity">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B7E76" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-            <line x1="3" y1="20" x2="21" y2="20"/>
-          </svg>
-          <span className="text-[8px] font-black tracking-wider leading-none" style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>STATS</span>
-        </button>
-      </div>
     </div>
   )
 }
