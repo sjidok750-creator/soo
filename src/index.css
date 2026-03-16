@@ -10,8 +10,52 @@
 }
 
 
+/* 하트 플로팅 애니메이션 */
+@keyframes heartFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  30%  { opacity: 1; transform: translateY(-40px) scale(1.2); }
+  70%  { opacity: 0.6; transform: translateY(-90px) scale(0.9); }
+  100% { opacity: 0; transform: translateY(-140px) scale(0.7); }
+}
+.heart-float {
+  animation: heartFloat 1.1s ease-out forwards;
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  font-size: 20px;
+  user-select: none;
+}
+
 /* 드래그 중 텍스트 선택 방지 */
 .dragging-active {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* 스크롤바 숨김 */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 탭 / 버튼 누름 피드백 */
+@keyframes tapPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+.tap-pop:active {
+  animation: tapPop 0.18s ease-out;
+}
+
+/* 카드 진입 페이드업 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fadeUp 0.28s ease-out both;
 }
