@@ -539,25 +539,44 @@ function TodoInputSheet({ nickname, onClose, date }) {
 
   return (
     <>
-      <div className="fixed inset-x-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
-        style={{ bottom: 64, maxHeight: '55vh' }}>
-        <div className="overflow-y-auto h-full">
-          <div className="px-5 pt-3 pb-6">
+      {/* 백드롭 — stone 톤 딤 */}
+      <div
+        className="fixed inset-0 z-[49]"
+        style={{ background: 'rgba(28,25,23,0.32)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }}
+        onClick={onClose}
+      />
+      {/* 시트 */}
+      <div
+        className="fixed inset-x-0 z-50 rounded-t-3xl overflow-hidden"
+        style={{
+          bottom: 64,
+          maxHeight: '60vh',
+          background: '#fff',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.14)',
+        }}
+      >
+        {/* 상단 코랄 액센트 바 */}
+        <div style={{ height: 3, background: 'linear-gradient(90deg, #F5A58A 0%, #E8694A 50%, #D4845A 100%)' }} />
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(60vh - 3px)' }}>
+          <div className="px-5 pt-4 pb-6">
             {/* handle */}
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-            {/* header */}
-            <div className="flex items-center justify-end mb-4">
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor: 'rgba(232,105,74,0.2)' }} />
+            {/* close */}
+            <div className="flex items-center justify-end mb-3">
               <button onClick={onClose}
-                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: '#FFF3F0', color: '#E8694A' }}>✕</button>
             </div>
-            {/* text */}
+            {/* textarea */}
             <textarea value={text} onChange={e => setText(e.target.value)}
               placeholder="What to study..."
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#E8694A] mb-4"
+              className="w-full rounded-2xl px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none mb-4"
+              style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8', fontFamily: 'JetBrains Mono, monospace' }}
               rows={2} />
             {/* subjects */}
             <div className="mb-4">
-              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">SUBJECT</span>
+              <span className="text-[10px] font-black tracking-[0.18em] mb-2 block"
+                style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>SUBJECT</span>
               <div className="flex flex-wrap gap-1.5">
                 {DAILY_SUBJECTS.map(s => {
                   const sel = subject === s.id
@@ -566,7 +585,7 @@ function TodoInputSheet({ nickname, onClose, date }) {
                       className="px-2.5 py-1 rounded-full text-xs font-semibold border transition-all"
                       style={sel
                         ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' }
-                        : { backgroundColor: s.bg, borderColor: s.color + '80', color: s.color }
+                        : { backgroundColor: s.bg, borderColor: s.color + '60', color: s.color }
                       }>{s.name}</button>
                   )
                 })}
@@ -574,37 +593,50 @@ function TodoInputSheet({ nickname, onClose, date }) {
               {subject === 'custom' && (
                 <input value={customName} onChange={e => setCustomName(e.target.value)}
                   placeholder="과목명 직접 입력"
-                  className="mt-2 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#E8694A]" />
+                  className="mt-2 w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                  style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8' }} />
               )}
             </div>
             {/* time */}
             <div className="mb-5">
-              <span className="text-[11px] font-bold text-gray-400 tracking-widest mb-2 block">STUDY TIME</span>
+              <span className="text-[10px] font-black tracking-[0.18em] mb-2 block"
+                style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>STUDY TIME</span>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
-                  <span className="text-[10px] text-gray-400 font-medium shrink-0">START</span>
+                <div className="flex items-center gap-1.5 flex-1 rounded-xl px-3 py-2.5"
+                  style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8' }}>
+                  <span className="text-[9px] font-black tracking-widest shrink-0"
+                    style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>START</span>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
                 </div>
-                <span className="text-gray-300 text-base shrink-0">→</span>
-                <div className="flex items-center gap-1.5 flex-1 bg-gray-50 rounded-xl px-3 py-2">
-                  <span className="text-[10px] text-gray-400 font-medium shrink-0">END</span>
+                <span className="shrink-0 text-sm font-light" style={{ color: '#D4C8C0' }}>→</span>
+                <div className="flex items-center gap-1.5 flex-1 rounded-xl px-3 py-2.5"
+                  style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8' }}>
+                  <span className="text-[9px] font-black tracking-widest shrink-0"
+                    style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>END</span>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
                     className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
                 </div>
                 {totalMins > 0 && (
-                  <div className="px-2.5 py-1.5 rounded-xl text-xs font-bold shrink-0"
-                    style={{ backgroundColor: '#FFF3F0', color: '#E8694A' }}>{totalMins}분</div>
+                  <div className="px-2.5 py-1.5 rounded-xl text-xs font-black shrink-0"
+                    style={{ backgroundColor: '#FFF3F0', color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>{totalMins}m</div>
                 )}
               </div>
             </div>
             {/* buttons */}
             <div className="flex gap-2">
               <button onClick={onClose}
-                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm text-gray-500 font-semibold">CANCEL</button>
+                className="flex-1 py-3 rounded-2xl text-sm font-bold"
+                style={{ background: '#F5F3F0', color: '#B8AFA8' }}>CANCEL</button>
               <button onClick={handleAdd}
-                className="py-3 rounded-2xl text-white text-sm font-bold transition-all duration-300"
-                style={{ backgroundColor: added ? '#10B981' : '#E8694A', flex: 2 }}>
+                className="py-3 rounded-2xl text-white text-sm font-black transition-all duration-300"
+                style={{
+                  background: added ? '#10B981' : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
+                  boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
+                  flex: 2,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  letterSpacing: '0.06em',
+                }}>
                 {added ? '✓ DONE!' : 'ADD'}
               </button>
             </div>
@@ -1299,57 +1331,88 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner }) {
       <ToastContainer />
 
       {/* 하단 네비게이션 바 */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 flex items-center justify-around h-16 px-1">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-1"
+        style={{
+          height: 64,
+          background: 'rgba(255,255,255,0.88)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(232,105,74,0.1)',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.06)',
+        }}
+      >
         {/* Task */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="13" y2="16"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Task</span>
+          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>TASK</span>
         </button>
         {/* Search */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="7"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Search</span>
+          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>FIND</span>
         </button>
-        {/* Add (중앙) */}
-        <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full" onClick={() => setShowTodoInput(true)}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.2" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Add</span>
+        {/* + FAB (중앙) */}
+        <button
+          className="flex flex-col items-center justify-center flex-1 h-full relative"
+          onClick={() => setShowTodoInput(v => !v)}
+        >
+          <div
+            className="w-13 h-13 rounded-full flex items-center justify-center transition-transform active:scale-90"
+            style={{
+              width: 52, height: 52,
+              marginTop: -20,
+              background: showTodoInput
+                ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
+              boxShadow: showTodoInput
+                ? '0 4px 20px rgba(16,185,129,0.45)'
+                : '0 4px 20px rgba(232,105,74,0.45)',
+            }}
+          >
+            {showTodoInput ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            )}
+          </div>
         </button>
         {/* Vocab */}
         <button
           onClick={onOpenVocabScanner}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-            stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
             <line x1="9" y1="8" x2="15" y2="8"/>
             <line x1="9" y1="12" x2="15" y2="12"/>
             <line x1="9" y1="16" x2="12" y2="16"/>
           </svg>
-          <span className="text-[9px] font-medium leading-none text-gray-700">Vocab</span>
+          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>VOCAB</span>
         </button>
         {/* Stats */}
         <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#C4B8AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"/>
             <line x1="12" y1="20" x2="12" y2="4"/>
             <line x1="6" y1="20" x2="6" y2="14"/>
             <line x1="3" y1="20" x2="21" y2="20"/>
           </svg>
-          <span className="text-[9px] font-medium text-gray-700 leading-none">Stats</span>
+          <span className="text-[8px] font-bold tracking-wider leading-none" style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>STATS</span>
         </button>
       </div>
     </div>
