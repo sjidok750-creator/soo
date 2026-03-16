@@ -812,30 +812,42 @@ function TodoList({ todos }) {
                   {todo.text}
                 </span>
 
-                {/* Time 2줄 — 시작/종료 */}
-                <div className="flex-shrink-0 flex flex-col items-center justify-center gap-px tabular-nums"
-                  style={{ width: '13%', fontFamily: 'JetBrains Mono, monospace' }}>
-                  <span className="text-[9px] sm:text-[10px] leading-none" style={{ color: '#9CA3AF' }}>
+                {/* Time 2줄 — 시작/종료 (고정 52px) */}
+                <div
+                  className="flex-shrink-0 flex flex-col items-end justify-center gap-px tabular-nums"
+                  style={{ width: 52, fontFamily: 'JetBrains Mono, monospace' }}
+                >
+                  <span className="text-[9px] leading-none" style={{ color: '#9CA3AF' }}>
                     {todo.studyStart || '—'}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] leading-none" style={{ color: '#C4B8AF' }}>
+                  <span className="text-[9px] leading-none" style={{ color: '#C4B8AF' }}>
                     {todo.studyEnd || ''}
                   </span>
                 </div>
 
-                {/* Subject 한글 — 배지 */}
-                <span
-                  className="flex-shrink-0 text-[10px] font-black whitespace-nowrap text-center px-1.5 py-0.5 rounded-md"
+                {/* Subject 배지 (고정 40px) */}
+                <div
+                  className="flex-shrink-0 flex items-center justify-center rounded-md px-1 py-0.5"
                   style={{
-                    color: todo.done ? '#CBD5E1' : subj.color,
+                    width: 40,
                     backgroundColor: todo.done ? '#F8FAFC' : subj.bg,
-                    fontFamily: 'JetBrains Mono, monospace',
-                    maxWidth: 44,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                  {(todo.subject === 'custom' && todo.subjectName) ? todo.subjectName : subj.name}
-                </span>
+                  }}
+                >
+                  <span
+                    className="text-[10px] font-black leading-none"
+                    style={{
+                      color: todo.done ? '#CBD5E1' : subj.color,
+                      fontFamily: 'JetBrains Mono, monospace',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: 36,
+                      display: 'block',
+                    }}
+                  >
+                    {(todo.subject === 'custom' && todo.subjectName) ? todo.subjectName : subj.name}
+                  </span>
+                </div>
               </div>
             </div>
           )
@@ -1254,15 +1266,22 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
       )}
 
       {/* 헤더 — 고정 */}
-      <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          {/* 달력 아이콘 버튼 */}
+      <div className="sticky top-0 z-40 bg-white px-4 pt-3 pb-2.5 border-b border-gray-100">
+        <div className="flex items-center gap-2.5">
+          {/* 앱 로고 */}
+          <img
+            src={`${import.meta.env.BASE_URL}icon.svg`}
+            alt="logo"
+            className="flex-shrink-0 rounded-xl"
+            style={{ width: 40, height: 40 }}
+          />
+          {/* 달력 아이콘 버튼 — 조금 작게 */}
           <button
             onClick={() => setShowCalendar(true)}
-            className="flex items-center justify-center rounded-xl p-2.5 transition hover:opacity-80"
+            className="flex items-center justify-center rounded-lg p-2 transition hover:opacity-80 flex-shrink-0"
             style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" stroke="#E8694A" strokeWidth="2"/>
               <line x1="16" y1="2" x2="16" y2="6" stroke="#E8694A" strokeWidth="2"/>
               <line x1="8" y1="2" x2="8" y2="6" stroke="#E8694A" strokeWidth="2"/>
@@ -1274,17 +1293,17 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <rect x="11" y="17" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
             </svg>
           </button>
-          {/* 년도 선택 */}
+          {/* 년도 선택 — 조금 작게 */}
           <div className="relative">
             <select
               value={selectedYear}
               onChange={e => setSelectedYear(Number(e.target.value))}
-              className="appearance-none rounded-full px-4 pr-9 py-2 text-sm font-bold focus:outline-none cursor-pointer"
+              className="appearance-none rounded-full px-3 pr-7 py-1.5 text-xs font-bold focus:outline-none cursor-pointer"
               style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0', color: '#E8694A' }}
             >
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>

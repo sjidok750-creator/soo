@@ -356,8 +356,115 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
   )
 }
 
+// ─── 태스크 수정 시트 ─────────────────────────────────────────────
+function EditTaskSheet({ task, onClose }) {
+  const [cat,        setCat]        = useState(task.category || 'school')
+  const [subj,       setSubj]       = useState(task.subject  || 'math')
+  const [customName, setCustomName] = useState(task.subjectName || '')
+  const [taskText,   setTaskText]   = useState(task.task     || '')
+  const [deadline,   setDeadline]   = useState(task.deadline || '')
+
+  const handleSave = async () => {
+    if (!taskText.trim()) return
+    const s = getDailySubject(subj)
+    await updateDoc(doc(db, 'task-board', task.id), {
+      category: cat,
+      subject: subj,
+      subjectName: subj === 'custom' && customName.trim() ? customName.trim() : s.name,
+      task: taskText.trim(),
+      deadline,
+    })
+    onClose()
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-y-auto"
+        style={{ maxHeight: '94dvh', paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
+        <div className="flex justify-center pt-3 pb-0.5">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <span className="text-[13px] font-black text-gray-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>Edit Task</span>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:bg-gray-200">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div className="px-5 pt-4 pb-2 flex flex-col gap-4">
+          {/* Category */}
+          <div>
+            <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Category</p>
+            <div className="flex gap-2 flex-wrap">
+              {CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setCat(c.id)}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold transition-all active:scale-95"
+                  style={{
+                    backgroundColor: cat === c.id ? c.bg : '#F9FAFB',
+                    color: cat === c.id ? c.text : '#9CA3AF',
+                    border: `1.5px solid ${cat === c.id ? c.border : '#E5E7EB'}`,
+                    fontFamily: 'JetBrains Mono, monospace',
+                  }}>{c.label}</button>
+              ))}
+            </div>
+          </div>
+          {/* Subject */}
+          <div>
+            <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Subject</p>
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+              {DAILY_SUBJECTS.map(s => (
+                <button key={s.id} onClick={() => setSubj(s.id)}
+                  className="flex flex-col items-center gap-0.5 py-2 px-0.5 rounded-xl border-2 text-center transition-all active:scale-95"
+                  style={{ borderColor: subj === s.id ? s.color : '#E5E7EB', backgroundColor: subj === s.id ? s.bg : 'white' }}>
+                  <span className="text-[10px] font-black leading-none" style={{ color: subj === s.id ? s.color : '#9CA3AF' }}>{s.abbr}</span>
+                  <span className="text-[8px] leading-tight text-center" style={{ color: subj === s.id ? s.color : '#C4B5C0' }}>{s.name}</span>
+                </button>
+              ))}
+            </div>
+            {subj === 'custom' && (
+              <input type="text" value={customName} onChange={e => setCustomName(e.target.value)}
+                placeholder="과목명 직접 입력..."
+                className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none"
+                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }} />
+            )}
+          </div>
+          {/* Task */}
+          <div>
+            <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Task</p>
+            <input type="text" value={taskText} onChange={e => setTaskText(e.target.value)}
+              placeholder="Enter task description..."
+              className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none transition-colors"
+              style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 13 }}
+              onFocus={e => e.target.style.borderColor = '#E8694A'}
+              onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
+          </div>
+          {/* Deadline */}
+          <div>
+            <p className="text-[9px] font-black tracking-widest text-gray-400 uppercase mb-2">Deadline</p>
+            <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-700 focus:outline-none transition-colors"
+              style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13 }}
+              onFocus={e => e.target.style.borderColor = '#E8694A'}
+              onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
+          </div>
+          <div className="flex gap-2 mb-2">
+            <button onClick={onClose}
+              className="flex-1 py-3.5 rounded-2xl text-sm font-bold"
+              style={{ background: '#F5F3F0', color: '#B8AFA8', fontFamily: 'JetBrains Mono, monospace' }}>CANCEL</button>
+            <button onClick={handleSave} disabled={!taskText.trim()}
+              className="py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all disabled:opacity-30"
+              style={{ flex: 2, backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>SAVE</button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── 태스크 상세 모달 ─────────────────────────────────────────────
-function TaskDetailModal({ task, onDelete, onClose }) {
+function TaskDetailModal({ task, onDelete, onEdit, onClose }) {
   const [attachImg, setAttachImg] = useState(null)
   const cat  = CAT_MAP[task.category] || CAT_MAP.other
   const subj = getDailySubject(task.subject)
@@ -393,7 +500,7 @@ function TaskDetailModal({ task, onDelete, onClose }) {
           </span>
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-semibold leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}
-              style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+              style={{ fontFamily: 'Pretendard, sans-serif' }}>
               {task.task}
             </p>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -413,6 +520,16 @@ function TaskDetailModal({ task, onDelete, onClose }) {
           </div>
         </div>
         <div className="flex flex-col gap-2">
+          {/* Edit 버튼 */}
+          <button onClick={() => onEdit(task)}
+            className="w-full py-3 rounded-2xl text-white font-black text-sm flex items-center justify-center gap-2 active:opacity-80"
+            style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit Task
+          </button>
           {task.attachmentName && (
             <button onClick={handleViewAttachment}
               className="w-full py-3 rounded-2xl bg-gray-50 text-gray-700 font-semibold text-sm flex items-center justify-center gap-2 active:bg-gray-100"
@@ -483,6 +600,7 @@ export default function TaskManager({ onBack, nickname }) {
   const [viewDate, setViewDate]         = useState(getTodayISO())
   const [showAdd, setShowAdd]           = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
+  const [editingTask,  setEditingTask]  = useState(null)
   const [error, setError]               = useState('')
   const isRefreshing = usePullToRefresh()
 
@@ -741,11 +859,12 @@ export default function TaskManager({ onBack, nickname }) {
                         {/* Task */}
                         <div className="px-2 py-2 flex items-center gap-2 min-w-0">
                           <Checkbox checked={!!task.done} onChange={() => toggleDone(task)} />
-                          <span className="text-[11px] leading-snug min-w-0"
+                          <span className="text-[13px] leading-snug min-w-0"
                             style={{
                               color: task.done ? '#CBD5E1' : '#1F2937',
                               textDecoration: task.done ? 'line-through' : 'none',
-                              fontFamily: 'JetBrains Mono, monospace',
+                              fontFamily: 'Pretendard, sans-serif',
+                              fontWeight: 500,
                               overflow: 'hidden',
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
@@ -856,8 +975,16 @@ export default function TaskManager({ onBack, nickname }) {
       {showAdd && (
         <AddSheet viewDate={viewDate} onClose={() => setShowAdd(false)} onSubmit={handleSubmit} />
       )}
-      {selectedTask && (
-        <TaskDetailModal task={selectedTask} onDelete={deleteTask} onClose={() => setSelectedTask(null)} />
+      {selectedTask && !editingTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onDelete={deleteTask}
+          onEdit={t => { setEditingTask(t); setSelectedTask(null) }}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
+      {editingTask && (
+        <EditTaskSheet task={editingTask} onClose={() => setEditingTask(null)} />
       )}
     </div>
   )
