@@ -350,14 +350,54 @@ function DdayPickerModal({ onSelect, onClose }) {
 
 /* ── 잠뜰TV 유튜브 플레이어 바텀시트 ── */
 function YouTubeVideoSheet({ video, onClose }) {
+  const [minimized, setMinimized] = useState(false)
+
+  /* 최소화 상태: iframe은 DOM에 유지(오디오 계속 재생), 앱 자유롭게 사용 가능 */
+  if (minimized) {
+    return (
+      <div className="fixed inset-x-0 z-50 max-w-lg mx-auto px-2" style={{ bottom: 68 }}>
+        {/* 오디오 유지용 숨김 iframe */}
+        <iframe
+          src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0`}
+          title="yt-bg-audio"
+          allow="autoplay; encrypted-media"
+          style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', border: 'none' }}
+        />
+        {/* 미니바 */}
+        <div
+          className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl"
+          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-xs font-bold line-clamp-1 leading-tight">{video.title}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace' }}>재생 중</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setMinimized(false)}
+            className="px-2.5 py-1 rounded-lg active:opacity-60 transition-opacity"
+            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
+          >펼치기</button>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center active:opacity-60 transition-opacity"
+            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: 14 }}
+          >✕</button>
+        </div>
+      </div>
+    )
+  }
+
+  /* 전체 플레이어 — top 없음 → 앱 위쪽 영역 터치 가능 */
   return (
-    <div
-      className="fixed inset-x-0 bottom-0 z-50"
-      style={{ top: 0 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div className="fixed inset-x-0 bottom-0 z-50">
       <div
-        className="absolute inset-x-0 bottom-0 rounded-t-3xl overflow-hidden shadow-2xl"
+        className="rounded-t-3xl overflow-hidden shadow-2xl"
         style={{ background: '#0F172A' }}
       >
         {/* handle */}
@@ -383,13 +423,19 @@ function YouTubeVideoSheet({ video, onClose }) {
               )}
             </div>
           </div>
+          {/* 최소화 버튼 */}
+          <button
+            onClick={() => setMinimized(true)}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1 }}
+          >—</button>
           <button
             onClick={onClose}
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           >✕</button>
         </div>
-        {/* 16:9 iframe — 광고 하단 잘림 방지를 위해 safe area 추가 */}
+        {/* 16:9 iframe */}
         <div style={{ position: 'relative', paddingBottom: '56.25%', backgroundColor: '#000' }}>
           <iframe
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
@@ -399,7 +445,7 @@ function YouTubeVideoSheet({ video, onClose }) {
             allowFullScreen
           />
         </div>
-        {/* safe area bottom — env(safe-area-inset-bottom)으로 기기별 최적화 */}
+        {/* safe area bottom */}
         <div style={{ height: 'calc(20px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
       </div>
     </div>
