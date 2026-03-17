@@ -26,16 +26,16 @@ export default function App() {
   const activeTab = showTaskManager ? 'task' : showVocabScanner ? 'vocab' : showNotes ? 'notes' : 'home'
 
   function navTask() {
-    setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTaskManager(true); setShowTodoInput(false)
+    setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTaskManager(true); setShowTodoInput(false); setAddTrigger(0)
   }
   function navVocab() {
-    setShowTaskManager(false); setShowNotes(false); setCurrentSubject(null); setShowVocabScanner(true); setShowTodoInput(false)
+    setShowTaskManager(false); setShowNotes(false); setCurrentSubject(null); setShowVocabScanner(true); setShowTodoInput(false); setAddTrigger(0)
   }
   function navNotes() {
-    setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null); setShowNotes(true); setShowTodoInput(false)
+    setShowTaskManager(false); setShowVocabScanner(false); setCurrentSubject(null); setShowNotes(true); setShowTodoInput(false); setAddTrigger(0)
   }
   function navHome() {
-    setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTodoInput(false)
+    setShowTaskManager(false); setShowVocabScanner(false); setShowNotes(false); setCurrentSubject(null); setShowTodoInput(false); setAddTrigger(0)
   }
   function handleNavAdd() {
     if (activeTab === 'home') { setShowTodoInput(true) }
