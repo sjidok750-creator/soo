@@ -307,52 +307,33 @@ function EmptyState() {
   )
 }
 
-// ─── 아이폰 스타일 추가 메뉴 ──────────────────────────────────────
-function AddMenu({ anchor, onCamera, onGallery, onFiles, onClose }) {
-  const MENU_W = 172
-  // anchor: { top, right } — 메뉴 우측이 버튼 좌측에 맞닿도록
-  const style = {
-    position: 'fixed',
-    top: anchor.top,
-    right: anchor.right,
-    width: MENU_W,
-    zIndex: 60,
-  }
-
+// ─── iOS 스타일 파일 선택 바텀시트 ───────────────────────────────
+function FilePickerSheet({ onCamera, onGallery, onFiles, onClose }) {
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
-      <div
-        className="absolute bg-white rounded-2xl shadow-2xl overflow-hidden"
-        style={{ ...style, border: '1px solid rgba(0,0,0,0.08)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 사진 찍기 */}
-        <button
-          onClick={onCamera}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
-        >
-          <span className="text-lg leading-none">📷</span>
-          <span className="text-[13px] font-semibold text-gray-900">사진 찍기</span>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
+      onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative rounded-2xl overflow-hidden mx-4 mb-3 bg-white" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
+        </div>
+        <button onClick={onGallery} className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-100 active:bg-gray-100 transition-colors">
+          <span className="text-2xl leading-none">🖼️</span>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">사진보관함</span>
         </button>
-        <div className="border-t border-gray-100 mx-3" />
-        {/* 사진 보관함 */}
-        <button
-          onClick={onGallery}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
-        >
-          <span className="text-lg leading-none">🖼️</span>
-          <span className="text-[13px] font-semibold text-gray-900">사진 보관함</span>
+        <button onClick={onCamera} className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-100 active:bg-gray-100 transition-colors">
+          <span className="text-2xl leading-none">📷</span>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">사진 또는 비디오 찍기</span>
         </button>
-        <div className="border-t border-gray-100 mx-3" />
-        {/* 파일 선택 */}
-        <button
-          onClick={onFiles}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors"
-        >
-          <span className="text-lg leading-none">📂</span>
-          <span className="text-[13px] font-semibold text-gray-900">파일 선택</span>
+        <button onClick={onFiles} className="w-full flex items-center gap-4 px-5 py-4 active:bg-gray-100 transition-colors">
+          <span className="text-2xl leading-none">📂</span>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">파일 선택</span>
         </button>
       </div>
+      <button className="relative mx-4 py-4 rounded-2xl font-semibold text-gray-800 bg-white active:bg-gray-100 transition-colors text-[17px]" onClick={onClose}>
+        취소
+      </button>
     </div>
   )
 }
@@ -389,7 +370,6 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
   const [showAddMenu, setShowAddMenu] = useState(false)
-  const [menuAnchor, setMenuAnchor] = useState({ top: 0, right: 0 })
 
   const addBtnRef = useRef()
   const cameraRef = useRef()
@@ -413,23 +393,10 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
 
   // 외부 ADD 트리거 (네비 + 버튼)
   useEffect(() => {
-    if (addTrigger > 0) {
-      setMenuAnchor({ top: window.innerHeight * 0.38, right: window.innerWidth / 2 - 86 })
-      setShowAddMenu(true)
-    }
+    if (addTrigger > 0) setShowAddMenu(true)
   }, [addTrigger])
 
-  // +ADD 버튼 클릭 → 메뉴 위치 계산
-  const openAddMenu = () => {
-    const rect = addBtnRef.current?.getBoundingClientRect()
-    if (rect) {
-      setMenuAnchor({
-        top: rect.top,
-        right: window.innerWidth - rect.left + 6,
-      })
-    }
-    setShowAddMenu(true)
-  }
+  const openAddMenu = () => setShowAddMenu(true)
 
   // 사진 처리 공통
   const handleFile = async (e) => {
@@ -513,11 +480,11 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center justify-center rounded-xl active:opacity-70 transition-opacity"
-            style={{ width: 36, height: 36, border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
+            className="flex items-center justify-center rounded-xl p-2.5 active:opacity-70 transition-opacity"
+            style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2.5"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
             </svg>
           </button>
           <span className="font-black tracking-widest uppercase"
@@ -665,10 +632,9 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
         </div>
       </div>
 
-      {/* 아이폰 스타일 추가 메뉴 */}
+      {/* iOS 스타일 파일 선택 시트 */}
       {showAddMenu && (
-        <AddMenu
-          anchor={menuAnchor}
+        <FilePickerSheet
           onCamera={() => { setShowAddMenu(false); cameraRef.current?.click() }}
           onGallery={() => { setShowAddMenu(false); galleryRef.current?.click() }}
           onFiles={() => { setShowAddMenu(false); filesRef.current?.click() }}

@@ -212,10 +212,12 @@ function CalendarModal({ onClose, nickname }) {
             <form onSubmit={handleAddExam} className="bg-teal-50 rounded-xl p-3 space-y-2">
               <input type="text" value={newExam.title} onChange={e => setNewExam(p => ({ ...p, title: e.target.value }))}
                 placeholder="시험명 (예: 1학기 중간고사)"
-                className="w-full px-3 py-2 rounded-lg border border-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" autoFocus />
+                className="w-full px-3 py-2 rounded-lg border border-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                style={{ fontSize: 16 }} autoFocus />
               <div className="flex gap-2">
                 <input type="date" value={newExam.date} onChange={e => setNewExam(p => ({ ...p, date: e.target.value }))}
-                  className="flex-1 px-3 py-2 rounded-lg border border-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                  className="flex-1 px-3 py-2 rounded-lg border border-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  style={{ fontSize: 16 }} />
                 <select value={newExam.subject} onChange={e => setNewExam(p => ({ ...p, subject: e.target.value }))}
                   className="px-2 py-2 rounded-lg border border-teal-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400">
                   {SUBJECTS.map(s => <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>)}
@@ -573,7 +575,7 @@ function TodoInputSheet({ nickname, onClose, date }) {
             <textarea value={text} onChange={e => setText(e.target.value)}
               placeholder="What to study..."
               className="w-full rounded-2xl px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none mb-4"
-              style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8', fontFamily: 'JetBrains Mono, monospace' }}
+              style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8', fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}
               rows={2} />
             {/* subjects */}
             <div className="mb-4">
@@ -596,7 +598,7 @@ function TodoInputSheet({ nickname, onClose, date }) {
                 <input value={customName} onChange={e => setCustomName(e.target.value)}
                   placeholder="과목명 직접 입력"
                   className="mt-2 w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                  style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8' }} />
+                  style={{ background: '#FAFAF9', border: '1.5px solid #F0EDE8', fontSize: 16 }} />
               )}
             </div>
             {/* time */}
@@ -609,7 +611,8 @@ function TodoInputSheet({ nickname, onClose, date }) {
                   <span className="text-[9px] font-black tracking-widest shrink-0"
                     style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>START</span>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
+                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0"
+                    style={{ fontSize: 16 }} />
                 </div>
                 <span className="shrink-0 text-sm font-light" style={{ color: '#D4C8C0' }}>→</span>
                 <div className="flex items-center gap-1.5 flex-1 rounded-xl px-3 py-2.5"
@@ -617,7 +620,8 @@ function TodoInputSheet({ nickname, onClose, date }) {
                   <span className="text-[9px] font-black tracking-widest shrink-0"
                     style={{ color: '#C4B8AF', fontFamily: 'JetBrains Mono, monospace' }}>END</span>
                   <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0" />
+                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 focus:outline-none min-w-0"
+                    style={{ fontSize: 16 }} />
                 </div>
                 {totalMins > 0 && (
                   <div className="px-2.5 py-1.5 rounded-xl text-xs font-black shrink-0"
@@ -697,7 +701,7 @@ function EditTodoModal({ todo, onClose }) {
         </div>
         <textarea value={text} onChange={e => setText(e.target.value)}
           className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#E8694A] mb-3"
-          style={{ fontFamily: 'Pretendard, sans-serif' }}
+          style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 16 }}
           rows={2} />
         <div className="flex flex-wrap gap-1.5 mb-3">
           {DAILY_SUBJECTS.map(s => (
@@ -714,12 +718,14 @@ function EditTodoModal({ todo, onClose }) {
           <div className="flex-1">
             <label className="text-[10px] text-gray-400 font-bold mb-1 block tracking-widest">START</label>
             <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]"
+              style={{ fontSize: 16 }} />
           </div>
           <div className="flex-1">
             <label className="text-[10px] text-gray-400 font-bold mb-1 block tracking-widest">END</label>
             <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E8694A]"
+              style={{ fontSize: 16 }} />
           </div>
           <div className="flex-shrink-0 flex flex-col justify-end">
             <span className="text-xs font-bold text-gray-500 pb-2">{formatTotal(totalMins)}</span>
@@ -1248,8 +1254,8 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {/* 헤더 — 고정 */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-3 pb-2.5 border-b border-gray-100">
-        <div className="flex items-center justify-between gap-2.5">
-          {/* 달력 아이콘 버튼 — 조금 작게 */}
+        <div className="flex items-center gap-2.5">
+          {/* 달력 아이콘 버튼 */}
           <button
             onClick={() => setShowCalendar(true)}
             className="flex items-center justify-center rounded-lg p-2 transition hover:opacity-80 flex-shrink-0"
@@ -1267,7 +1273,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <rect x="11" y="17" width="2.2" height="2.2" rx="0.4" fill="#E8694A"/>
             </svg>
           </button>
-          {/* 년도 선택 — 조금 작게 */}
+          {/* 년도 선택 */}
           <div className="relative">
             <select
               value={selectedYear}
@@ -1281,17 +1287,6 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
-          {/* 할일 추가 버튼 */}
-          <button
-            onClick={() => setLocalShowTodo(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-[11px] font-black shadow-sm active:opacity-75 transition-opacity flex-shrink-0"
-            style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            ADD
-          </button>
         </div>
       </div>
 

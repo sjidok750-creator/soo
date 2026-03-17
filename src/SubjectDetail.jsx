@@ -267,8 +267,12 @@ export default function SubjectDetail({ subject, onBack }) {
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-              ←
+            <button onClick={onBack}
+              className="flex items-center justify-center rounded-xl p-2.5 active:opacity-70 transition-opacity"
+              style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
+              </svg>
             </button>
             <span className="text-xl">{subj.emoji}</span>
             <div className="flex-1 min-w-0">
