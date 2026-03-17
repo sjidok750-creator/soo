@@ -685,29 +685,6 @@ export default function NotesPage({ onBack, addTrigger }) {
 
           {/* 스페이서 */}
           <div className="flex-1" />
-
-          {/* +ADD 버튼 */}
-          <button
-            onClick={() => setShowPicker(true)}
-            className="flex flex-col items-center gap-0.5 w-full px-1 py-2 active:scale-90 transition-all"
-          >
-            <div
-              className="rounded-full flex items-center justify-center"
-              style={{
-                width: 40, height: 40,
-                background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)`,
-                boxShadow: `0 4px 14px rgba(232,105,74,0.45)`,
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </div>
-            <span style={{ color: CORAL, fontFamily: MONO, fontWeight: 900, fontSize: 7, letterSpacing: '0.05em' }}>
-              ADD
-            </span>
-          </button>
         </div>
 
         {/* ── 우측 메인 패널 (85%) — PTR로 첫화면 복귀 ── */}
