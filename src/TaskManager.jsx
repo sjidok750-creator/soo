@@ -743,27 +743,17 @@ export default function TaskManager({ onBack, nickname, addTrigger }) {
 
       {/* ── 헤더 ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-40 bg-white px-4 pt-4 pb-3 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack}
-              className="flex items-center justify-center rounded-xl p-2.5 active:opacity-70"
-              style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
-              </svg>
-            </button>
-            <span className="text-sm font-black" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-              TASK BOARD
-            </span>
-          </div>
-          <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white text-[11px] font-black shadow-sm active:opacity-75"
-            style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        <div className="flex items-center gap-3">
+          <button onClick={onBack}
+            className="flex items-center justify-center rounded-xl p-2.5 active:opacity-70"
+            style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
             </svg>
-            ADD
           </button>
+          <span className="text-sm font-black" style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>
+            TASK BOARD
+          </span>
         </div>
       </div>
 

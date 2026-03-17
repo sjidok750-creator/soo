@@ -4,6 +4,7 @@ import {
   collection, addDoc, query, onSnapshot, orderBy,
   serverTimestamp, writeBatch, doc
 } from 'firebase/firestore'
+import PullToRefreshWrapper from './PullToRefreshWrapper'
 
 // ─── 이미지 압축 (Canvas → base64) ───────────────────────────────
 // Firestore 문서 한계: 1MB → base64 imageUrl은 700,000자 이하로 유지
@@ -153,10 +154,15 @@ function ThumbnailImage({ imageUrl, className = '', onClick }) {
 }
 
 // ─── 단어 표 (반응형: 모바일 두줄 / 데스크톱 4열) ────────────────
-function VocabTable({ scan }) {
+function VocabTable({ scan, shuffledOrder }) {
   const [revealedMap, setRevealedMap] = useState({})
   const [checkedMap, setCheckedMap] = useState({})
-  const [shuffledOrder, setShuffledOrder] = useState(null)
+
+  // 셔플 변경 시 체크/공개 상태 초기화
+  useEffect(() => {
+    setRevealedMap({})
+    setCheckedMap({})
+  }, [shuffledOrder])
 
   const displayWords = shuffledOrder ? shuffledOrder.map(i => scan.words[i]) : scan.words
 
@@ -167,43 +173,9 @@ function VocabTable({ scan }) {
     if (allRevealed) setRevealedMap({})
     else { const m = {}; displayWords.forEach((_, i) => { m[i] = true }); setRevealedMap(m) }
   }
-  const toggleShuffle = () => {
-    if (shuffledOrder) {
-      setShuffledOrder(null)
-    } else {
-      const idx = scan.words.map((_, i) => i)
-      for (let i = idx.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [idx[i], idx[j]] = [idx[j], idx[i]]
-      }
-      setShuffledOrder(idx)
-    }
-    setRevealedMap({})
-    setCheckedMap({})
-  }
 
   return (
     <div className="w-full">
-      {/* 셔플 토글 버튼 */}
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={toggleShuffle}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all active:scale-95"
-          style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            background: shuffledOrder ? 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)' : '#F1F5F9',
-            color: shuffledOrder ? 'white' : '#64748B',
-            boxShadow: shuffledOrder ? '0 2px 8px rgba(232,105,74,0.35)' : 'none',
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
-            <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-          </svg>
-          SHUFFLE {shuffledOrder ? 'ON' : 'OFF'}
-        </button>
-      </div>
-
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
 
         {/* ── 헤더: 모바일 3열 / 데스크톱 4열 ── */}
@@ -338,40 +310,17 @@ function FilePickerSheet({ onCamera, onGallery, onFiles, onClose }) {
   )
 }
 
-// ─── Pull-to-Refresh 훅 ───────────────────────────────────────────
-function usePullToRefresh() {
-  const [refreshing, setRefreshing] = useState(false)
-  useEffect(() => {
-    let startY = 0, startX = 0, canPull = false
-    const onStart = (e) => {
-      startY = e.touches[0].clientY; startX = e.touches[0].clientX
-      canPull = (window.scrollY || document.documentElement.scrollTop) === 0
-    }
-    const onEnd = (e) => {
-      if (!canPull) return
-      const dy = e.changedTouches[0].clientY - startY
-      const dx = Math.abs(e.changedTouches[0].clientX - startX)
-      if (dy > 80 && dx < 40) { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }
-    }
-    window.addEventListener('touchstart', onStart, { passive: true })
-    window.addEventListener('touchend',   onEnd,   { passive: true })
-    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
-  }, [])
-  return refreshing
-}
-
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────
 export default function VocabScanner({ onBack, nickname, addTrigger }) {
-  const isRefreshing = usePullToRefresh()
   const [scans, setScans] = useState([])
   const [expandedDate, setExpandedDate] = useState(null)   // 사이드바 아코디언
   const [selectedScan, setSelectedScan] = useState(null)   // 좌측 단어 표시
+  const [shuffledOrder, setShuffledOrder] = useState(null) // 셔플 순서
   const [viewingImageUrl, setViewingImageUrl] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
   const [showAddMenu, setShowAddMenu] = useState(false)
 
-  const addBtnRef = useRef()
   const cameraRef = useRef()
   const galleryRef = useRef()
   const filesRef = useRef()
@@ -391,12 +340,37 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
   }, {})
   const sortedDates = Object.keys(scansByDate).sort((a, b) => b.localeCompare(a))
 
+  // selectedScan 변경 시 셔플 초기화
+  useEffect(() => { setShuffledOrder(null) }, [selectedScan])
+
+  // 셔플 토글
+  const toggleShuffle = () => {
+    if (!selectedScan) return
+    if (shuffledOrder) {
+      setShuffledOrder(null)
+    } else {
+      const arr = [...Array(selectedScan.words.length).keys()]
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]]
+      }
+      setShuffledOrder(arr)
+    }
+  }
+
   // 외부 ADD 트리거 (네비 + 버튼)
   useEffect(() => {
     if (addTrigger > 0) setShowAddMenu(true)
   }, [addTrigger])
 
   const openAddMenu = () => setShowAddMenu(true)
+
+  // 리프레시: 초기 화면으로
+  const handleRefresh = () => {
+    setSelectedScan(null)
+    setExpandedDate(null)
+    setShuffledOrder(null)
+  }
 
   // 사진 처리 공통
   const handleFile = async (e) => {
@@ -467,12 +441,8 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
   }
 
   return (
+    <PullToRefreshWrapper onRefresh={handleRefresh} bg="#FAFAF9">
     <div className="min-h-screen bg-stone-50 flex flex-col pb-16">
-      {isRefreshing && (
-        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
-          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#E8694A' }} />
-        </div>
-      )}
 
       {/* 헤더 */}
       <div className="flex-shrink-0 flex items-center px-4 border-b border-gray-100"
@@ -509,7 +479,7 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
         {/* 좌측 75% */}
         <div className="overflow-y-auto flex flex-col" style={{ width: '75%' }}>
           {selectedScan && (
-            <div className="sticky top-0 z-10 flex items-center px-4 py-2.5 border-b border-gray-100"
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-gray-100"
               style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
               <button
                 onClick={() => setSelectedScan(null)}
@@ -521,11 +491,26 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
                 </svg>
                 BACK
               </button>
+              <button
+                onClick={toggleShuffle}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold active:opacity-60 transition-opacity"
+                style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  backgroundColor: shuffledOrder ? '#E8694A' : '#F1F5F9',
+                  color: shuffledOrder ? 'white' : '#94A3B8',
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                  <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+                </svg>
+                SHUFFLE
+              </button>
             </div>
           )}
           <div className="p-4 flex-1">
             {selectedScan ? (
-              <VocabTable scan={selectedScan} />
+              <VocabTable scan={selectedScan} shuffledOrder={shuffledOrder} />
             ) : (
               <EmptyState />
             )}
@@ -535,22 +520,7 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
         {/* 우측 25% — 사이드바 */}
         <div className="bg-white border-l border-gray-100 overflow-y-auto flex flex-col" style={{ width: '25%' }}>
 
-          {/* +ADD 버튼 */}
-          <div className="flex-shrink-0 px-2 py-2 border-b border-gray-100">
-            <button
-              ref={addBtnRef}
-              onClick={openAddMenu}
-              className="w-full flex items-center justify-center gap-1 py-1.5 rounded-full text-white text-[10px] font-black shadow-sm active:opacity-75 transition-opacity"
-              style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
-            >
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              ADD
-            </button>
-          </div>
-
-          {/* 날짜 폴더 아코디언 목록 */}
+            {/* 날짜 폴더 아코디언 목록 */}
           <div className="flex flex-col pb-3">
             {sortedDates.length === 0 && (
               <p className="text-[9px] text-center text-gray-300 mt-6 leading-relaxed">폴더 없음</p>
@@ -672,5 +642,6 @@ export default function VocabScanner({ onBack, nickname, addTrigger }) {
         </div>
       )}
     </div>
+    </PullToRefreshWrapper>
   )
 }

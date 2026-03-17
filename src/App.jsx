@@ -134,7 +134,7 @@ export default function App() {
             </svg>
           </div>
           <span className="text-[8px] font-black tracking-wider leading-none"
-            style={{ color: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}>ADD</span>
+            style={{ color: '#8B7E76', fontFamily: 'JetBrains Mono, monospace' }}>ADD</span>
         </button>
 
         {/* VOCAB */}
