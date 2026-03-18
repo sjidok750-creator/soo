@@ -215,9 +215,9 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="fixed inset-0 z-[55] bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+        className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-3xl shadow-2xl flex flex-col"
         style={{ maxHeight: '94dvh', overflow: 'hidden' }}
       >
         {/* 핸들 */}
@@ -395,8 +395,8 @@ function EditTaskSheet({ task, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-y-auto"
+      <div className="fixed inset-0 z-[55] bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-3xl shadow-2xl overflow-y-auto"
         style={{ maxHeight: '94dvh', paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
         <div className="flex justify-center pt-3 pb-0.5">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -501,8 +501,8 @@ function TaskDetailModal({ task, onDelete, onEdit, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl px-5 pt-4"
+      <div className="fixed inset-0 z-[55] bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-3xl shadow-2xl px-5 pt-4"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)' }}>
         <div className="flex justify-center mb-3">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -569,7 +569,7 @@ function TaskDetailModal({ task, onDelete, onEdit, onClose }) {
         </div>
       </div>
       {attachImg && (
-        <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4"
           onClick={() => { URL.revokeObjectURL(attachImg); setAttachImg(null) }}>
           <button className="absolute top-5 right-5 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-xl"
             onClick={() => { URL.revokeObjectURL(attachImg); setAttachImg(null) }}>✕</button>
