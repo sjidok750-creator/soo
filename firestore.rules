@@ -10,5 +10,14 @@ service cloud.firestore {
     match /settings/{id} {
       allow read, write: if true;
     }
+    match /vocab-scans/{id} {
+      allow read, write: if true;
+    }
+    match /task-board/{id} {
+      allow read, write: if true;
+    }
+    match /notes-media/{id} {
+      allow read, write: if true;
+    }
   }
 }
