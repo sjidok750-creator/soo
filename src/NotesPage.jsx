@@ -702,8 +702,8 @@ export default function NotesPage({ onBack, addTrigger }) {
         </div>
 
         {/* ── 우측 메인 패널 (85%) — PTR로 첫화면 복귀 ── */}
-        <PullToRefreshWrapper onRefresh={() => setSelectedSubject(null)} bg="#fff" style={{ flex: 1, overflow: 'hidden' }}>
-        <div className="flex-1 overflow-y-auto bg-white" style={{ minHeight: '100%' }}>
+        <PullToRefreshWrapper onRefresh={() => setSelectedSubject(null)} bg="#fff" style={{ flex: 1, overflow: 'hidden', height: '100%' }}>
+        <div className="overflow-y-auto bg-white" style={{ height: '100%' }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="flex flex-col items-center gap-2">
@@ -715,7 +715,7 @@ export default function NotesPage({ onBack, addTrigger }) {
             </div>
           ) : displayMedia.length === 0 ? (
             /* 빈 상태 */
-            <div className="flex flex-col items-center justify-center gap-3 h-full" style={{ minHeight: '60vh' }}>
+            <div className="flex flex-col items-center justify-center gap-3" style={{ height: '100%' }}>
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center"
                 style={{ background: CORAL_BG }}

@@ -10,7 +10,7 @@ const MONO = 'JetBrains Mono, monospace'
  * - 콘텐츠 전체가 아래로 내려갔다가 올라오는 시각 효과
  * - 상단에서 코랄색 인디케이터가 내려옴
  */
-export default function PullToRefreshWrapper({ onRefresh, children, bg = '#FAFAFA' }) {
+export default function PullToRefreshWrapper({ onRefresh, children, bg = '#FAFAFA', style }) {
   const wrapperRef  = useRef(null)
   const startY      = useRef(0)
   const active      = useRef(false)
@@ -95,7 +95,7 @@ export default function PullToRefreshWrapper({ onRefresh, children, bg = '#FAFAF
 
   return (
     /* wrapper: 배경색을 페이지와 동일하게 → 당길 때 빈 영역이 자연스럽게 보임 */
-    <div ref={wrapperRef} style={{ position: 'relative', background: bg }}>
+    <div ref={wrapperRef} style={{ position: 'relative', background: bg, ...style }}>
 
       {/* 콘텐츠 + 인디케이터를 함께 translateY */}
       <div
@@ -106,6 +106,7 @@ export default function PullToRefreshWrapper({ onRefresh, children, bg = '#FAFAF
             : 'none',
           position: 'relative',
           willChange: 'transform',
+          height: '100%',
         }}
       >
         {/* 인디케이터 — 콘텐츠 위 50px에 위치해서 당길수록 화면에 들어옴 */}
