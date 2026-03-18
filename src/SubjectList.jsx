@@ -611,12 +611,6 @@ function TodoInputSheet({ nickname, onClose, date }) {
           <div className="px-5 pt-4 pb-2">
             {/* handle */}
             <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor: 'rgba(232,105,74,0.2)' }} />
-            {/* close */}
-            <div className="flex items-center justify-end mb-3">
-              <button onClick={onClose}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: '#FFF3F0', color: '#E8694A' }}>✕</button>
-            </div>
             {/* textarea */}
             <textarea value={text} onChange={e => setText(e.target.value)}
               placeholder="What to study..."

@@ -202,6 +202,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
   const [taskText,   setTaskText]   = useState('')
   const [deadline,   setDeadline]   = useState('')
   const [attachFile, setAttachFile] = useState(null)
+  const [added,      setAdded]      = useState(false)
   const fileRef = useRef()
 
   const handleFileChange = e => {
@@ -225,21 +226,14 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
         </div>
 
         {/* 시트 헤더 */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-          <div>
-            <span className="text-[13px] font-black text-gray-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-              New Task
-            </span>
-            <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: isToday ? '#FFF3F0' : '#F3F4F6', color: isToday ? '#E8694A' : '#6B7280', fontFamily: 'JetBrains Mono, monospace' }}>
-              {fmtViewDate(viewDate)}
-            </span>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:bg-gray-200">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
+        <div className="px-5 py-3 border-b border-gray-100">
+          <span className="text-[13px] font-black text-gray-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+            New Task
+          </span>
+          <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: isToday ? '#FFF3F0' : '#F3F4F6', color: isToday ? '#E8694A' : '#6B7280', fontFamily: 'JetBrains Mono, monospace' }}>
+            {fmtViewDate(viewDate)}
+          </span>
         </div>
 
         <div className="overflow-y-auto flex-1">
@@ -270,7 +264,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
             <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
               {DAILY_SUBJECTS.map(s => (
                 <button key={s.id} onClick={() => setSubj(s.id)}
-                  className="flex flex-col items-center gap-0.5 py-2 px-0.5 rounded-xl border-2 text-center transition-all active:scale-95"
+                  className="flex flex-col items-center gap-0.5 py-1 px-0.5 rounded-xl border-2 text-center transition-all active:scale-95"
                   style={{
                     borderColor: subj === s.id ? s.color : '#E5E7EB',
                     backgroundColor: subj === s.id ? s.bg : 'white',
@@ -345,16 +339,30 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
 
         </div>
         </div>
-        {/* Submit 버튼 — 하단 고정 */}
+        {/* ADD 버튼 — 하단 고정 */}
         <div className="px-5 py-3 flex-shrink-0 border-t border-gray-100"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
           <button
-            onClick={() => onSubmit({ cat, subj, customName, taskText, deadline, attachFile })}
-            disabled={!taskText.trim()}
-            className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all disabled:opacity-30"
-            style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
+            onClick={async () => {
+              if (!taskText.trim() || added) return
+              await onSubmit({ cat, subj, customName, taskText, deadline, attachFile })
+              setAdded(true)
+              setTimeout(() => {
+                setAdded(false)
+                setTaskText('')
+                setDeadline('')
+                setAttachFile(null)
+              }, 1800)
+            }}
+            disabled={!taskText.trim() || added}
+            className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all duration-300 disabled:opacity-40"
+            style={{
+              background: added ? '#10B981' : '#E8694A',
+              boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
           >
-            Add Task
+            {added ? '✓ DONE!' : 'ADD'}
           </button>
         </div>
       </div>
@@ -717,7 +725,6 @@ export default function TaskManager({ onBack, nickname, addTrigger }) {
       taskDate: viewDate,
       createdAt: serverTimestamp(),
     })
-    setShowAdd(false)
   }
 
   // 날짜별 필터
