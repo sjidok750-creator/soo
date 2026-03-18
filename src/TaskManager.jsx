@@ -226,14 +226,40 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
         </div>
 
         {/* 시트 헤더 */}
-        <div className="px-5 py-3 border-b border-gray-100">
-          <span className="text-[13px] font-black text-gray-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-            New Task
-          </span>
-          <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: isToday ? '#FFF3F0' : '#F3F4F6', color: isToday ? '#E8694A' : '#6B7280', fontFamily: 'JetBrains Mono, monospace' }}>
-            {fmtViewDate(viewDate)}
-          </span>
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <span className="text-[13px] font-black text-gray-900" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+              New Task
+            </span>
+            <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: isToday ? '#FFF3F0' : '#F3F4F6', color: isToday ? '#E8694A' : '#6B7280', fontFamily: 'JetBrains Mono, monospace' }}>
+              {fmtViewDate(viewDate)}
+            </span>
+          </div>
+          {/* 헤더 제출 버튼 — 네비바 가림 문제 해결용 */}
+          <button
+            onClick={async () => {
+              if (!taskText.trim() || added) return
+              await onSubmit({ cat, subj, customName, taskText, deadline, attachFile })
+              setAdded(true)
+              setTimeout(() => {
+                setAdded(false)
+                setTaskText('')
+                setDeadline('')
+                setAttachFile(null)
+              }, 1800)
+            }}
+            disabled={!taskText.trim() || added}
+            className="px-3.5 py-1.5 rounded-full text-[11px] font-black transition-all active:scale-95 disabled:opacity-30"
+            style={{
+              background: added ? '#10B981' : '#E8694A',
+              color: 'white',
+              fontFamily: 'JetBrains Mono, monospace',
+              boxShadow: added ? '0 2px 8px rgba(16,185,129,0.3)' : '0 2px 8px rgba(232,105,74,0.35)',
+            }}
+          >
+            {added ? '✓ DONE!' : '✓ 추가'}
+          </button>
         </div>
 
         <div className="overflow-y-auto flex-1">
@@ -341,9 +367,9 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
         </div>
         </div>
 
-        {/* ADD 버튼 — 스크롤 영역 밖 고정 */}
+        {/* ADD 버튼 — 스크롤 영역 밖 고정 (네비바 64px + 여유 20px) */}
         <div className="bg-white border-t border-gray-100 px-5 py-3"
-          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
+          style={{ paddingBottom: 'max(calc(env(safe-area-inset-bottom) + 84px), 84px)' }}>
           <button
             onClick={async () => {
               if (!taskText.trim() || added) return
