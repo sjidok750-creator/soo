@@ -1,39 +1,116 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function SplashScreen({ onDone }) {
+  const [phase, setPhase] = useState(0)
+  // phase 0: all hidden
+  // phase 1: "TODO LIST" 등장
+  // phase 2: 캐릭터 이미지 등장
+  // phase 3: "For. 수현" 등장
+  // phase 4: 전체 페이드아웃
+
   useEffect(() => {
-    const timer = setTimeout(onDone, 2600)
-    return () => clearTimeout(timer)
+    const timers = [
+      setTimeout(() => setPhase(1), 200),
+      setTimeout(() => setPhase(2), 700),
+      setTimeout(() => setPhase(3), 1300),
+      setTimeout(() => setPhase(4), 2900),
+      setTimeout(onDone, 3600),
+    ]
+    return () => timers.forEach(clearTimeout)
   }, [onDone])
 
+  const mono = "'JetBrains Mono', 'Courier New', monospace"
+  const coral = '#E8694A'
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: '#fff7f5' }}>
-      <div style={{ animation: 'splashSpin 2.4s ease forwards' }}>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="200" height="200">
-          <rect x="148" y="220" width="728" height="584" rx="20" ry="20"
-                fill="#fff7f5" stroke="#E8694A" strokeWidth="32"/>
-          <rect x="178" y="250" width="668" height="524" rx="8" ry="8"
-                fill="none" stroke="#E8694A" strokeWidth="8" opacity="0.3"/>
-          <text x="512" y="462"
-                fontFamily="'JetBrains Mono', 'Courier New', monospace"
-                fontSize="210"
-                fontWeight="700"
-                fill="#E8694A"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                letterSpacing="18">TODO</text>
-          <line x1="208" y1="512" x2="816" y2="512"
-                stroke="#E8694A" strokeWidth="14" strokeLinecap="round" opacity="0.55"/>
-          <text x="512" y="562"
-                fontFamily="'JetBrains Mono', 'Courier New', monospace"
-                fontSize="210"
-                fontWeight="700"
-                fill="#E8694A"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                letterSpacing="18">LIST</text>
-        </svg>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '1.5rem',
+        backgroundColor: '#ffffff',
+        opacity: phase === 4 ? 0 : 1,
+        transition: phase === 4 ? 'opacity 0.7s ease' : 'none',
+      }}
+    >
+      {/* TODO LIST */}
+      <h1
+        style={{
+          fontFamily: mono,
+          color: coral,
+          fontSize: '2.6rem',
+          fontWeight: '700',
+          letterSpacing: '0.12em',
+          margin: 0,
+          opacity: phase >= 1 ? 1 : 0,
+          transform: phase >= 1 ? 'translateY(0)' : 'translateY(-18px)',
+          transition: 'opacity 0.5s ease, transform 0.5s ease',
+        }}
+      >
+        TODO LIST
+      </h1>
+
+      {/* 캐릭터 이미지 */}
+      <div
+        style={{
+          width: '190px',
+          height: '190px',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          backgroundColor: '#6DDAF0',
+          opacity: phase >= 2 ? 1 : 0,
+          transform: phase >= 2 ? 'scale(1)' : 'scale(0.82)',
+          transition: 'opacity 0.55s ease, transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          flexShrink: 0,
+        }}
+      >
+        <img
+          src="/soo/jamddal.jpg"
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
       </div>
+
+      {/* For. 수현 */}
+      <p
+        style={{
+          fontFamily: mono,
+          color: coral,
+          fontSize: '1.9rem',
+          fontWeight: '700',
+          letterSpacing: '0.06em',
+          margin: 0,
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(14px)',
+          transition:
+            'opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          filter: phase >= 3 ? 'blur(0px)' : 'blur(4px)',
+        }}
+      >
+        For. L.S.HYEON
+      </p>
+
+      {/* 부제 */}
+      <p
+        style={{
+          fontFamily: mono,
+          color: '#B0A9A4',
+          fontSize: '0.68rem',
+          fontWeight: '400',
+          letterSpacing: '0.14em',
+          margin: 0,
+          marginTop: '-0.6rem',
+          opacity: phase >= 3 ? 1 : 0,
+          transition: 'opacity 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        }}
+      >
+        in celebration of your 2026 birthday
+      </p>
     </div>
   )
 }
