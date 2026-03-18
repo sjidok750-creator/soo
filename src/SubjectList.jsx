@@ -511,8 +511,15 @@ function TodoInputSheet({ nickname, onClose }) {
             {/* header */}
             <div className="flex items-center justify-between mb-4">
               <span className="font-bold text-gray-800">오늘의 할 일 추가</span>
-              <button onClick={onClose}
-                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
+              <div className="flex items-center gap-2">
+                <button onClick={handleAdd}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                  style={{ backgroundColor: '#E8694A' }}>
+                  <span>✓</span><span>추가</span>
+                </button>
+                <button onClick={onClose}
+                  className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">✕</button>
+              </div>
             </div>
             {/* text */}
             <textarea value={text} onChange={e => setText(e.target.value)}
