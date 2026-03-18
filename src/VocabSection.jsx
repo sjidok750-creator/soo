@@ -551,20 +551,18 @@ export default function VocabSection() {
           onClick={() => setShowAddSheet(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative rounded-3xl overflow-hidden mx-4 mb-3 bg-white" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
-            {/* 사진보관함 */}
+            {/* 사진 보관함 */}
             <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { fileRef.current?.click(); setShowAddSheet(false) }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2.5"/>
-                <path d="M2 13l5-4 4 3 3-2 6 5"/>
-                <circle cx="8" cy="8" r="1.5" fill="#1C1C1E" stroke="none"/>
+                <rect x="3" y="5" width="16" height="13" rx="2"/>
+                <rect x="5" y="3" width="16" height="13" rx="2" fill="white" stroke="#1C1C1E"/>
+                <path d="M5 12l3.5-3 3 2.5 2-1.5 4 4"/>
+                <circle cx="10" cy="8" r="1.2" fill="#1C1C1E" stroke="none"/>
               </svg>
-              <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진보관함</span>
+              <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진 보관함</span>
             </button>
             <div className="mx-6 h-px bg-gray-100" />
-            {/* 카메라 */}
+            {/* 사진 또는 비디오 찍기 */}
             <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { cameraRef.current?.click(); setShowAddSheet(false) }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
@@ -573,7 +571,7 @@ export default function VocabSection() {
               <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진 또는 비디오 찍기</span>
             </button>
             <div className="mx-6 h-px bg-gray-100" />
-            {/* 파일 */}
+            {/* 파일 선택 */}
             <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { fileRef.current?.click(); setShowAddSheet(false) }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
