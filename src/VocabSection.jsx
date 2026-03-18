@@ -544,65 +544,45 @@ export default function VocabSection() {
         )}
       </div>
 
-      {/* ── 추가 시트 (iPhone 액션시트 스타일) ── */}
+      {/* ── 추가 시트 (Notes와 동일한 스타일) ── */}
       {showAddSheet && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col justify-end px-4"
+        <div className="fixed inset-0 z-50 flex flex-col justify-end"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
-          onClick={() => setShowAddSheet(false)}
-        >
-          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)' }} />
-
-          {/* 액션 카드 */}
-          <div className="relative rounded-2xl overflow-hidden mb-3 bg-white/95" style={{ backdropFilter: 'blur(20px)' }}
-            onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-4 pb-2">
-              <p className="text-center text-[10px] font-black tracking-widest" style={{ color: CORAL, fontFamily: MONO }}>
-                VOCAB BOOK
-              </p>
+          onClick={() => setShowAddSheet(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative rounded-3xl overflow-hidden mx-4 mb-3 bg-white" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-200" />
             </div>
-            {[
-              {
-                onClick: () => cameraRef.current?.click(),
-                label: '사진 찍기',
-                sub: '카메라로 단어장을 촬영',
-                icon: <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></>,
-              },
-              {
-                onClick: () => fileRef.current?.click(),
-                label: '갤러리에서 선택',
-                sub: '저장된 사진을 불러오기',
-                icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
-              },
-            ].map(({ onClick, label, sub, icon }, i) => (
-              <button
-                key={label}
-                className="w-full flex items-center gap-4 px-5 py-4 active:bg-gray-100/80 transition"
-                style={{ borderTop: i === 0 ? '1px solid rgba(0,0,0,0.07)' : 'none', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
-                onClick={onClick}
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: `linear-gradient(135deg, #F5956A 0%, ${CORAL} 100%)` }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p style={{ fontFamily: MONO, fontWeight: 700, fontSize: 13, color: '#111827' }}>{label}</p>
-                  <p style={{ fontFamily: MONO, fontWeight: 500, fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>{sub}</p>
-                </div>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            ))}
+            {/* 사진보관함 */}
+            <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { fileRef.current?.click(); setShowAddSheet(false) }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2.5"/>
+                <path d="M2 13l5-4 4 3 3-2 6 5"/>
+                <circle cx="8" cy="8" r="1.5" fill="#1C1C1E" stroke="none"/>
+              </svg>
+              <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진보관함</span>
+            </button>
+            <div className="mx-6 h-px bg-gray-100" />
+            {/* 카메라 */}
+            <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { cameraRef.current?.click(); setShowAddSheet(false) }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진 또는 비디오 찍기</span>
+            </button>
+            <div className="mx-6 h-px bg-gray-100" />
+            {/* 파일 */}
+            <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => { fileRef.current?.click(); setShowAddSheet(false) }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+              </svg>
+              <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>파일 선택</span>
+            </button>
           </div>
-
-          {/* 취소 버튼 (분리) */}
-          <button
-            className="relative w-full py-4 rounded-2xl font-black tracking-widest transition active:opacity-70"
-            style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', color: '#374151', fontFamily: MONO, fontSize: 13 }}
-            onClick={() => setShowAddSheet(false)}
-          >
-            CANCEL
+          <button className="relative mx-4 py-4 rounded-3xl font-semibold text-gray-800 bg-white active:bg-gray-100 transition-colors text-[17px]" onClick={() => setShowAddSheet(false)}>
+            취소
           </button>
         </div>
       )}
