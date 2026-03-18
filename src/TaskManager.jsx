@@ -337,33 +337,34 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
             <input ref={fileRef} type="file" accept="*/*" className="hidden" onChange={handleFileChange} />
           </div>
 
+          {/* ADD 버튼 — sticky 하단 고정 */}
+          <div className="sticky bottom-0 bg-white border-t border-gray-100 px-0 py-3"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)', marginLeft: -20, marginRight: -20, paddingLeft: 20, paddingRight: 20 }}>
+            <button
+              onClick={async () => {
+                if (!taskText.trim() || added) return
+                await onSubmit({ cat, subj, customName, taskText, deadline, attachFile })
+                setAdded(true)
+                setTimeout(() => {
+                  setAdded(false)
+                  setTaskText('')
+                  setDeadline('')
+                  setAttachFile(null)
+                }, 1800)
+              }}
+              disabled={!taskText.trim() || added}
+              className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all duration-300 disabled:opacity-40"
+              style={{
+                background: added ? '#10B981' : '#E8694A',
+                boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
+                fontFamily: 'JetBrains Mono, monospace',
+              }}
+            >
+              {added ? '✓ DONE!' : 'ADD'}
+            </button>
+          </div>
+
         </div>
-        </div>
-        {/* ADD 버튼 — 하단 고정 */}
-        <div className="px-5 py-3 flex-shrink-0 border-t border-gray-100"
-          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
-          <button
-            onClick={async () => {
-              if (!taskText.trim() || added) return
-              await onSubmit({ cat, subj, customName, taskText, deadline, attachFile })
-              setAdded(true)
-              setTimeout(() => {
-                setAdded(false)
-                setTaskText('')
-                setDeadline('')
-                setAttachFile(null)
-              }, 1800)
-            }}
-            disabled={!taskText.trim() || added}
-            className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all duration-300 disabled:opacity-40"
-            style={{
-              background: added ? '#10B981' : '#E8694A',
-              boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
-              fontFamily: 'JetBrains Mono, monospace',
-            }}
-          >
-            {added ? '✓ DONE!' : 'ADD'}
-          </button>
         </div>
       </div>
     </>
