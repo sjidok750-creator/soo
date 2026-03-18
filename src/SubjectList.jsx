@@ -597,18 +597,18 @@ function TodoInputSheet({ nickname, onClose, date }) {
       />
       {/* 시트 */}
       <div
-        className="fixed inset-x-0 z-50 rounded-t-3xl overflow-hidden"
+        className="fixed inset-x-0 z-50 rounded-t-3xl flex flex-col overflow-hidden"
         style={{
           bottom: 64,
-          maxHeight: '60vh',
+          maxHeight: '75vh',
           background: '#fff',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.14)',
         }}
       >
         {/* 상단 코랄 액센트 바 */}
-        <div style={{ height: 3, background: 'linear-gradient(90deg, #F5A58A 0%, #E8694A 50%, #D4845A 100%)' }} />
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(60vh - 3px)' }}>
-          <div className="px-5 pt-4 pb-6">
+        <div style={{ height: 3, flexShrink: 0, background: 'linear-gradient(90deg, #F5A58A 0%, #E8694A 50%, #D4845A 100%)' }} />
+        <div className="overflow-y-auto flex-1">
+          <div className="px-5 pt-4 pb-2">
             {/* handle */}
             <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ backgroundColor: 'rgba(232,105,74,0.2)' }} />
             {/* close */}
@@ -675,24 +675,24 @@ function TodoInputSheet({ nickname, onClose, date }) {
                 )}
               </div>
             </div>
-            {/* buttons */}
-            <div className="flex gap-2">
-              <button onClick={onClose}
-                className="flex-1 py-3 rounded-2xl text-sm font-bold"
-                style={{ background: '#F5F3F0', color: '#B8AFA8' }}>CANCEL</button>
-              <button onClick={handleAdd}
-                className="py-3 rounded-2xl text-white text-sm font-black transition-all duration-300"
-                style={{
-                  background: added ? '#10B981' : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
-                  boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
-                  flex: 2,
-                  fontFamily: 'JetBrains Mono, monospace',
-                  letterSpacing: '0.06em',
-                }}>
-                {added ? '✓ DONE!' : 'ADD'}
-              </button>
-            </div>
           </div>
+        </div>
+        {/* 버튼 — 스크롤 영역 밖 하단 고정 */}
+        <div className="flex gap-2 px-5 py-3 flex-shrink-0 border-t border-gray-100">
+          <button onClick={onClose}
+            className="flex-1 py-3 rounded-2xl text-sm font-bold"
+            style={{ background: '#F5F3F0', color: '#B8AFA8' }}>CANCEL</button>
+          <button onClick={handleAdd}
+            className="py-3 rounded-2xl text-white text-sm font-black transition-all duration-300"
+            style={{
+              background: added ? '#10B981' : 'linear-gradient(135deg, #F5956A 0%, #E8694A 100%)',
+              boxShadow: added ? '0 4px 12px rgba(16,185,129,0.3)' : '0 4px 16px rgba(232,105,74,0.35)',
+              flex: 2,
+              fontFamily: 'JetBrains Mono, monospace',
+              letterSpacing: '0.06em',
+            }}>
+            {added ? '✓ DONE!' : 'ADD'}
+          </button>
         </div>
         <ToastContainer />
       </div>

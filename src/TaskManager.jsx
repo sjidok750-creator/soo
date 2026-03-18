@@ -216,8 +216,8 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
     <>
       <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-y-auto"
-        style={{ maxHeight: '94dvh', paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col"
+        style={{ maxHeight: '94dvh' }}
       >
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-0.5">
@@ -242,6 +242,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
           </button>
         </div>
 
+        <div className="overflow-y-auto flex-1">
         <div className="px-5 pt-4 pb-2 flex flex-col gap-4">
 
           {/* Category */}
@@ -342,11 +343,15 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
             <input ref={fileRef} type="file" accept="*/*" className="hidden" onChange={handleFileChange} />
           </div>
 
-          {/* Submit */}
+        </div>
+        </div>
+        {/* Submit 버튼 — 하단 고정 */}
+        <div className="px-5 py-3 flex-shrink-0 border-t border-gray-100"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}>
           <button
             onClick={() => onSubmit({ cat, subj, customName, taskText, deadline, attachFile })}
             disabled={!taskText.trim()}
-            className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all disabled:opacity-30 mb-2"
+            className="w-full py-3.5 rounded-2xl text-white text-[13px] font-black shadow-md active:opacity-80 transition-all disabled:opacity-30"
             style={{ backgroundColor: '#E8694A', fontFamily: 'JetBrains Mono, monospace' }}
           >
             Add Task
