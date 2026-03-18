@@ -218,7 +218,7 @@ function AddSheet({ viewDate, onClose, onSubmit }) {
       <div className="fixed inset-0 z-40 bg-black/30" style={{ backdropFilter: 'blur(4px)' }} onClick={onClose} />
       <div
         className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col"
-        style={{ maxHeight: '94dvh' }}
+        style={{ maxHeight: '94dvh', overflow: 'hidden' }}
       >
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-0.5">
