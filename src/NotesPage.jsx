@@ -701,7 +701,7 @@ export default function NotesPage({ onBack, addTrigger }) {
             </div>
           ) : displayMedia.length === 0 ? (
             /* 빈 상태 */
-            <div className="flex flex-col items-center justify-center h-full gap-3 pb-8">
+            <div className="flex flex-col items-center justify-center gap-3" style={{ minHeight: 'calc(100vh - 200px)' }}>
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center"
                 style={{ background: CORAL_BG }}
