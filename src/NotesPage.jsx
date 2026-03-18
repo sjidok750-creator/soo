@@ -78,28 +78,42 @@ function MediaPickerSheet({ onClose, onPick }) {
     <div className="fixed inset-0 z-50 flex flex-col justify-end"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 10px)' }}
       onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="relative rounded-2xl overflow-hidden mx-4 mb-3 bg-white" onClick={e => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="relative rounded-3xl overflow-hidden mx-4 mb-3 bg-white" onClick={e => e.stopPropagation()}>
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
-        <button className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-100 active:bg-gray-100 transition-colors" onClick={() => galleryRef.current.click()}>
-          <span className="text-2xl leading-none">🖼️</span>
-          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">사진보관함</span>
+        {/* 사진보관함 */}
+        <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => galleryRef.current.click()}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2.5"/>
+            <path d="M2 13l5-4 4 3 3-2 6 5"/>
+            <circle cx="8" cy="8" r="1.5" fill="#1C1C1E" stroke="none"/>
+          </svg>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진 보관함</span>
         </button>
-        <button className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-100 active:bg-gray-100 transition-colors" onClick={() => photoRef.current.click()}>
-          <span className="text-2xl leading-none">📷</span>
-          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">사진 또는 비디오 찍기</span>
+        <div className="mx-6 h-px bg-gray-100" />
+        {/* 카메라 */}
+        <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => photoRef.current.click()}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>사진 또는 비디오 찍기</span>
         </button>
-        <button className="w-full flex items-center gap-4 px-5 py-4 active:bg-gray-100 transition-colors" onClick={() => fileRef.current.click()}>
-          <span className="text-2xl leading-none">📂</span>
-          <span className="flex-1 text-left text-[17px] font-medium text-gray-800">파일 선택</span>
+        <div className="mx-6 h-px bg-gray-100" />
+        {/* 파일 */}
+        <button className="w-full flex items-center gap-5 px-6 py-4 active:bg-gray-50 transition-colors" onClick={() => fileRef.current.click()}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          <span className="flex-1 text-left text-[17px] font-medium text-gray-900" style={{ letterSpacing: '-0.01em' }}>파일 선택</span>
         </button>
         <input ref={photoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInput} />
         <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleInput} />
       </div>
-      <button className="relative mx-4 py-4 rounded-2xl font-semibold text-gray-800 bg-white active:bg-gray-100 transition-colors text-[17px]" onClick={onClose}>
+      <button className="relative mx-4 py-4 rounded-3xl font-semibold text-gray-800 bg-white active:bg-gray-100 transition-colors text-[17px]" onClick={onClose}>
         취소
       </button>
     </div>
