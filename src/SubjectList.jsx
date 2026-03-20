@@ -446,7 +446,7 @@ function YouTubeVideoSheet({ video, onClose }) {
           />
         </div>
         {/* safe area bottom */}
-        <div style={{ height: 'calc(20px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
+        <div style={{ height: 'calc(34px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
       </div>
     </div>
   )
