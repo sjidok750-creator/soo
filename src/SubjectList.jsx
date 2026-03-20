@@ -395,7 +395,7 @@ function YouTubeVideoSheet({ video, onClose }) {
 
   /* 전체 플레이어 — top 없음 → 앱 위쪽 영역 터치 가능 */
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50">
+    <div className="fixed inset-x-0 bottom-0 z-50 max-w-lg mx-auto">
       <div
         className="rounded-t-3xl overflow-hidden shadow-2xl"
         style={{ background: '#0F172A' }}
@@ -446,7 +446,7 @@ function YouTubeVideoSheet({ video, onClose }) {
           />
         </div>
         {/* safe area bottom */}
-        <div style={{ height: 'calc(34px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
+        <div style={{ height: 'calc(20px + env(safe-area-inset-bottom, 0px))', background: '#0F172A' }} />
       </div>
     </div>
   )
