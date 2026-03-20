@@ -785,7 +785,7 @@ function EditTodoModal({ todo, onClose }) {
 }
 
 /* ───── TodoList ───── */
-function TodoList({ todos }) {
+function TodoList({ todos, onAddClick }) {
   const [editingTodo, setEditingTodo] = useState(null)
 
   async function handleToggle(todo) {
@@ -798,13 +798,15 @@ function TodoList({ todos }) {
 
   if (!todos.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 text-gray-300">
+      <div className="flex flex-col items-center justify-center py-10 text-gray-300 cursor-pointer active:opacity-60 transition-opacity select-none"
+        onClick={onAddClick}>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
           <rect x="9" y="3" width="6" height="4" rx="1"/>
           <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
         </svg>
         <p className="text-xs font-medium" style={{ fontFamily: 'Pretendard, sans-serif' }}>아직 할 일이 없어요</p>
+        <p className="text-[10px] mt-1" style={{ fontFamily: 'Pretendard, sans-serif' }}>탭해서 추가하기</p>
       </div>
     )
   }
@@ -1052,7 +1054,7 @@ function StudyTimeGraph({ todos }) {
 }
 
 /* ───── DailyBoard ───── */
-function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
+function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading, onAddClick }) {
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [stampShown, setStampShown] = useState(false)
   const touchStartX = useRef(null)
@@ -1188,7 +1190,7 @@ function DailyBoard({ todos, selectedDate, onPrevDay, onNextDay, loading }) {
             <p className="text-xs font-medium">불러오는 중...</p>
           </div>
         ) : (
-          <TodoList todos={todos} />
+          <TodoList todos={todos} onAddClick={onAddClick} />
         )}
       </div>
     </div>
@@ -1396,6 +1398,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
         onPrevDay={prevDay}
         onNextDay={nextDay}
         loading={todosLoading}
+        onAddClick={() => setLocalShowTodo(true)}
       />
       <StudyTimeGraph todos={todayTodos} />
 
