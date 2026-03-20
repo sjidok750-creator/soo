@@ -843,11 +843,13 @@ export default function TaskManager({ onBack, nickname, addTrigger }) {
                     </div>
                   </div>
 
-                  {/* 빈 줄 */}
+                  {/* 빈 줄 — 클릭 시 AddSheet 오픈 */}
                   {catTasks.length === 0 && (
                     <>
                       {[0, 1].map(i => (
-                        <div key={i} className="grid border-b border-gray-200/40" style={{ gridTemplateColumns: gridCols, minHeight: 34 }}>
+                        <div key={i} className="grid border-b border-gray-200/40 cursor-pointer active:bg-orange-50/50 transition-colors"
+                          style={{ gridTemplateColumns: gridCols, minHeight: 34 }}
+                          onClick={() => setShowAdd(true)}>
                           <div className="border-r border-gray-200/40" /><div /><div className="border-l border-gray-200/40" /><div className="border-l border-gray-200/40" />
                         </div>
                       ))}
