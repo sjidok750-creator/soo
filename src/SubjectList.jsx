@@ -201,7 +201,7 @@ function CalendarModal({ onClose, nickname }) {
             </div>
           </div>
         )}
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-8">
           {!showAddForm ? (
             <button onClick={() => setShowAddForm(true)} className="w-full py-2 border-2 border-dashed border-teal-300 text-teal-500 rounded-xl text-sm hover:bg-teal-50 transition">
               + 시험 일정 추가
@@ -265,7 +265,7 @@ function DdayPickerModal({ onSelect, onClose }) {
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-gray-200" />
           </div>
-          <div className="px-6 pt-4 pb-10">
+          <div className="px-6 pt-4 pb-24">
             <p className="text-xs tracking-widest text-gray-300 mb-1 uppercase">{selectedDate}</p>
             <p className="text-base font-bold text-gray-700 mb-6">어떤 날인가요?</p>
             <div className="relative mb-8">
@@ -322,7 +322,7 @@ function DdayPickerModal({ onSelect, onClose }) {
             <div key={d} className="text-center text-[11px] text-gray-300 py-1">{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 px-4 gap-y-1 pb-8">
+        <div className="grid grid-cols-7 px-4 gap-y-1 pb-20">
           {cells.map((d, i) => {
             if (!d) return <div key={i} />
             const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear()
@@ -505,7 +505,7 @@ function TodoInputSheet({ nickname, onClose }) {
       <div className="fixed inset-x-0 z-50 bg-white rounded-t-3xl shadow-2xl overflow-hidden"
         style={{ bottom: 64, maxHeight: '55vh' }}>
         <div className="overflow-y-auto h-full">
-          <div className="px-5 pt-3 pb-6">
+          <div className="px-5 pt-3 pb-10">
             {/* handle */}
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
             {/* header */}
@@ -617,7 +617,7 @@ function EditTodoModal({ todo, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-4 pb-8">
+      <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-4 pb-24">
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
         <div className="flex items-center justify-between mb-4">
           <span className="font-bold text-gray-800" style={{ fontFamily: 'Pretendard, sans-serif' }}>할 일 수정</span>
