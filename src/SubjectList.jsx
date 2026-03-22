@@ -547,45 +547,92 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
+/* ── 드래그 이동 훅 (DOM 직접 조작 — 60fps, 리렌더 없음) ── */
+function useDraggable() {
+  const elRef = useRef(null)
+  const state = useRef({ sx: 0, sy: 0, tx: 0, ty: 0, dragging: false })
+
+  const clamp = () => {
+    const el = elRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const vw = window.innerWidth, vh = window.innerHeight
+    // 최소 40px은 화면 안에 유지
+    const minVisible = 40
+    let { tx, ty } = state.current
+    if (r.right < minVisible) tx += minVisible - r.right
+    if (r.left > vw - minVisible) tx -= r.left - (vw - minVisible)
+    if (r.bottom < minVisible) ty += minVisible - r.bottom
+    if (r.top > vh - minVisible) ty -= r.top - (vh - minVisible)
+    state.current.tx = tx
+    state.current.ty = ty
+    el.style.transform = `translate3d(${tx}px,${ty}px,0)`
+  }
+
+  const apply = () => {
+    const el = elRef.current
+    if (el) el.style.transform = `translate3d(${state.current.tx}px,${state.current.ty}px,0)`
+  }
+
+  const onStart = (cx, cy) => {
+    state.current.sx = cx - state.current.tx
+    state.current.sy = cy - state.current.ty
+    state.current.dragging = false
+  }
+
+  const onMove = (cx, cy) => {
+    const dx = cx - state.current.sx - state.current.tx
+    const dy = cy - state.current.sy - state.current.ty
+    if (!state.current.dragging && Math.abs(dx) + Math.abs(dy) > 8) state.current.dragging = true
+    if (state.current.dragging) {
+      state.current.tx = cx - state.current.sx
+      state.current.ty = cy - state.current.sy
+      apply()
+    }
+  }
+
+  const onEnd = () => {
+    if (state.current.dragging) clamp()
+    // dragging 플래그는 약간 지연 해제 (클릭 방지)
+    setTimeout(() => { state.current.dragging = false }, 50)
+  }
+
+  const wasDragging = () => state.current.dragging
+
+  const handlers = {
+    onTouchStart: e => { e.stopPropagation(); onStart(e.touches[0].clientX, e.touches[0].clientY) },
+    onTouchMove: e => { e.stopPropagation(); onMove(e.touches[0].clientX, e.touches[0].clientY) },
+    onTouchEnd: e => { e.stopPropagation(); onEnd() },
+    onMouseDown: e => {
+      e.stopPropagation()
+      onStart(e.clientX, e.clientY)
+      const mm = ev => { ev.preventDefault(); onMove(ev.clientX, ev.clientY) }
+      const mu = () => { onEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu) }
+      window.addEventListener('mousemove', mm)
+      window.addEventListener('mouseup', mu)
+    },
+  }
+
+  // 화면 회전/리사이즈 시 범위 재보정
+  useEffect(() => {
+    const onResize = () => clamp()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  return { elRef, handlers, wasDragging }
+}
+
 /* ── 잠뜰TV 유튜브 플레이어 바텀시트 ── */
 function YouTubeVideoSheet({ video, onClose }) {
   const [minimized, setMinimized] = useState(false)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const dragRef = useRef(null)
-  const dragState = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, dragging: false })
-
-  function onDragStart(clientX, clientY) {
-    dragState.current = { startX: clientX, startY: clientY, origX: pos.x, origY: pos.y, dragging: false }
-  }
-  function onDragMove(clientX, clientY) {
-    const dx = clientX - dragState.current.startX
-    const dy = clientY - dragState.current.startY
-    if (!dragState.current.dragging && Math.abs(dx) + Math.abs(dy) > 5) dragState.current.dragging = true
-    if (dragState.current.dragging) {
-      const el = dragRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      let nx = dragState.current.origX + dx
-      let ny = dragState.current.origY + dy
-      // 화면 밖으로 나가지 않게 제한
-      const maxX = window.innerWidth - rect.width
-      const maxY = window.innerHeight - rect.height
-      nx = Math.max(-pos.x - rect.left, Math.min(nx, maxX - rect.left + pos.x))
-      ny = Math.max(-pos.y - rect.top, Math.min(ny, maxY - rect.top + pos.y))
-      setPos({ x: nx, y: ny })
-    }
-  }
-  function onDragEnd() { dragState.current.dragging = false }
-
-  function handleTouchStart(e) { const t = e.touches[0]; onDragStart(t.clientX, t.clientY) }
-  function handleTouchMove(e) { const t = e.touches[0]; onDragMove(t.clientX, t.clientY) }
-  function handleMouseDown(e) { onDragStart(e.clientX, e.clientY); const mm = ev => onDragMove(ev.clientX, ev.clientY); const mu = () => { onDragEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu) }; window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu) }
+  const { elRef, handlers, wasDragging } = useDraggable()
 
   /* 최소화 상태 */
   if (minimized) {
     return (
-      <div ref={dragRef} className="fixed z-50 max-w-lg mx-auto px-2"
-        style={{ bottom: 68, left: 0, right: 0, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+      <div ref={elRef} className="fixed z-50 px-2"
+        style={{ bottom: 68, left: 8, right: 8, willChange: 'transform' }}>
         <iframe
           src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0`}
           title="yt-bg-audio"
@@ -593,10 +640,9 @@ function YouTubeVideoSheet({ video, onClose }) {
           style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', border: 'none' }}
         />
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl cursor-grab active:cursor-grabbing"
-          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)', touchAction: 'none' }}
-          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
-          onMouseDown={handleMouseDown}
+          className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl"
+          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)', touchAction: 'none', userSelect: 'none' }}
+          {...handlers}
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
             <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
@@ -608,11 +654,11 @@ function YouTubeVideoSheet({ video, onClose }) {
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace' }}>재생 중</span>
             </div>
           </div>
-          <button onClick={() => { if (!dragState.current.dragging) setMinimized(false) }}
+          <button onClick={() => { if (!wasDragging()) setMinimized(false) }}
             className="px-2.5 py-1 rounded-lg active:opacity-60 transition-opacity"
             style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
           >펼치기</button>
-          <button onClick={() => { if (!dragState.current.dragging) onClose() }}
+          <button onClick={() => { if (!wasDragging()) onClose() }}
             className="w-7 h-7 rounded-full flex items-center justify-center active:opacity-60 transition-opacity"
             style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: 14 }}
           >✕</button>
@@ -621,53 +667,49 @@ function YouTubeVideoSheet({ video, onClose }) {
     )
   }
 
-  /* 전체 플레이어 — 드래그 이동 가능 */
+  /* 전체 플레이어 */
   return (
-    <div ref={dragRef} className="fixed z-50 max-w-lg mx-auto"
-      style={{ bottom: 0, left: 0, right: 0, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+    <div ref={elRef} className="fixed z-50"
+      style={{ bottom: 0, left: 0, right: 0, maxWidth: 512, margin: '0 auto', willChange: 'transform' }}>
       <div
         className="rounded-t-3xl overflow-hidden shadow-2xl"
         style={{ background: '#0F172A' }}
       >
-        {/* 드래그 핸들 영역 */}
-        <div className="flex justify-center pt-3 cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
-          onMouseDown={handleMouseDown}
+        {/* 드래그 핸들 + 헤더 통합 */}
+        <div
+          style={{ touchAction: 'none', userSelect: 'none' }}
+          {...handlers}
         >
-          <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
-        </div>
-        {/* header — 드래그 가능 */}
-        <div className="flex items-center gap-3 px-5 pt-3 pb-3 cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
-          onMouseDown={handleMouseDown}
-        >
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-md">
-            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
+          <div className="flex justify-center pt-3 cursor-grab">
+            <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm leading-tight line-clamp-1">{video.title}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,0,0,0.2)' }}>
-                <svg width="6" height="6" viewBox="0 0 10 10" fill="#FF4444"><polygon points="2,1 9,5 2,9" /></svg>
-                <span className="text-[8px] font-bold" style={{ color: '#FF6B6B', fontFamily: 'JetBrains Mono, monospace' }}>잠뜰TV</span>
-              </div>
-              {video.pubDate && (
-                <span className="text-[8px] text-gray-600" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                  {video.pubDate.slice(0, 10)}
-                </span>
-              )}
+          <div className="flex items-center gap-3 px-5 pt-3 pb-3 cursor-grab">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-md">
+              <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm leading-tight line-clamp-1">{video.title}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,0,0,0.2)' }}>
+                  <svg width="6" height="6" viewBox="0 0 10 10" fill="#FF4444"><polygon points="2,1 9,5 2,9" /></svg>
+                  <span className="text-[8px] font-bold" style={{ color: '#FF6B6B', fontFamily: 'JetBrains Mono, monospace' }}>잠뜰TV</span>
+                </div>
+                {video.pubDate && (
+                  <span className="text-[8px] text-gray-600" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                    {video.pubDate.slice(0, 10)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button onClick={() => { if (!wasDragging()) setMinimized(true) }}
+              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1 }}
+            >—</button>
+            <button onClick={() => { if (!wasDragging()) onClose() }}
+              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+            >✕</button>
           </div>
-          <button onClick={() => { if (!dragState.current.dragging) setMinimized(true) }}
-            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1 }}
-          >—</button>
-          <button onClick={() => { if (!dragState.current.dragging) onClose() }}
-            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
-          >✕</button>
         </div>
         {/* 16:9 iframe */}
         <div style={{ position: 'relative', paddingBottom: '56.25%', backgroundColor: '#000' }}>
