@@ -86,42 +86,75 @@ function SettingsModal({ onClose }) {
   const FONT = 'JetBrains Mono, monospace'
   const CORAL = '#E8694A'
 
-  const DELETE_OPTIONS = [
-    { id: 'day',   label: 'BY DAY',   desc: 'Delete todos for a specific day' },
-    { id: 'month', label: 'BY MONTH', desc: 'Delete all todos for a month' },
-    { id: 'year',  label: 'BY YEAR',  desc: 'Delete all todos for a year' },
-    { id: 'all',   label: 'ALL DATA', desc: 'Delete every todo permanently' },
+  // 모든 Firestore 컬렉션과 날짜 필드 매핑
+  const ALL_COLLECTIONS = [
+    { col: 'study-todos',   label: 'TODOS',   dateField: 'date' },
+    { col: 'task-board',    label: 'TASKS',    dateField: 'taskDate' },
+    { col: 'vocab-scans',   label: 'VOCAB',    dateField: 'date' },
+    { col: 'notes-media',   label: 'NOTES',    dateField: null }, // createdAt은 timestamp
+    { col: 'exam-schedule', label: 'EXAMS',    dateField: 'date' },
   ]
 
-  function getFilterFn() {
-    if (deleteMode === 'day') return t => t.date === targetDate
-    if (deleteMode === 'month') return t => t.date?.slice(0, 7) === targetDate.slice(0, 7)
-    if (deleteMode === 'year') return t => t.date?.slice(0, 4) === targetDate.slice(0, 4)
-    return () => true
+  const DELETE_OPTIONS = [
+    { id: 'day',   label: 'BY DAY',   desc: 'Delete all data for a specific day' },
+    { id: 'month', label: 'BY MONTH', desc: 'Delete all data for a month' },
+    { id: 'year',  label: 'BY YEAR',  desc: 'Delete all data for a year' },
+    { id: 'all',   label: 'ALL DATA', desc: 'Delete everything permanently' },
+  ]
+
+  function getDateFilter(dateField) {
+    if (deleteMode === 'all') return () => true
+    if (!dateField) {
+      // notes-media: createdAt은 숫자(ms) — 날짜 범위로 필터
+      return (data) => {
+        if (!data.createdAt) return deleteMode === 'all'
+        const d = new Date(data.createdAt)
+        const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+        if (deleteMode === 'day') return ds === targetDate
+        if (deleteMode === 'month') return ds.slice(0, 7) === targetDate.slice(0, 7)
+        if (deleteMode === 'year') return ds.slice(0, 4) === targetDate.slice(0, 4)
+        return false
+      }
+    }
+    return (data) => {
+      const val = data[dateField]
+      if (!val) return false
+      if (deleteMode === 'day') return val === targetDate
+      if (deleteMode === 'month') return val.slice(0, 7) === targetDate.slice(0, 7)
+      if (deleteMode === 'year') return val.slice(0, 4) === targetDate.slice(0, 4)
+      return false
+    }
   }
 
   function getConfirmMsg() {
-    if (deleteMode === 'day') return `DELETE ALL TODOS ON ${targetDate}?`
-    if (deleteMode === 'month') return `DELETE ALL TODOS IN ${targetDate.slice(0, 7)}?`
-    if (deleteMode === 'year') return `DELETE ALL TODOS IN ${targetDate.slice(0, 4)}?`
-    return 'DELETE ALL TODOS PERMANENTLY?'
+    if (deleteMode === 'day') return `DELETE ALL DATA ON ${targetDate}?`
+    if (deleteMode === 'month') return `DELETE ALL DATA IN ${targetDate.slice(0, 7)}?`
+    if (deleteMode === 'year') return `DELETE ALL DATA IN ${targetDate.slice(0, 4)}?`
+    return 'DELETE ALL DATA PERMANENTLY?'
   }
 
   async function handleDelete() {
     setDeleting(true)
     try {
-      const snap = await getDocs(collection(db, 'study-todos'))
-      const filterFn = getFilterFn()
-      const targets = snap.docs.filter(d => filterFn(d.data()))
-      if (targets.length === 0) {
-        addToast('No todos to delete', { icon: '📭' })
-        setDeleting(false)
-        return
+      let totalDeleted = 0
+      for (const { col, dateField } of ALL_COLLECTIONS) {
+        const snap = await getDocs(collection(db, col))
+        const filterFn = getDateFilter(dateField)
+        const targets = snap.docs.filter(d => filterFn(d.data()))
+        if (targets.length === 0) continue
+        // writeBatch는 최대 500건 제한
+        for (let i = 0; i < targets.length; i += 400) {
+          const batch = writeBatch(db)
+          targets.slice(i, i + 400).forEach(d => batch.delete(d.ref))
+          await batch.commit()
+        }
+        totalDeleted += targets.length
       }
-      const batch = writeBatch(db)
-      targets.forEach(d => batch.delete(d.ref))
-      await batch.commit()
-      addToast(`Deleted ${targets.length} todo(s)`, { icon: '🗑️' })
+      if (totalDeleted === 0) {
+        addToast('No data to delete', { icon: '📭' })
+      } else {
+        addToast(`Deleted ${totalDeleted} item(s)`, { icon: '🗑️' })
+      }
       setConfirmStep(false)
       setDeleteMode(null)
     } catch (err) {
@@ -153,7 +186,7 @@ function SettingsModal({ onClose }) {
         {/* 삭제 옵션 섹션 */}
         <div className="px-5">
           <span className="text-[9px] font-black tracking-[0.2em] block mb-3"
-            style={{ color: '#C4B8AF', fontFamily: FONT }}>DELETE TODOS</span>
+            style={{ color: '#C4B8AF', fontFamily: FONT }}>DELETE DATA</span>
 
           {!deleteMode ? (
             <div className="space-y-2">
@@ -221,7 +254,7 @@ function SettingsModal({ onClose }) {
               <p className="text-center text-xs font-black mb-1 tracking-wide"
                 style={{ color: '#991B1B', fontFamily: FONT }}>{getConfirmMsg()}</p>
               <p className="text-center text-[10px] mb-4"
-                style={{ color: '#B91C1C', fontFamily: FONT }}>This action cannot be undone.</p>
+                style={{ color: '#B91C1C', fontFamily: FONT }}>Todos, tasks, vocab, notes, exams will be deleted.</p>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmStep(false)}
                   className="flex-1 py-3 rounded-xl text-sm font-bold"
@@ -517,25 +550,56 @@ function DdayPickerModal({ onSelect, onClose }) {
 /* ── 잠뜰TV 유튜브 플레이어 바텀시트 ── */
 function YouTubeVideoSheet({ video, onClose }) {
   const [minimized, setMinimized] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const dragRef = useRef(null)
+  const dragState = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, dragging: false })
 
-  /* 최소화 상태: iframe은 DOM에 유지(오디오 계속 재생), 앱 자유롭게 사용 가능 */
+  function onDragStart(clientX, clientY) {
+    dragState.current = { startX: clientX, startY: clientY, origX: pos.x, origY: pos.y, dragging: false }
+  }
+  function onDragMove(clientX, clientY) {
+    const dx = clientX - dragState.current.startX
+    const dy = clientY - dragState.current.startY
+    if (!dragState.current.dragging && Math.abs(dx) + Math.abs(dy) > 5) dragState.current.dragging = true
+    if (dragState.current.dragging) {
+      const el = dragRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      let nx = dragState.current.origX + dx
+      let ny = dragState.current.origY + dy
+      // 화면 밖으로 나가지 않게 제한
+      const maxX = window.innerWidth - rect.width
+      const maxY = window.innerHeight - rect.height
+      nx = Math.max(-pos.x - rect.left, Math.min(nx, maxX - rect.left + pos.x))
+      ny = Math.max(-pos.y - rect.top, Math.min(ny, maxY - rect.top + pos.y))
+      setPos({ x: nx, y: ny })
+    }
+  }
+  function onDragEnd() { dragState.current.dragging = false }
+
+  function handleTouchStart(e) { const t = e.touches[0]; onDragStart(t.clientX, t.clientY) }
+  function handleTouchMove(e) { const t = e.touches[0]; onDragMove(t.clientX, t.clientY) }
+  function handleMouseDown(e) { onDragStart(e.clientX, e.clientY); const mm = ev => onDragMove(ev.clientX, ev.clientY); const mu = () => { onDragEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu) }; window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu) }
+
+  /* 최소화 상태 */
   if (minimized) {
     return (
-      <div className="fixed inset-x-0 z-50 max-w-lg mx-auto px-2" style={{ bottom: 68 }}>
-        {/* 오디오 유지용 숨김 iframe */}
+      <div ref={dragRef} className="fixed z-50 max-w-lg mx-auto px-2"
+        style={{ bottom: 68, left: 0, right: 0, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
         <iframe
           src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0`}
           title="yt-bg-audio"
           allow="autoplay; encrypted-media"
           style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', border: 'none' }}
         />
-        {/* 미니바 */}
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl"
-          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl cursor-grab active:cursor-grabbing"
+          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)', touchAction: 'none' }}
+          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
+          onMouseDown={handleMouseDown}
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
+            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-bold line-clamp-1 leading-tight">{video.title}</p>
@@ -544,13 +608,11 @@ function YouTubeVideoSheet({ video, onClose }) {
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 9, fontFamily: 'JetBrains Mono, monospace' }}>재생 중</span>
             </div>
           </div>
-          <button
-            onClick={() => setMinimized(false)}
+          <button onClick={() => { if (!dragState.current.dragging) setMinimized(false) }}
             className="px-2.5 py-1 rounded-lg active:opacity-60 transition-opacity"
             style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
           >펼치기</button>
-          <button
-            onClick={onClose}
+          <button onClick={() => { if (!dragState.current.dragging) onClose() }}
             className="w-7 h-7 rounded-full flex items-center justify-center active:opacity-60 transition-opacity"
             style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: 14 }}
           >✕</button>
@@ -559,21 +621,30 @@ function YouTubeVideoSheet({ video, onClose }) {
     )
   }
 
-  /* 전체 플레이어 — top 없음 → 앱 위쪽 영역 터치 가능 */
+  /* 전체 플레이어 — 드래그 이동 가능 */
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 max-w-lg mx-auto">
+    <div ref={dragRef} className="fixed z-50 max-w-lg mx-auto"
+      style={{ bottom: 0, left: 0, right: 0, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
       <div
         className="rounded-t-3xl overflow-hidden shadow-2xl"
         style={{ background: '#0F172A' }}
       >
-        {/* handle */}
-        <div className="flex justify-center pt-3">
+        {/* 드래그 핸들 영역 */}
+        <div className="flex justify-center pt-3 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
+          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
+          onMouseDown={handleMouseDown}
+        >
           <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
         </div>
-        {/* header */}
-        <div className="flex items-center gap-3 px-5 pt-3 pb-3">
+        {/* header — 드래그 가능 */}
+        <div className="flex items-center gap-3 px-5 pt-3 pb-3 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
+          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={onDragEnd}
+          onMouseDown={handleMouseDown}
+        >
           <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden shadow-md">
-            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
+            <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm leading-tight line-clamp-1">{video.title}</p>
@@ -589,14 +660,11 @@ function YouTubeVideoSheet({ video, onClose }) {
               )}
             </div>
           </div>
-          {/* 최소화 버튼 */}
-          <button
-            onClick={() => setMinimized(true)}
+          <button onClick={() => { if (!dragState.current.dragging) setMinimized(true) }}
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 1 }}
           >—</button>
-          <button
-            onClick={onClose}
+          <button onClick={() => { if (!dragState.current.dragging) onClose() }}
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
           >✕</button>
