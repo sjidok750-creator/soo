@@ -1,6 +1,6 @@
 {
-  "name": "스터디버디",
-  "short_name": "스터디버디",
+  "name": "todosoo",
+  "short_name": "todosoo",
   "description": "고등학생을 위한 실시간 공부 투두 앱",
   "start_url": "/soo/",
   "display": "standalone",
