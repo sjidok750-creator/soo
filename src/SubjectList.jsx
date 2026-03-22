@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { db } from './firebase'
 import {
   collection, onSnapshot, query, orderBy, where, addDoc, serverTimestamp,
-  deleteDoc, doc, updateDoc, setDoc
+  deleteDoc, doc, updateDoc, setDoc, getDocs, writeBatch
 } from 'firebase/firestore'
 import { useToast } from './Toast'
 import { SUBJECTS, getSubject, DAILY_SUBJECTS, getDailySubject } from './subjectConfig'
@@ -73,6 +73,172 @@ function parseDday(raw) {
   } catch {
     return { date: raw, title: '' }
   }
+}
+
+/* ───── SettingsModal ───── */
+function SettingsModal({ onClose }) {
+  const [deleteMode, setDeleteMode] = useState(null) // 'day' | 'month' | 'year' | 'all'
+  const [confirmStep, setConfirmStep] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [targetDate, setTargetDate] = useState(getTodayStr())
+  const { addToast, ToastContainer } = useToast()
+
+  const FONT = 'JetBrains Mono, monospace'
+  const CORAL = '#E8694A'
+
+  const DELETE_OPTIONS = [
+    { id: 'day',   label: 'BY DAY',   desc: 'Delete todos for a specific day' },
+    { id: 'month', label: 'BY MONTH', desc: 'Delete all todos for a month' },
+    { id: 'year',  label: 'BY YEAR',  desc: 'Delete all todos for a year' },
+    { id: 'all',   label: 'ALL DATA', desc: 'Delete every todo permanently' },
+  ]
+
+  function getFilterFn() {
+    if (deleteMode === 'day') return t => t.date === targetDate
+    if (deleteMode === 'month') return t => t.date?.slice(0, 7) === targetDate.slice(0, 7)
+    if (deleteMode === 'year') return t => t.date?.slice(0, 4) === targetDate.slice(0, 4)
+    return () => true
+  }
+
+  function getConfirmMsg() {
+    if (deleteMode === 'day') return `DELETE ALL TODOS ON ${targetDate}?`
+    if (deleteMode === 'month') return `DELETE ALL TODOS IN ${targetDate.slice(0, 7)}?`
+    if (deleteMode === 'year') return `DELETE ALL TODOS IN ${targetDate.slice(0, 4)}?`
+    return 'DELETE ALL TODOS PERMANENTLY?'
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      const snap = await getDocs(collection(db, 'study-todos'))
+      const filterFn = getFilterFn()
+      const targets = snap.docs.filter(d => filterFn(d.data()))
+      if (targets.length === 0) {
+        addToast('No todos to delete', { icon: '📭' })
+        setDeleting(false)
+        return
+      }
+      const batch = writeBatch(db)
+      targets.forEach(d => batch.delete(d.ref))
+      await batch.commit()
+      addToast(`Deleted ${targets.length} todo(s)`, { icon: '🗑️' })
+      setConfirmStep(false)
+      setDeleteMode(null)
+    } catch (err) {
+      addToast(`Delete failed: ${err.message}`, { icon: '❌' })
+    }
+    setDeleting(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(28,25,23,0.4)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full max-w-lg bg-white rounded-t-3xl pb-24"
+        style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+        {/* 상단 액센트 */}
+        <div style={{ height: 3, background: `linear-gradient(90deg, #F5A58A 0%, ${CORAL} 50%, #D4845A 100%)` }} />
+        {/* 핸들 */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(232,105,74,0.2)' }} />
+        </div>
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 pt-2 pb-4">
+          <span className="text-sm font-black tracking-[0.1em]"
+            style={{ color: CORAL, fontFamily: FONT }}>SETTINGS</span>
+          <button onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+            style={{ backgroundColor: '#FFF3F0', color: CORAL }}>✕</button>
+        </div>
+
+        {/* 삭제 옵션 섹션 */}
+        <div className="px-5">
+          <span className="text-[9px] font-black tracking-[0.2em] block mb-3"
+            style={{ color: '#C4B8AF', fontFamily: FONT }}>DELETE TODOS</span>
+
+          {!deleteMode ? (
+            <div className="space-y-2">
+              {DELETE_OPTIONS.map(opt => (
+                <button key={opt.id} onClick={() => { setDeleteMode(opt.id); setConfirmStep(false) }}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: '#FAFAF9', border: '1.5px solid #F0EDE8' }}>
+                  <div className="text-left">
+                    <p className="text-xs font-bold" style={{ color: '#44403C', fontFamily: FONT }}>{opt.label}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: '#A8A09A', fontFamily: FONT }}>{opt.desc}</p>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="2" strokeLinecap="round">
+                    <polyline points="9 6 15 12 9 18"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+          ) : !confirmStep ? (
+            <div>
+              {/* 날짜 선택 (day/month/year) */}
+              {deleteMode !== 'all' && (
+                <div className="mb-4">
+                  <label className="text-[9px] font-black tracking-[0.2em] block mb-2"
+                    style={{ color: '#C4B8AF', fontFamily: FONT }}>
+                    {deleteMode === 'day' ? 'SELECT DATE' : deleteMode === 'month' ? 'SELECT MONTH' : 'SELECT YEAR'}
+                  </label>
+                  <input
+                    type={deleteMode === 'day' ? 'date' : deleteMode === 'month' ? 'month' : 'number'}
+                    value={deleteMode === 'year' ? targetDate.slice(0, 4) : deleteMode === 'month' ? targetDate.slice(0, 7) : targetDate}
+                    onChange={e => {
+                      if (deleteMode === 'year') setTargetDate(`${e.target.value}-01-01`)
+                      else if (deleteMode === 'month') setTargetDate(`${e.target.value}-01`)
+                      else setTargetDate(e.target.value)
+                    }}
+                    min={deleteMode === 'year' ? 2020 : undefined}
+                    max={deleteMode === 'year' ? 2030 : undefined}
+                    className="w-full rounded-xl px-4 py-3 text-sm font-bold focus:outline-none"
+                    style={{
+                      backgroundColor: '#FAFAF9', border: `1.5px solid ${CORAL}40`,
+                      color: '#44403C', fontFamily: FONT, fontSize: 16,
+                    }}
+                  />
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button onClick={() => setDeleteMode(null)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold"
+                  style={{ backgroundColor: '#F5F3F0', color: '#B8AFA8', fontFamily: FONT }}>BACK</button>
+                <button onClick={() => setConfirmStep(true)}
+                  className="py-3 rounded-xl text-white text-sm font-black"
+                  style={{ flex: 2, backgroundColor: '#EF4444', fontFamily: FONT }}>DELETE</button>
+              </div>
+            </div>
+          ) : (
+            /* 삭제 확인 단계 */
+            <div className="rounded-2xl p-5" style={{ backgroundColor: '#FEF2F2', border: '1.5px solid #FECACA' }}>
+              <div className="flex justify-center mb-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FEE2E2' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+              </div>
+              <p className="text-center text-xs font-black mb-1 tracking-wide"
+                style={{ color: '#991B1B', fontFamily: FONT }}>{getConfirmMsg()}</p>
+              <p className="text-center text-[10px] mb-4"
+                style={{ color: '#B91C1C', fontFamily: FONT }}>This action cannot be undone.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmStep(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold"
+                  style={{ backgroundColor: '#fff', color: '#9CA3AF', fontFamily: FONT, border: '1px solid #E5E7EB' }}>CANCEL</button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="py-3 rounded-xl text-white text-sm font-black disabled:opacity-50"
+                  style={{ flex: 2, backgroundColor: '#DC2626', fontFamily: FONT }}>
+                  {deleting ? 'DELETING...' : 'CONFIRM'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        <ToastContainer />
+      </div>
+    </div>
+  )
 }
 
 function CalendarModal({ onClose, nickname }) {
@@ -1204,6 +1370,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [dday, setDday] = useState({ date: '', title: '' })
   const [showDdayPicker, setShowDdayPicker] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   // showTodoInput / onCloseTodoInput are managed by App.jsx (so nav persists across screens)
   const [playingVideo, setPlayingVideo] = useState(null)
   const [todayTodos, setTodayTodos] = useState([])
@@ -1329,6 +1496,19 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </div>
+          {/* 스페이서 */}
+          <div className="flex-1" />
+          {/* 설정 버튼 */}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center justify-center rounded-lg p-2 transition hover:opacity-80 flex-shrink-0 active:scale-95"
+            style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8694A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -1404,6 +1584,7 @@ export default function SubjectList({ onSelectSubject, onOpenVocabScanner, onOpe
 
       {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} nickname={nickname} />}
       {showDdayPicker && <DdayPickerModal onSelect={handleDdaySelect} onClose={() => setShowDdayPicker(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {(showTodoInput || localShowTodo) && <TodoInputSheet nickname={nickname} onClose={() => { onCloseTodoInput?.(); setLocalShowTodo(false) }} date={selectedDate} />}
       {playingVideo && <YouTubeVideoSheet video={playingVideo} onClose={() => setPlayingVideo(null)} />}
       <ToastContainer />
