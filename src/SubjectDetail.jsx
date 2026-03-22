@@ -11,6 +11,11 @@ import {
 
 const NICKNAME_KEY = 'study-buddy-nickname'
 
+function getTodayStr() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
+}
+
 // 마감일 포맷
 function formatDueDate(dateStr) {
   if (!dateStr) return null
@@ -41,7 +46,29 @@ function Avatar({ name, size = 'sm' }) {
   )
 }
 
+function usePullToRefresh() {
+  const [refreshing, setRefreshing] = useState(false)
+  useEffect(() => {
+    let startY = 0, startX = 0, canPull = false
+    const onStart = (e) => {
+      startY = e.touches[0].clientY; startX = e.touches[0].clientX
+      canPull = (window.scrollY || document.documentElement.scrollTop) === 0
+    }
+    const onEnd = (e) => {
+      if (!canPull) return
+      const dy = e.changedTouches[0].clientY - startY
+      const dx = Math.abs(e.changedTouches[0].clientX - startX)
+      if (dy > 80 && dx < 40) { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend',   onEnd,   { passive: true })
+    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd) }
+  }, [])
+  return refreshing
+}
+
 export default function SubjectDetail({ subject, onBack }) {
+  const isRefreshing = usePullToRefresh()
   const nickname = localStorage.getItem(NICKNAME_KEY) ?? '익명'
   const [todos, setTodos] = useState([])
   const [filter, setFilter] = useState('all') // all | active | done
@@ -77,10 +104,11 @@ export default function SubjectDetail({ subject, onBack }) {
   const colRef = collection(db, 'study-todos')
 
   useEffect(() => {
-    const q = query(colRef, orderBy('order', 'asc'), orderBy('createdAt', 'asc'))
-    return onSnapshot(q, (snap) => {
+    return onSnapshot(colRef, (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      const filtered = all.filter(t => t.subject === subject.id)
+      const filtered = all
+        .filter(t => t.subject === subject.id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0))
 
       // 새 항목 토스트 알림
       if (prevIdsRef.current !== null) {
@@ -92,6 +120,9 @@ export default function SubjectDetail({ subject, onBack }) {
       }
       prevIdsRef.current = new Set(filtered.map(t => t.id))
       setTodos(filtered)
+    }, (err) => {
+      console.error('Todos read error:', err)
+      addToast(`❌ 데이터 로드 실패: ${err.code}`)
     })
   }, [subject.id])
 
@@ -111,12 +142,16 @@ export default function SubjectDetail({ subject, onBack }) {
         difficulty,
         dueDate: dueDate || null,
         order: maxOrder,
+        date: getTodayStr(),
         createdAt: serverTimestamp(),
       })
       setText('')
       setDueDate('')
       setShowForm(false)
       addToast('할 일이 추가됐어요!', { icon: '✅' })
+    } catch (err) {
+      console.error('Todo add error:', err)
+      addToast(`❌ 저장 실패: ${err.code ?? err.message}`)
     } finally {
       setSubmitting(false)
     }
@@ -223,12 +258,21 @@ export default function SubjectDetail({ subject, onBack }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50 ${dragging ? 'dragging-active' : ''}`}>
+      {isRefreshing && (
+        <div className="fixed top-16 left-0 right-0 z-50 flex justify-center py-2 pointer-events-none">
+          <div className="w-7 h-7 rounded-full border-2 border-gray-100 animate-spin" style={{ borderTopColor: '#0D9488' }} />
+        </div>
+      )}
       {/* 스티키 헤더 */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-              ←
+            <button onClick={onBack}
+              className="flex items-center justify-center rounded-xl p-2.5 active:opacity-70 transition-opacity"
+              style={{ border: '2px solid #E8694A', backgroundColor: '#FFF3F0' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" stroke="#E8694A" strokeWidth="2"/>
+              </svg>
             </button>
             <span className="text-xl">{subj.emoji}</span>
             <div className="flex-1 min-w-0">
