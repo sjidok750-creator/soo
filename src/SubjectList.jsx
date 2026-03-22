@@ -547,86 +547,140 @@ function DdayPickerModal({ onSelect, onClose }) {
   )
 }
 
-/* ── 드래그 이동 훅 (DOM 직접 조작 — 60fps, 리렌더 없음) ── */
-function useDraggable() {
+/* ── 드래그 이동 훅 (DOM 직접 조작 + non-passive touch — iOS 최적화) ── */
+function useDraggable(resetKey) {
   const elRef = useRef(null)
-  const state = useRef({ sx: 0, sy: 0, tx: 0, ty: 0, dragging: false })
+  const dragZoneRef = useRef(null)
+  const s = useRef({ sx: 0, sy: 0, tx: 0, ty: 0, dragging: false, active: false })
 
-  const clamp = () => {
-    const el = elRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    const vw = window.innerWidth, vh = window.innerHeight
-    // 최소 40px은 화면 안에 유지
-    const minVisible = 40
-    let { tx, ty } = state.current
-    if (r.right < minVisible) tx += minVisible - r.right
-    if (r.left > vw - minVisible) tx -= r.left - (vw - minVisible)
-    if (r.bottom < minVisible) ty += minVisible - r.bottom
-    if (r.top > vh - minVisible) ty -= r.top - (vh - minVisible)
-    state.current.tx = tx
-    state.current.ty = ty
-    el.style.transform = `translate3d(${tx}px,${ty}px,0)`
-  }
+  // resetKey(minimized 전환 등)가 변경되면 위치 초기화
+  useEffect(() => {
+    s.current.tx = 0
+    s.current.ty = 0
+    if (elRef.current) elRef.current.style.transform = ''
+  }, [resetKey])
 
-  const apply = () => {
-    const el = elRef.current
-    if (el) el.style.transform = `translate3d(${state.current.tx}px,${state.current.ty}px,0)`
-  }
-
-  const onStart = (cx, cy) => {
-    state.current.sx = cx - state.current.tx
-    state.current.sy = cy - state.current.ty
-    state.current.dragging = false
-  }
-
-  const onMove = (cx, cy) => {
-    const dx = cx - state.current.sx - state.current.tx
-    const dy = cy - state.current.sy - state.current.ty
-    if (!state.current.dragging && Math.abs(dx) + Math.abs(dy) > 8) state.current.dragging = true
-    if (state.current.dragging) {
-      state.current.tx = cx - state.current.sx
-      state.current.ty = cy - state.current.sy
-      apply()
+  function getViewport() {
+    // iOS Safari: visualViewport이 정확, 없으면 fallback
+    const vv = window.visualViewport
+    return {
+      w: vv ? vv.width : window.innerWidth,
+      h: vv ? vv.height : window.innerHeight,
     }
   }
 
-  const onEnd = () => {
-    if (state.current.dragging) clamp()
-    // dragging 플래그는 약간 지연 해제 (클릭 방지)
-    setTimeout(() => { state.current.dragging = false }, 50)
+  function clamp() {
+    const el = elRef.current
+    if (!el) return
+    const { w: vw, h: vh } = getViewport()
+    // transform 임시 제거 후 원래 위치 측정
+    const saved = el.style.transform
+    el.style.transform = ''
+    const base = el.getBoundingClientRect()
+    el.style.transform = saved
+
+    let { tx, ty } = s.current
+    // 이동 후 실제 위치
+    const left = base.left + tx
+    const top = base.top + ty
+    const right = left + base.width
+    const bottom = top + base.height
+    // 최소 60px은 화면 안에 유지
+    const pad = 60
+    if (right < pad) tx += pad - right
+    if (left > vw - pad) tx -= left - (vw - pad)
+    if (bottom < pad) ty += pad - bottom
+    if (top > vh - pad) ty -= top - (vh - pad)
+    s.current.tx = tx
+    s.current.ty = ty
+    el.style.transform = `translate3d(${tx}px,${ty}px,0)`
   }
 
-  const wasDragging = () => state.current.dragging
-
-  const handlers = {
-    onTouchStart: e => { e.stopPropagation(); onStart(e.touches[0].clientX, e.touches[0].clientY) },
-    onTouchMove: e => { e.stopPropagation(); onMove(e.touches[0].clientX, e.touches[0].clientY) },
-    onTouchEnd: e => { e.stopPropagation(); onEnd() },
-    onMouseDown: e => {
-      e.stopPropagation()
-      onStart(e.clientX, e.clientY)
-      const mm = ev => { ev.preventDefault(); onMove(ev.clientX, ev.clientY) }
-      const mu = () => { onEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu) }
-      window.addEventListener('mousemove', mm)
-      window.addEventListener('mouseup', mu)
-    },
+  function onStart(cx, cy) {
+    s.current.sx = cx - s.current.tx
+    s.current.sy = cy - s.current.ty
+    s.current.dragging = false
+    s.current.active = true
   }
 
-  // 화면 회전/리사이즈 시 범위 재보정
+  function onMove(cx, cy) {
+    if (!s.current.active) return
+    const newTx = cx - s.current.sx
+    const newTy = cy - s.current.sy
+    const dx = newTx - s.current.tx
+    const dy = newTy - s.current.ty
+    if (!s.current.dragging && (Math.abs(cx - s.current.sx - s.current.tx + dx) > 0) && (Math.abs(dx) + Math.abs(dy) > 8)) {
+      s.current.dragging = true
+    }
+    if (s.current.dragging) {
+      s.current.tx = newTx
+      s.current.ty = newTy
+      if (elRef.current) elRef.current.style.transform = `translate3d(${newTx}px,${newTy}px,0)`
+    }
+  }
+
+  function onEnd() {
+    s.current.active = false
+    if (s.current.dragging) clamp()
+    setTimeout(() => { s.current.dragging = false }, 80)
+  }
+
+  const wasDragging = () => s.current.dragging
+
+  // non-passive touch listeners — iOS Safari에서 preventDefault 가능하게
   useEffect(() => {
-    const onResize = () => clamp()
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    const zone = dragZoneRef.current
+    if (!zone) return
+
+    function handleTS(e) {
+      if (e.touches.length !== 1) return
+      const t = e.touches[0]
+      onStart(t.clientX, t.clientY)
+    }
+    function handleTM(e) {
+      if (!s.current.active) return
+      e.preventDefault() // ← iOS 스크롤 방지 (passive:false 필수)
+      const t = e.touches[0]
+      onMove(t.clientX, t.clientY)
+    }
+    function handleTE() { onEnd() }
+
+    zone.addEventListener('touchstart', handleTS, { passive: true })
+    zone.addEventListener('touchmove', handleTM, { passive: false })
+    zone.addEventListener('touchend', handleTE, { passive: true })
+
+    return () => {
+      zone.removeEventListener('touchstart', handleTS)
+      zone.removeEventListener('touchmove', handleTM)
+      zone.removeEventListener('touchend', handleTE)
+    }
+  })
+
+  // 마우스 드래그 (데스크톱)
+  function onMouseDown(e) {
+    e.preventDefault()
+    onStart(e.clientX, e.clientY)
+    const mm = ev => { ev.preventDefault(); onMove(ev.clientX, ev.clientY) }
+    const mu = () => { onEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu) }
+    window.addEventListener('mousemove', mm)
+    window.addEventListener('mouseup', mu)
+  }
+
+  // 화면 회전/리사이즈 시 재보정
+  useEffect(() => {
+    const h = () => clamp()
+    window.addEventListener('resize', h)
+    window.addEventListener('orientationchange', h)
+    return () => { window.removeEventListener('resize', h); window.removeEventListener('orientationchange', h) }
   }, [])
 
-  return { elRef, handlers, wasDragging }
+  return { elRef, dragZoneRef, onMouseDown, wasDragging }
 }
 
 /* ── 잠뜰TV 유튜브 플레이어 바텀시트 ── */
 function YouTubeVideoSheet({ video, onClose }) {
   const [minimized, setMinimized] = useState(false)
-  const { elRef, handlers, wasDragging } = useDraggable()
+  const { elRef, dragZoneRef, onMouseDown, wasDragging } = useDraggable(minimized)
 
   /* 최소화 상태 */
   if (minimized) {
@@ -639,10 +693,10 @@ function YouTubeVideoSheet({ video, onClose }) {
           allow="autoplay; encrypted-media"
           style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', border: 'none' }}
         />
-        <div
+        <div ref={dragZoneRef}
           className="flex items-center gap-3 px-3 py-2 rounded-2xl shadow-2xl"
-          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)', touchAction: 'none', userSelect: 'none' }}
-          {...handlers}
+          style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.07)', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+          onMouseDown={onMouseDown}
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
             <img src={video.thumbnail} alt="" className="w-full h-full object-cover" draggable={false} />
@@ -675,10 +729,10 @@ function YouTubeVideoSheet({ video, onClose }) {
         className="rounded-t-3xl overflow-hidden shadow-2xl"
         style={{ background: '#0F172A' }}
       >
-        {/* 드래그 핸들 + 헤더 통합 */}
-        <div
-          style={{ touchAction: 'none', userSelect: 'none' }}
-          {...handlers}
+        {/* 드래그 핸들 + 헤더 */}
+        <div ref={dragZoneRef}
+          style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+          onMouseDown={onMouseDown}
         >
           <div className="flex justify-center pt-3 cursor-grab">
             <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
